@@ -24,6 +24,7 @@ async function getConsultationContext(visitId) {
   const [[visit]] = await pool.execute(
     `SELECT v.*, a.appointment_code, a.token_number, a.slot_time, a.appointment_date, a.reason,
             p.id AS patient_id, p.health_id, p.name AS patient_name, p.gender, p.age_years, p.dob, p.mobile,
+            a.lmp_date, a.gravida, a.para, a.abortions, a.pregnancy_status, a.gestational_age_weeks, a.gestational_age_days, a.estimated_due_date, a.obstetric_notes,
             m.blood_group, m.allergies, m.existing_conditions, m.height_cm AS profile_height, m.weight_kg AS profile_weight,
             u.name AS doctor_name, dept.name AS department_name
      FROM opd_visits v
