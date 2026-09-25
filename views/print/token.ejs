@@ -22,6 +22,8 @@
     <div class="kv"><span class="k">Appointment No.</span><span class="v"><%= appointment.appointment_code %></span></div>
   </div>
 
+  <div style="text-align:center;margin:1rem 0 .5rem;"><img src="/opd/appointments/<%= appointment.id %>/barcode" alt="Appointment barcode" style="width:320px;height:80px;object-fit:contain;"><div style="font-size:.75rem;color:#666;">Scan appointment barcode at the doctor desk</div></div>
+
   <div class="print-footer-note">
     Please be seated in the waiting area. Tokens are called in order. Report to reception if you miss your call.
   </div>
