@@ -241,6 +241,42 @@ async function updateVisitStatus(req, res, next) {
   }
 }
 
+async function showVitals(req, res, next) {
+  try {
+    const [[visit]] = await pool.execute(
+      `SELECT v.id, v.status, a.token_number, a.appointment_date, p.name AS patient_name, p.health_id, p.age_years, p.gender, u.name AS doctor_name
+       FROM opd_visits v JOIN appointments a ON a.id = v.appointment_id
+       JOIN patients p ON p.id = v.patient_id
+       JOIN doctors d ON d.id = v.doctor_id JOIN users u ON u.id = d.user_id
+       WHERE v.id = :id`,
+      { id: req.params.visitId }
+    );
+    if (!visit) throw new AppError('Visit not found', 404);
+    const [[vitals]] = await pool.execute('SELECT * FROM appointment_vitals WHERE visit_id = :id', { id: req.params.visitId });
+    res.render('opd/vitals', { title: `Vitals — ${visit.patient_name}`, visit, vitals: vitals || {} });
+  } catch (err) { next(err); }
+}
+
+async function saveVitals(req, res, next) {
+  try {
+    const [[visit]] = await pool.execute('SELECT id FROM opd_visits WHERE id = :id', { id: req.params.visitId });
+    if (!visit) throw new AppError('Visit not found', 404);
+    await pool.execute(
+      `INSERT INTO appointment_vitals (visit_id, bp, pulse, spo2, temperature, height_cm, weight_kg, respiratory_rate, pain_score, recorded_by)
+       VALUES (:visitId, :bp, :pulse, :spo2, :temperature, :height, :weight, :respiratory, :pain, :recordedBy)
+       ON DUPLICATE KEY UPDATE bp=VALUES(bp), pulse=VALUES(pulse), spo2=VALUES(spo2), temperature=VALUES(temperature),
+       height_cm=VALUES(height_cm), weight_kg=VALUES(weight_kg), respiratory_rate=VALUES(respiratory_rate), pain_score=VALUES(pain_score), recorded_by=VALUES(recorded_by)`,
+      { visitId:req.params.visitId, bp:req.body.bp||null, pulse:req.body.pulse||null, spo2:req.body.spo2||null, temperature:req.body.temperature||null,
+        height:req.body.heightCm||null, weight:req.body.weightKg||null, respiratory:req.body.respiratoryRate||null, pain:req.body.painScore||null, recordedBy:req.user.id }
+    );
+    req.flash('success', 'Patient vitals saved.');
+    res.redirect('/opd/queue');
+  } catch (err) {
+    if (err instanceof AppError) { req.flash('errors', [{message:err.message}]); return res.redirect('/opd/queue'); }
+    next(err);
+  }
+}
+
 async function printToken(req, res, next) {
   try {
     const data = await opdService.getAppointment(req.params.id);
@@ -275,7 +311,7 @@ async function liveBoard(req, res, next) {
   }
 }
 
-module.exports = {
+module.exports = { showVitals, saveVitals,
   showBookingForm,
   book,
   listAppointments,
