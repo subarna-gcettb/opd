@@ -33,7 +33,7 @@
       <div class="col-12">
         <label class="form-label">Reason / Chief Complaint</label>
         <textarea name="reason" class="form-control" rows="2" placeholder="e.g. Fever and body ache for 3 days"></textarea>
-      </div>
+      </div><div class="col-12 obstetric-section" style="display:none"><div class="alert alert-info small mb-2"><strong>Women’s health / pregnancy details</strong> — these values are calculated and shown to the doctor for clinical context.</div><div class="row g-2"><div class="col-md-3"><label class="form-label small">LMP</label><input type="date" name="lmpDate" class="form-control"></div><div class="col-md-2"><label class="form-label small">Pregnancy</label><select name="pregnancyStatus" class="form-select"><option value="UNKNOWN">Unknown</option><option value="NOT_PREGNANT">Not pregnant</option><option value="PREGNANT">Pregnant</option></select></div><div class="col-md-2"><label class="form-label small">Gravida</label><input type="number" name="gravida" min="0" class="form-control"></div><div class="col-md-2"><label class="form-label small">Para</label><input type="number" name="para" min="0" class="form-control"></div><div class="col-md-2"><label class="form-label small">Abortions</label><input type="number" name="abortions" min="0" class="form-control"></div><div class="col-md-12"><label class="form-label small">Obstetric notes</label><textarea name="obstetricNotes" class="form-control" rows="2"></textarea></div></div></div>
     </div>
   </div>
   <div class="card-footer d-flex justify-content-end gap-2">
