@@ -14,6 +14,7 @@ router.get('/queue', requirePermission('queue.manage'), asyncHandler(opdControll
 router.get('/visits/:visitId/vitals', requirePermission('queue.manage'), asyncHandler(opdController.showVitals));
 router.post('/visits/:visitId/vitals', requirePermission('queue.manage'), csrfProtection, asyncHandler(opdController.saveVitals));
 router.get('/live-board', requirePermission('queue.manage', 'consultation.create'), asyncHandler(opdController.liveBoard));
+router.post('/visits/:visitId/reorder', requirePermission('queue.manage'), csrfProtection, asyncHandler(opdController.reorderQueue));
 router.post(
   '/visits/:visitId/status',
   requirePermission('queue.manage'),
