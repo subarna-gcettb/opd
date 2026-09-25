@@ -30,10 +30,27 @@ async function resolve(req, res, next) {
     }
 
     if (/^APT/i.test(raw)) {
-      const [[appt]] = await pool.execute('SELECT id FROM appointments WHERE appointment_code = :code', {
-        code: raw.toUpperCase()
-      });
+      const [[appt]] = await pool.execute(
+        `SELECT a.id, a.doctor_id, a.appointment_date, a.status AS appointment_status,
+                v.id AS visit_id, v.status AS visit_status
+         FROM appointments a
+         LEFT JOIN opd_visits v ON v.appointment_id = a.id
+         WHERE a.appointment_code = :code LIMIT 1`,
+        { code: raw.toUpperCase() }
+      );
       if (!appt) throw new AppError(`No appointment found for code ${raw}`, 404);
+
+      const isDoctor = Boolean(req.user.doctorId);
+      if (isDoctor) {
+        if (appt.doctor_id !== req.user.doctorId) throw new AppError('This appointment is assigned to another doctor.', 403);
+        if (appt.appointment_date instanceof Date) appt.appointment_date = appt.appointment_date.toISOString().slice(0,10);
+        const today = new Date().toISOString().slice(0,10);
+        if (String(appt.appointment_date).slice(0,10) !== today) throw new AppError('This appointment is not for today.', 409);
+        if (!appt.visit_id || !['WAITING','CALLED','IN_CONSULTATION'].includes(appt.visit_status)) {
+          throw new AppError('This patient is not currently in today’s active queue.', 409);
+        }
+        return res.redirect(`/doctor/consultation/${appt.visit_id}`);
+      }
       return res.redirect(`/opd/appointments/${appt.id}`);
     }
 
