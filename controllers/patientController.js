@@ -147,13 +147,29 @@ async function update(req, res, next) {
   }
 }
 
-async function remove(req, res, next) {
+async function suspend(req, res, next) {
   try {
     const data = await patientService.getPatientProfile(req.params.healthId);
     if (!data) throw new AppError('Patient not found', 404);
-    await patientService.softDeletePatient(data.patient.id, req.user.id);
-    req.flash('success', `Patient ${data.patient.name} has been removed. Their medical history is retained for audit.`);
-    res.redirect('/patients');
+    await patientService.suspendPatient(data.patient.id, req.user.id, req.body.reason);
+    req.flash('success', `Patient ${data.patient.name} has been suspended. Medical history is retained.`);
+    res.redirect(`/patients/${req.params.healthId}`);
+  } catch (err) {
+    if (err instanceof AppError) {
+      req.flash('errors', [{ message: err.message }]);
+      return res.redirect(`/patients/${req.params.healthId}`);
+    }
+    next(err);
+  }
+}
+
+async function restore(req, res, next) {
+  try {
+    const data = await patientService.getPatientProfile(req.params.healthId);
+    if (!data) throw new AppError('Patient not found', 404);
+    await patientService.restorePatient(data.patient.id, req.user.id);
+    req.flash('success', 'Patient has been restored to active status.');
+    res.redirect(`/patients/${req.params.healthId}`);
   } catch (err) {
     if (err instanceof AppError) {
       req.flash('errors', [{ message: err.message }]);
@@ -173,6 +189,7 @@ module.exports = {
   barcodeImage,
   registrationSlip,
   showEditForm,
-  update,
-  remove
+  update
+  ,suspend
+  ,restore
 };
