@@ -1,0 +1,81 @@
+<%
+  const can = (p) => currentUser && currentUser.permissions.includes(p);
+  const suspended = patient.status === 'SUSPENDED';
+%>
+<div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+  <div>
+    <h4 class="mb-0"><%= patient.name %> <% if (suspended) { %><span class="badge text-bg-danger">SUSPENDED</span><% } %></h4>
+    <div class="text-muted"><code><%= patient.health_id %></code> · <%= patient.registration_number %> · <%= patient.branch_name %></div>
+  </div>
+  <div class="d-flex gap-2">
+    <% if (can('patient.edit') && !suspended) { %><a href="/patients/<%= patient.health_id %>/edit" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil"></i> Edit</a><% } %>
+    <a href="/patients/<%= patient.health_id %>/slip" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="bi bi-printer"></i> Registration Slip</a>
+  </div>
+</div>
+
+<% if (suspended) { %>
+  <div class="alert alert-warning d-flex justify-content-between align-items-center">
+    <div><strong>Patient suspended.</strong> New appointments and patient portal access are blocked. Existing medical history is retained.</div>
+    <% if (can('patient.suspend')) { %>
+      <form method="POST" action="/patients/<%= patient.health_id %>/restore">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="btn btn-success btn-sm">Restore Patient</button>
+      </form>
+    <% } %>
+  </div>
+<% else if (can('patient.suspend')) { %>
+  <div class="text-end mb-3">
+    <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#suspendModal"><i class="bi bi-person-slash"></i> Suspend Patient</button>
+  </div>
+<% } %>
+
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="card mb-3">
+      <div class="card-header">Patient Details</div>
+      <div class="card-body">
+        <div class="row g-2 small">
+          <div class="col-6"><strong>Gender:</strong> <%= patient.gender %></div>
+          <div class="col-6"><strong>Age:</strong> <%= patient.age_years || '—' %></div>
+          <div class="col-6"><strong>Mobile:</strong> <%= patient.mobile %></div>
+          <div class="col-6"><strong>Aadhaar:</strong> <%= patient.aadhaar_masked || '—' %></div>
+          <div class="col-12"><strong>Address:</strong> <%= [patient.address, patient.village_town, patient.police_station, patient.district, patient.state, patient.pin_code].filter(Boolean).join(', ') || '—' %></div>
+          <div class="col-12"><strong>Allergies:</strong> <%= patient.allergies || 'None recorded' %></div>
+          <div class="col-12"><strong>Existing Conditions:</strong> <%= patient.existing_conditions || 'None recorded' %></div>
+        </div>
+      </div>
+    </div>
+    <div class="card text-center">
+      <div class="card-header">Patient Barcode</div>
+      <div class="card-body"><img src="/patients/<%= patient.health_id %>/barcode" alt="Health ID barcode" style="max-width:100%;height:80px;"><div class="small text-muted mt-2"><%= patient.health_id %></div></div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card mb-3">
+      <div class="card-header">OPD History</div>
+      <div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>Date</th><th>Doctor</th><th>Diagnosis</th><th>Status</th></tr></thead><tbody>
+        <% opdHistory.forEach(v => { %><tr><td><%= new Date(v.checked_in_at).toLocaleDateString() %></td><td><%= v.doctor_name %></td><td><%= v.diagnosis || '—' %></td><td><%= v.status %></td></tr><% }) %>
+        <% if (!opdHistory.length) { %><tr><td colspan="4" class="text-center text-muted py-3">No OPD history.</td></tr><% } %>
+      </tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="card-header">Billing</div>
+      <div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>Invoice</th><th>Date</th><th>Net</th><th>Status</th></tr></thead><tbody>
+        <% billing.forEach(b => { %><tr><td><%= b.invoice_number %></td><td><%= new Date(b.created_at).toLocaleDateString() %></td><td>₹<%= Number(b.net_amount).toFixed(2) %></td><td><%= b.status %></td></tr><% }) %>
+        <% if (!billing.length) { %><tr><td colspan="4" class="text-center text-muted py-3">No billing records.</td></tr><% } %>
+      </tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="suspendModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form method="POST" action="/patients/<%= patient.health_id %>/suspend" class="modal-content">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="modal-header"><h5 class="modal-title">Suspend Patient</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body"><p class="small">This does not delete the patient or medical history. It prevents new appointments and disables the patient portal account.</p><label class="form-label">Reason</label><textarea name="reason" class="form-control" rows="3" required></textarea></div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-danger">Suspend Patient</button></div>
+    </form>
+  </div>
+</div>
