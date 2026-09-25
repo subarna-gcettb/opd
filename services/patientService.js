@@ -409,7 +409,6 @@ module.exports = {
   listPatients,
   getPatientProfile,
   updatePatient,
-  softDeletePatient,
   suspendPatient,
   restorePatient
 };
