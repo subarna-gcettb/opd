@@ -163,6 +163,19 @@ async function requestPasswordResetOtp(req, res) {
   }
 }
 
+async function resetPassword(req, res, next) {
+  try {
+    const { newPassword, confirmPassword } = req.body;
+    if (!newPassword || newPassword.length < 8) throw new AppError('Password must be at least 8 characters', 422);
+    if (newPassword !== confirmPassword) throw new AppError('Passwords do not match', 422);
+    const hash = await bcrypt.hash(newPassword, authConfig.bcryptRounds);
+    await pool.execute('UPDATE users SET password_hash = :hash, must_reset_password = 0 WHERE id = :id', { hash, id: req.user.id });
+    await auditService.log({ userId: req.user.id, action: 'PASSWORD_RESET', entity: 'user', entityId: req.user.id, ipAddress: req.clientIp });
+    req.flash('success', 'Password updated successfully.');
+    res.redirect(req.user.patientId ? '/patient-portal' : '/dashboard');
+  } catch (err) { next(err); }
+}
+
 async function verifyPasswordReset(req, res) {
   try {
     const email = String(req.body.email || req.session.resetEmail || '').trim().toLowerCase();
@@ -312,7 +325,7 @@ module.exports = {
   login,
   logout,
   showResetPassword,
-  resetPassword: verifyPasswordReset,
+  resetPassword,
   showSignup,
   showVerifySignup,
   signupRequestOtp,
