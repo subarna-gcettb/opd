@@ -241,6 +241,18 @@ async function updateVisitStatus(req, res, next) {
   }
 }
 
+async function reorderQueue(req, res, next) {
+  try {
+    await opdService.reorderQueue(req.params.visitId, req.body.direction, req.user.id);
+    req.flash('success', 'Queue order updated.');
+    res.redirect(req.get('Referer') || '/opd/queue');
+  } catch (err) {
+    if (err instanceof AppError) req.flash('errors', [{ message: err.message }]);
+    else return next(err);
+    res.redirect(req.get('Referer') || '/opd/queue');
+  }
+}
+
 async function showVitals(req, res, next) {
   try {
     const [[visit]] = await pool.execute(
@@ -311,7 +323,7 @@ async function liveBoard(req, res, next) {
   }
 }
 
-module.exports = { showVitals, saveVitals,
+module.exports = { reorderQueue, showVitals, saveVitals,
   showBookingForm,
   book,
   listAppointments,
