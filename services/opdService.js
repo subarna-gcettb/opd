@@ -150,12 +150,15 @@ async function rescheduleAppointment(appointmentId, { newDate, newTime, reason }
 
     // New date => new token in that date's per-doctor sequence.
     const newToken = await generateToken(conn, appt.doctor_id, newDate);
+    const obstetric = calculatePregnancy(appt.lmp_date, appt.pregnancy_status, newDate);
 
     await conn.execute(
       `UPDATE appointments SET appointment_date = :newDate, slot_time = :newTime,
-        token_number = :newToken, status = 'RESCHEDULED' WHERE id = :id`,
-      { newDate, newTime, newToken, id: appointmentId }
+        token_number = :newToken, gestational_age_weeks = :gaWeeks, gestational_age_days = :gaDays, estimated_due_date = :edd, status = 'RESCHEDULED' WHERE id = :id`,
+      { newDate, newTime, newToken, gaWeeks: obstetric.weeks, gaDays: obstetric.days, edd: obstetric.edd, id: appointmentId }
     );
+
+    await conn.execute('UPDATE opd_visits SET queue_position = :newToken WHERE appointment_id = :id AND status <> \'CANCELLED\'', { newToken, id: appointmentId });
 
     await conn.execute(
       `INSERT INTO appointment_history
@@ -193,7 +196,8 @@ async function updateAppointmentDetails(appointmentId, payload, actorUserId) {
   if (!data) throw new AppError('Appointment not found', 404);
   if (['CANCELLED','COMPLETED'].includes(data.appointment.status)) throw new AppError('This appointment can no longer be edited', 409);
 
-  if (payload.newDate !== data.appointment.appointment_date || payload.newTime !== String(data.appointment.slot_time).slice(0,5)) {
+  const currentDate = new Date(data.appointment.appointment_date).toISOString().slice(0,10);
+  if (payload.newDate !== currentDate || payload.newTime !== String(data.appointment.slot_time).slice(0,5)) {
     await rescheduleAppointment(appointmentId, { newDate: payload.newDate, newTime: payload.newTime, reason: payload.reason || 'Appointment details edited' }, actorUserId);
   }
   await pool.execute('UPDATE appointments SET reason=:reason WHERE id=:id', { reason: payload.reason || null, id: appointmentId });
