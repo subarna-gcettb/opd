@@ -1,0 +1,49 @@
+<h4 class="mb-3">Billing Report</h4>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <form method="GET" class="row g-2 align-items-end">
+      <div class="col-md-2"><label class="form-label small">From</label><input type="date" name="from" class="form-control form-control-sm" value="<%= from %>"></div>
+      <div class="col-md-2"><label class="form-label small">To</label><input type="date" name="to" class="form-control form-control-sm" value="<%= to %>"></div>
+      <div class="col-md-3">
+        <label class="form-label small">Status</label>
+        <select name="status" class="form-select form-select-sm">
+          <option value="">All</option>
+          <% ['DRAFT','AWAITING_PAYMENT','PAID','CANCELLED'].forEach(function(s) { %>
+            <option value="<%= s %>" <%= status === s ? 'selected' : '' %>><%= s.replace('_',' ') %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-md-2"><button class="btn btn-sm btn-primary w-100">Apply</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">₹<%= Number(totals.gross).toFixed(2) %></div><div class="stat-label">Gross</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">₹<%= Number(totals.discount).toFixed(2) %></div><div class="stat-label">Discount</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">₹<%= Number(totals.net).toFixed(2) %></div><div class="stat-label">Net</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value text-success">₹<%= Number(totals.collected).toFixed(2) %></div><div class="stat-label">Collected</div></div></div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Invoice</th><th>Patient</th><th>Amount</th><th>Discount</th><th>Method</th><th>Status</th></tr></thead>
+      <tbody>
+        <% rows.forEach(function(r) { %>
+          <tr>
+            <td><%= r.invoice_number %></td>
+            <td><%= r.patient_name %><div class="text-muted small"><%= r.health_id %></div></td>
+            <td>₹<%= Number(r.net_amount).toFixed(2) %></td>
+            <td>₹<%= Number(r.discount_amount).toFixed(2) %></td>
+            <td><%= r.payment_method || '—' %></td>
+            <td><span class="badge text-bg-<%= r.status === 'PAID' ? 'success' : 'secondary' %>"><%= r.status.replace('_',' ') %></span></td>
+          </tr>
+        <% }) %>
+        <% if (rows.length === 0) { %><tr><td colspan="6" class="text-center text-muted py-4">No invoices for this range.</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<button onclick="window.print()" class="btn btn-outline-secondary btn-sm mt-3 no-print"><i class="bi bi-printer"></i> Print</button>

@@ -1,0 +1,217 @@
+<h4 class="mb-3">Book OPD Appointment</h4>
+
+<form method="POST" action="/opd/appointments/new" class="card" id="bookingForm">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <input type="hidden" name="patientId" id="patientId" value="<%= patient ? patient.id : '' %>">
+  <input type="hidden" name="healthId" id="healthIdField" value="<%= patient ? patient.health_id : '' %>">
+
+  <div class="card-body">
+    <!-- STEP 1: PATIENT -->
+    <h6 class="text-uppercase text-muted small mb-2">1. Patient</h6>
+    <div id="patientPicker" class="<%= patient ? 'd-none' : '' %>">
+      <div class="input-group mb-2">
+        <input type="text" id="patientSearch" class="form-control" placeholder="Search by Health ID, name or mobile…">
+        <button class="btn btn-outline-secondary" type="button" id="patientSearchBtn">Search</button>
+      </div>
+      <div id="patientResults"></div>
+    </div>
+    <div id="patientSelected" class="alert alert-success d-flex justify-content-between align-items-center <%= patient ? '' : 'd-none' %>">
+      <div>
+        <strong id="selPatientName"><%= patient ? patient.name : '' %></strong>
+        &middot; Health ID <code id="selPatientHid"><%= patient ? patient.health_id : '' %></code>
+        &middot; <span id="selPatientMeta"><%= patient ? (patient.age_years || '—') + ' / ' + patient.gender : '' %></span>
+      </div>
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="changePatientBtn">Change</button>
+    </div>
+
+    <hr class="my-4">
+
+    <!-- STEP 2: DOCTOR -->
+    <h6 class="text-uppercase text-muted small mb-2">2. Branch, Department &amp; Doctor</h6>
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Branch *</label>
+        <select name="branchId" id="branchId" class="form-select" required>
+          <% branches.forEach(function(b, i) { %>
+            <option value="<%= b.id %>" <%= i === 0 ? 'selected' : '' %>><%= b.name %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Department *</label>
+        <select name="departmentId" id="departmentId" class="form-select" required>
+          <option value="">Select department</option>
+          <% departments.forEach(function(d) { %><option value="<%= d.id %>"><%= d.name %></option><% }) %>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Doctor *</label>
+        <select name="doctorId" id="doctorId" class="form-select" required disabled>
+          <option value="">Select department first</option>
+        </select>
+      </div>
+    </div>
+
+    <hr class="my-4">
+
+    <!-- STEP 3: SLOT -->
+    <h6 class="text-uppercase text-muted small mb-2">3. Date &amp; Time Slot</h6>
+    <div class="row g-3">
+      <div class="col-md-3">
+        <label class="form-label">Appointment Date *</label>
+        <input type="date" name="appointmentDate" id="appointmentDate" class="form-control" value="<%= today %>" min="<%= today %>" required>
+      </div>
+      <div class="col-md-9">
+        <label class="form-label">Available Slots *</label>
+        <div id="slotContainer" class="border rounded p-3 bg-light" style="min-height: 72px;">
+          <span class="text-muted small">Select a doctor and date to see available slots.</span>
+        </div>
+        <input type="hidden" name="slotTime" id="slotTime" required>
+      </div>
+    </div>
+
+    <hr class="my-4">
+
+    <h6 class="text-uppercase text-muted small mb-2">4. Reason / Chief Complaint</h6>
+    <textarea name="reason" class="form-control" rows="2" placeholder="e.g. Fever and body ache for 3 days"></textarea>
+  </div>
+
+  <div class="card-footer d-flex justify-content-end gap-2">
+    <a href="/dashboard" class="btn btn-outline-secondary">Cancel</a>
+    <button type="submit" class="btn btn-primary" id="submitBtn"><i class="bi bi-calendar-check"></i> Confirm Appointment</button>
+  </div>
+</form>
+
+<script>
+(function () {
+  const patientSearch = document.getElementById('patientSearch');
+  const patientResults = document.getElementById('patientResults');
+  const patientPicker = document.getElementById('patientPicker');
+  const patientSelected = document.getElementById('patientSelected');
+  const patientIdField = document.getElementById('patientId');
+
+  function runPatientSearch() {
+    const q = patientSearch.value.trim();
+    if (q.length < 2) return;
+    patientResults.innerHTML = '<div class="text-muted small">Searching…</div>';
+    fetch('/patients/search/results?q=' + encodeURIComponent(q), { headers: { Accept: 'application/json' } })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.results.length) {
+          patientResults.innerHTML = '<div class="alert alert-warning py-2 mb-0">No patient found. ' +
+            '<a href="/patients/new">Register a new patient</a> first.</div>';
+          return;
+        }
+        patientResults.innerHTML = '<div class="list-group">' + data.results.map(function (p) {
+          return '<button type="button" class="list-group-item list-group-item-action" ' +
+            'data-id="' + p.id + '" data-name="' + p.name + '" data-hid="' + p.health_id + '" ' +
+            'data-meta="' + (p.age_years || '—') + ' / ' + p.gender + '">' +
+            '<strong>' + p.name + '</strong> <code>' + p.health_id + '</code> · ' +
+            (p.age_years || '—') + '/' + p.gender + ' · ' + p.mobile + '</button>';
+        }).join('') + '</div>';
+      })
+      .catch(() => { patientResults.innerHTML = '<div class="text-danger small">Search failed.</div>'; });
+  }
+
+  document.getElementById('patientSearchBtn').addEventListener('click', runPatientSearch);
+  patientSearch && patientSearch.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); runPatientSearch(); }
+  });
+
+  patientResults.addEventListener('click', function (e) {
+    const btn = e.target.closest('[data-id]');
+    if (!btn) return;
+    patientIdField.value = btn.dataset.id;
+    document.getElementById('healthIdField').value = btn.dataset.hid;
+    document.getElementById('selPatientName').textContent = btn.dataset.name;
+    document.getElementById('selPatientHid').textContent = btn.dataset.hid;
+    document.getElementById('selPatientMeta').textContent = btn.dataset.meta;
+    patientPicker.classList.add('d-none');
+    patientSelected.classList.remove('d-none');
+  });
+
+  document.getElementById('changePatientBtn').addEventListener('click', function () {
+    patientIdField.value = '';
+    patientSelected.classList.add('d-none');
+    patientPicker.classList.remove('d-none');
+  });
+
+  // Department -> doctors cascade
+  const deptSel = document.getElementById('departmentId');
+  const docSel = document.getElementById('doctorId');
+  const branchSel = document.getElementById('branchId');
+
+  function loadDoctors() {
+    const deptId = deptSel.value;
+    if (!deptId) { docSel.innerHTML = '<option value="">Select department first</option>'; docSel.disabled = true; return; }
+    docSel.disabled = true;
+    docSel.innerHTML = '<option value="">Loading…</option>';
+    fetch('/doctors/api/list?departmentId=' + deptId + '&branchId=' + branchSel.value, { headers: { Accept: 'application/json' } })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.doctors.length) {
+          docSel.innerHTML = '<option value="">No doctors in this department</option>';
+          return;
+        }
+        docSel.innerHTML = '<option value="">Select doctor</option>' + data.doctors.map(function (d) {
+          return '<option value="' + d.id + '">' + d.name + ' (₹' + Number(d.consultation_fee).toFixed(2) + ')</option>';
+        }).join('');
+        docSel.disabled = false;
+      });
+  }
+  deptSel.addEventListener('change', loadDoctors);
+  branchSel.addEventListener('change', loadDoctors);
+
+  // Doctor + date -> slots
+  const dateInput = document.getElementById('appointmentDate');
+  const slotContainer = document.getElementById('slotContainer');
+  const slotTimeField = document.getElementById('slotTime');
+
+  function loadSlots() {
+    const doctorId = docSel.value;
+    const date = dateInput.value;
+    slotTimeField.value = '';
+    if (!doctorId || !date) {
+      slotContainer.innerHTML = '<span class="text-muted small">Select a doctor and date to see available slots.</span>';
+      return;
+    }
+    slotContainer.innerHTML = '<span class="text-muted small">Loading slots…</span>';
+    fetch('/doctors/' + doctorId + '/slots?date=' + date, { headers: { Accept: 'application/json' } })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.slots.length) {
+          slotContainer.innerHTML = '<div class="text-danger small">This doctor holds no OPD on the selected date (no schedule, holiday, or on leave).</div>';
+          return;
+        }
+        slotContainer.innerHTML = data.slots.map(function (s) {
+          const disabled = s.available <= 0 ? 'disabled' : '';
+          const cls = s.available <= 0 ? 'btn-outline-secondary' : 'btn-outline-primary';
+          return '<button type="button" class="btn btn-sm ' + cls + ' m-1 slot-btn" ' + disabled +
+            ' data-time="' + s.time + '">' + s.label +
+            (s.capacity > 1 ? ' <span class="badge text-bg-light">' + s.available + '/' + s.capacity + '</span>' : '') +
+            '</button>';
+        }).join('');
+      });
+  }
+
+  docSel.addEventListener('change', loadSlots);
+  dateInput.addEventListener('change', loadSlots);
+
+  slotContainer.addEventListener('click', function (e) {
+    const btn = e.target.closest('.slot-btn');
+    if (!btn || btn.disabled) return;
+    slotContainer.querySelectorAll('.slot-btn').forEach(function (b) {
+      b.classList.remove('btn-primary', 'active');
+      if (!b.disabled) b.classList.add('btn-outline-primary');
+    });
+    btn.classList.remove('btn-outline-primary');
+    btn.classList.add('btn-primary', 'active');
+    slotTimeField.value = btn.dataset.time;
+  });
+
+  document.getElementById('bookingForm').addEventListener('submit', function (e) {
+    if (!patientIdField.value) { e.preventDefault(); alert('Please select a patient.'); return; }
+    if (!slotTimeField.value) { e.preventDefault(); alert('Please select a time slot.'); }
+  });
+})();
+</script>

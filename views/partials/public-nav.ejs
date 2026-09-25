@@ -1,0 +1,50 @@
+<style>
+  .landing-topbar { background: var(--hms-sidebar-bg); color: #fff; padding: .9rem 0; position: sticky; top: 0; z-index: 20; }
+  .landing-topbar .container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; }
+  .landing-topbar .brand { display: flex; align-items: center; gap: .5rem; font-weight: 700; letter-spacing: .04em; }
+  .landing-topbar nav a { color: #dcefec; text-decoration: none; font-size: .92rem; margin: 0 .5rem; white-space: nowrap; }
+  .landing-topbar nav a.active, .landing-topbar nav a:hover { color: #fff; }
+  .landing-body { background: var(--hms-bg); }
+  .landing-hero { background: linear-gradient(135deg, var(--hms-primary-dark), var(--hms-primary)); color: #fff; padding: 2.75rem 0; }
+  .landing-hero h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: .5rem; }
+  .landing-hero p.lead { color: #d9efec; font-size: 1rem; max-width: 640px; }
+  .landing-section { padding: 2.75rem 0; }
+  .landing-section h2 { font-size: 1.4rem; font-weight: 700; color: var(--hms-primary-dark); margin-bottom: 1.25rem; }
+  .doctor-card, .service-card { background: #fff; border: 1px solid var(--hms-border); border-radius: .6rem; padding: 1.1rem; height: 100%; }
+  .doctor-card .avatar { width: 46px; height: 46px; border-radius: 50%; background: var(--hms-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+  .landing-footer { background: var(--hms-sidebar-bg); color: #b9ddd6; padding: 2rem 0; font-size: .85rem; margin-top: auto; }
+  .landing-footer a { color: #dcefec; }
+</style>
+
+<div class="landing-topbar">
+  <div class="container">
+    <a href="/" class="brand text-decoration-none text-white">
+      <% if (siteSettings.logo_path) { %><img src="<%= siteSettings.logo_path %>" alt="Logo" style="height:26px;"><% } else { %><i class="bi bi-hospital"></i><% } %>
+      <%= siteSettings.hospital_name.toUpperCase() %>
+    </a>
+    <nav class="d-none d-md-block">
+      <a href="/" class="<%= currentPage === 'home' ? 'active' : '' %>">Home</a>
+      <a href="/patient-portal-info" class="<%= currentPage === 'patient-portal' ? 'active' : '' %>">Patient Portal</a>
+      <a href="/services" class="<%= currentPage === 'services' ? 'active' : '' %>">Services</a>
+      <a href="/our-doctors" class="<%= currentPage === 'doctors' ? 'active' : '' %>">Doctors</a>
+      <a href="/lab-diagnostics" class="<%= currentPage === 'lab' ? 'active' : '' %>">Lab &amp; Diagnostics</a>
+      <a href="/live-opd" class="<%= currentPage === 'live-opd' ? 'active' : '' %>">Live OPD</a>
+      <a href="/contact" class="<%= currentPage === 'contact' ? 'active' : '' %>">Contact</a>
+    </nav>
+    <div class="d-md-none dropdown">
+      <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+        <i class="bi bi-list"></i> Menu
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li><a class="dropdown-item" href="/">Home</a></li>
+        <li><a class="dropdown-item" href="/patient-portal-info">Patient Portal</a></li>
+        <li><a class="dropdown-item" href="/services">Services</a></li>
+        <li><a class="dropdown-item" href="/our-doctors">Doctors</a></li>
+        <li><a class="dropdown-item" href="/lab-diagnostics">Lab &amp; Diagnostics</a></li>
+        <li><a class="dropdown-item" href="/live-opd">Live OPD</a></li>
+        <li><a class="dropdown-item" href="/contact">Contact</a></li>
+      </ul>
+    </div>
+    <a href="/auth/login" class="btn btn-light btn-sm">Sign In</a>
+  </div>
+</div>

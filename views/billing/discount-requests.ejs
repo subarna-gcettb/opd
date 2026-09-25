@@ -1,0 +1,49 @@
+<h4 class="mb-3">Pending Discount Requests</h4>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Invoice</th><th>Patient</th><th>Requested</th><th>Reason</th><th>Requested By</th><th>When</th><th></th></tr></thead>
+      <tbody>
+        <% rows.forEach(function(dr) { %>
+          <tr>
+            <td><a href="/billing/invoices/<%= dr.invoice_id %>"><%= dr.invoice_number %></a></td>
+            <td><%= dr.patient_name %><div class="text-muted small"><%= dr.health_id %></div></td>
+            <td><%= dr.requested_amount ? '₹' + Number(dr.requested_amount).toFixed(2) : dr.requested_percentage + '%' %></td>
+            <td><%= dr.reason %></td>
+            <td><%= dr.requested_by_name %></td>
+            <td><%= new Date(dr.requested_at).toLocaleString() %></td>
+            <td>
+              <div class="d-flex gap-1">
+                <form method="POST" action="/billing/discount-requests/<%= dr.id %>/decide">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <input type="hidden" name="decision" value="APPROVED">
+                  <button class="btn btn-sm btn-success">Approve</button>
+                </form>
+                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectModal<%= dr.id %>">Reject</button>
+              </div>
+              <div class="modal fade" id="rejectModal<%= dr.id %>" tabindex="-1">
+                <div class="modal-dialog">
+                  <form method="POST" action="/billing/discount-requests/<%= dr.id %>/decide" class="modal-content">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <input type="hidden" name="decision" value="REJECTED">
+                    <div class="modal-header"><h5 class="modal-title">Reject Discount Request</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                    <div class="modal-body">
+                      <label class="form-label">Rejection Reason</label>
+                      <textarea name="rejectionReason" class="form-control" rows="2" required></textarea>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                      <button type="submit" class="btn btn-danger">Reject</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </td>
+          </tr>
+        <% }) %>
+        <% if (rows.length === 0) { %><tr><td colspan="7" class="text-center text-muted py-4">No pending discount requests.</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+</div>

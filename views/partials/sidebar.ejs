@@ -1,0 +1,77 @@
+<%
+  const u = typeof currentUser !== 'undefined' ? currentUser : null;
+  const can = (perm) => u && u.permissions && u.permissions.includes(perm);
+  const isDoctor = u && u.doctorId;
+  const isPatientPortal = u && u.patientId;
+  const active = (p) => (typeof currentPath !== 'undefined' && currentPath.startsWith(p)) ? 'active' : '';
+%>
+<nav class="hms-sidebar">
+  <div class="hms-brand">
+    <% if (typeof siteSettings !== 'undefined' && siteSettings.logo_path) { %>
+      <img src="<%= siteSettings.logo_path %>" alt="Logo" style="height:28px;width:auto;border-radius:4px;">
+    <% } else { %>
+      <i class="bi bi-hospital"></i>
+    <% } %>
+    <span><%= typeof siteSettings !== 'undefined' ? siteSettings.hospital_name : 'Chhayabithi' %> HMS</span>
+  </div>
+
+  <% if (isPatientPortal) { %>
+    <ul class="nav flex-column hms-nav">
+      <li class="nav-item"><a class="nav-link <%= active('/patient-portal') %>" href="/patient-portal"><i class="bi bi-person-heart"></i> My Health Record</a></li>
+    </ul>
+  <% } else { %>
+  <ul class="nav flex-column hms-nav">
+    <li class="nav-item"><a class="nav-link <%= active('/dashboard') %>" href="/dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+
+    <% if (isDoctor) { %>
+      <li class="nav-item"><a class="nav-link <%= active('/doctor') %>" href="/doctor/queue"><i class="bi bi-person-badge"></i> Doctor Portal</a></li>
+    <% } %>
+
+    <% if (can('patient.create') || can('patient.view')) { %>
+      <li class="nav-section">Patients</li>
+      <% if (can('patient.create')) { %>
+        <li class="nav-item"><a class="nav-link <%= active('/patients/new') %>" href="/patients/new"><i class="bi bi-person-plus"></i> New Registration</a></li>
+      <% } %>
+      <li class="nav-item"><a class="nav-link <%= active('/patients/search') %>" href="/patients/search"><i class="bi bi-search"></i> Patient Search</a></li>
+      <li class="nav-item"><a class="nav-link <%= active('/patients') && currentPath === '/patients' ? 'active' : '' %>" href="/patients"><i class="bi bi-people"></i> All Patients</a></li>
+    <% } %>
+
+    <% if (can('appointment.create') || can('queue.manage')) { %>
+      <li class="nav-section">OPD</li>
+      <% if (can('appointment.create')) { %>
+        <li class="nav-item"><a class="nav-link <%= active('/opd/appointments/new') %>" href="/opd/appointments/new"><i class="bi bi-calendar-plus"></i> Book Appointment</a></li>
+        <li class="nav-item"><a class="nav-link <%= active('/opd/appointments') && !currentPath.includes('/new') ? 'active' : '' %>" href="/opd/appointments"><i class="bi bi-calendar-week"></i> Appointments</a></li>
+      <% } %>
+      <% if (can('queue.manage')) { %>
+        <li class="nav-item"><a class="nav-link <%= active('/opd/queue') %>" href="/opd/queue"><i class="bi bi-list-ol"></i> Today's Queue</a></li>
+        <li class="nav-item"><a class="nav-link <%= active('/opd/live-board') %>" href="/opd/live-board"><i class="bi bi-broadcast"></i> Live OPD Board</a></li>
+      <% } %>
+    <% } %>
+
+    <% if (can('doctor.manage') || can('doctor.schedule.manage')) { %>
+      <li class="nav-section">Doctors</li>
+      <li class="nav-item"><a class="nav-link <%= active('/doctors') %>" href="/doctors"><i class="bi bi-clipboard2-pulse"></i> Doctors</a></li>
+    <% } %>
+
+    <% if (can('billing.view') || can('discount.approve')) { %>
+      <li class="nav-section">Billing</li>
+      <li class="nav-item"><a class="nav-link <%= active('/billing/invoices') %>" href="/billing/invoices"><i class="bi bi-receipt"></i> OPD Bills</a></li>
+      <li class="nav-item"><a class="nav-link <%= active('/billing/discount-requests') %>" href="/billing/discount-requests"><i class="bi bi-percent"></i> Discount Requests</a></li>
+    <% } %>
+
+    <% if (can('report.view')) { %>
+      <li class="nav-section">Reports</li>
+      <li class="nav-item"><a class="nav-link <%= active('/reports') %>" href="/reports"><i class="bi bi-bar-chart"></i> OPD Reports</a></li>
+    <% } %>
+
+    <% if (can('user.manage') || can('branch.manage') || can('department.manage') || can('audit.view') || can('settings.manage')) { %>
+      <li class="nav-section">Administration</li>
+      <% if (can('user.manage')) { %><li class="nav-item"><a class="nav-link <%= active('/admin/users') %>" href="/admin/users"><i class="bi bi-people-fill"></i> Users</a></li><% } %>
+      <% if (can('branch.manage')) { %><li class="nav-item"><a class="nav-link <%= active('/admin/branches') %>" href="/admin/branches"><i class="bi bi-diagram-3"></i> Branches</a></li><% } %>
+      <% if (can('department.manage')) { %><li class="nav-item"><a class="nav-link <%= active('/admin/departments') %>" href="/admin/departments"><i class="bi bi-collection"></i> Departments</a></li><% } %>
+      <% if (can('audit.view')) { %><li class="nav-item"><a class="nav-link <%= active('/admin/audit-logs') %>" href="/admin/audit-logs"><i class="bi bi-journal-text"></i> Audit Logs</a></li><% } %>
+      <% if (can('settings.manage')) { %><li class="nav-item"><a class="nav-link <%= active('/admin/settings') %>" href="/admin/settings"><i class="bi bi-gear"></i> Site Settings</a></li><% } %>
+    <% } %>
+  </ul>
+  <% } %>
+</nav>

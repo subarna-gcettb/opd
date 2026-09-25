@@ -1,0 +1,49 @@
+<%
+  const statusBadge = { WAITING: 'secondary', CALLED: 'warning', IN_CONSULTATION: 'info', COMPLETED: 'success' };
+%>
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <h4 class="mb-0">My Patients Today</h4>
+  <div class="d-flex gap-2">
+    <form method="GET" class="d-flex gap-2">
+      <input type="date" name="date" class="form-control form-control-sm" value="<%= date %>">
+      <button class="btn btn-sm btn-outline-secondary">Go</button>
+    </form>
+    <form method="POST" action="/doctor/queue/call-next">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn btn-sm btn-warning"><i class="bi bi-megaphone"></i> Call Next Patient</button>
+    </form>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value"><%= stats.totalToday %></div><div class="stat-label">Total</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value text-secondary"><%= stats.waiting %></div><div class="stat-label">Waiting</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value text-info"><%= stats.inConsultation %></div><div class="stat-label">In Consultation</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value text-success"><%= stats.completed %></div><div class="stat-label">Completed</div></div></div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle">
+      <thead><tr><th>Token</th><th>Patient</th><th>Age / Gender</th><th>Appointment Time</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        <% rows.forEach(function(r) { %>
+          <tr>
+            <td><span class="token-badge"><%= String(r.token_number).padStart(3,'0') %></span></td>
+            <td><%= r.patient_name %><div class="text-muted small"><%= r.health_id %></div></td>
+            <td><%= r.age_years || '—' %> / <%= r.gender %></td>
+            <td><%= r.slot_time.slice(0,5) %></td>
+            <td><span class="badge text-bg-<%= statusBadge[r.visit_status] || 'secondary' %>"><%= r.visit_status.replace('_',' ') %></span></td>
+            <td>
+              <a href="/doctor/consultation/<%= r.visit_id %>" class="btn btn-sm btn-primary">
+                <%= r.visit_status === 'COMPLETED' ? 'View Record' : 'Start Consultation' %>
+              </a>
+            </td>
+          </tr>
+        <% }) %>
+        <% if (rows.length === 0) { %><tr><td colspan="6" class="text-center text-muted py-4">No patients assigned to you for this date.</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+</div>

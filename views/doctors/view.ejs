@@ -1,0 +1,184 @@
+<% const weekdays = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']; %>
+
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h4 class="mb-0"><%= doctor.name %></h4>
+    <div class="text-muted"><code><%= doctor.doctor_code %></code> &middot; <%= doctor.department_name || 'No department' %> &middot; <%= doctor.branch_name %></div>
+  </div>
+  <a href="/doctors" class="btn btn-outline-secondary btn-sm">Back to Doctors</a>
+</div>
+
+<ul class="nav nav-tabs">
+  <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#details">Details</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#schedule">Schedule</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#history">OPD History</button></li>
+</ul>
+
+<div class="tab-content card border-top-0">
+  <!-- DETAILS -->
+  <div class="tab-pane fade show active card-body" id="details">
+    <form method="POST" action="/doctors/<%= doctor.id %>">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Name</label>
+          <input type="text" name="name" class="form-control" value="<%= doctor.name %>">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Gender</label>
+          <select name="gender" class="form-select">
+            <option value="">—</option>
+            <% ['Male','Female','Other'].forEach(function(g) { %>
+              <option <%= doctor.gender === g ? 'selected' : '' %>><%= g %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Date of Birth</label>
+          <input type="date" name="dob" class="form-control" value="<%= doctor.dob || '' %>">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Mobile</label>
+          <input type="tel" name="mobile" class="form-control" value="<%= doctor.mobile || '' %>">
+        </div>
+        <div class="col-md-12">
+          <label class="form-label">Address</label>
+          <input type="text" name="address" class="form-control" value="<%= doctor.address || '' %>">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Professional Reg. No.</label>
+          <input type="text" name="professionalRegNumber" class="form-control" value="<%= doctor.professional_reg_number || '' %>">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Qualification</label>
+          <input type="text" name="qualification" class="form-control" value="<%= doctor.qualification || '' %>">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Specialisation</label>
+          <input type="text" name="specialisation" class="form-control" value="<%= doctor.specialisation || '' %>">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Department</label>
+          <select name="departmentId" class="form-select">
+            <option value="">—</option>
+            <% departments.forEach(function(d) { %>
+              <option value="<%= d.id %>" <%= doctor.department_id === d.id ? 'selected' : '' %>><%= d.name %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Experience (yrs)</label>
+          <input type="number" name="experienceYears" class="form-control" value="<%= doctor.experience_years || '' %>">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Consultation Fee</label>
+          <input type="number" step="0.01" name="consultationFee" class="form-control" value="<%= doctor.consultation_fee %>">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Joining Date</label>
+          <input type="date" name="joiningDate" class="form-control" value="<%= doctor.joining_date || '' %>">
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="isActive" value="1" id="isActive" <%= doctor.is_active ? 'checked' : '' %>>
+            <label class="form-check-label" for="isActive">Active</label>
+          </div>
+        </div>
+      </div>
+      <div class="mt-3 text-end">
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- SCHEDULE -->
+  <div class="tab-pane fade card-body" id="schedule">
+    <h6>Weekly OPD Schedule</h6>
+    <table class="table table-sm">
+      <thead><tr><th>Day</th><th>Hours</th><th>Slot Duration</th><th>Max per Slot</th><th></th></tr></thead>
+      <tbody>
+        <% templates.forEach(function(t) { %>
+          <tr>
+            <td><%= weekdays[t.weekday] %></td>
+            <td><%= t.start_time.slice(0,5) %> – <%= t.end_time.slice(0,5) %></td>
+            <td><%= t.slot_duration_minutes %> min</td>
+            <td><%= t.max_patients_per_slot %></td>
+            <td>
+              <form method="POST" action="/doctors/<%= doctor.id %>/schedule/<%= t.id %>/delete" data-confirm="Remove this schedule?">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button class="btn btn-sm btn-outline-danger">Remove</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+        <% if (templates.length === 0) { %><tr><td colspan="5" class="text-muted text-center py-3">No schedule configured — this doctor cannot be booked until a schedule is added.</td></tr><% } %>
+      </tbody>
+    </table>
+
+    <form method="POST" action="/doctors/<%= doctor.id %>/schedule" class="row g-2 align-items-end border-top pt-3">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="col-md-2">
+        <label class="form-label small">Day</label>
+        <select name="weekday" class="form-select form-select-sm" required>
+          <% weekdays.forEach(function(d, i) { %><option value="<%= i %>"><%= d %></option><% }) %>
+        </select>
+      </div>
+      <div class="col-md-2"><label class="form-label small">Start</label><input type="time" name="startTime" class="form-control form-control-sm" required></div>
+      <div class="col-md-2"><label class="form-label small">End</label><input type="time" name="endTime" class="form-control form-control-sm" required></div>
+      <div class="col-md-2"><label class="form-label small">Slot (min)</label><input type="number" name="slotDuration" class="form-control form-control-sm" value="15" min="5" required></div>
+      <div class="col-md-2"><label class="form-label small">Max/Slot</label><input type="number" name="maxPatients" class="form-control form-control-sm" value="1" min="1" required></div>
+      <div class="col-md-2"><button class="btn btn-sm btn-primary w-100">Add Schedule</button></div>
+    </form>
+
+    <h6 class="mt-4">Upcoming Exceptions (Leave / Holiday / Changed Hours)</h6>
+    <table class="table table-sm">
+      <thead><tr><th>Date</th><th>Type</th><th>Hours</th><th>Reason</th></tr></thead>
+      <tbody>
+        <% exceptions.forEach(function(e) { %>
+          <tr>
+            <td><%= new Date(e.exception_date).toLocaleDateString() %></td>
+            <td><span class="badge text-bg-<%= e.is_unavailable ? 'danger' : 'info' %>"><%= e.is_unavailable ? 'Unavailable' : 'Special Hours' %></span></td>
+            <td><%= e.start_time ? e.start_time.slice(0,5) + ' – ' + e.end_time.slice(0,5) : '—' %></td>
+            <td><%= e.reason || '—' %></td>
+          </tr>
+        <% }) %>
+        <% if (exceptions.length === 0) { %><tr><td colspan="4" class="text-muted text-center py-3">No upcoming exceptions.</td></tr><% } %>
+      </tbody>
+    </table>
+
+    <form method="POST" action="/doctors/<%= doctor.id %>/exception" class="row g-2 align-items-end border-top pt-3">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="col-md-2"><label class="form-label small">Date</label><input type="date" name="date" class="form-control form-control-sm" required></div>
+      <div class="col-md-2">
+        <label class="form-label small">Type</label>
+        <select name="isUnavailable" class="form-select form-select-sm">
+          <option value="1">Unavailable (Leave/Holiday)</option>
+          <option value="0">Special Working Hours</option>
+        </select>
+      </div>
+      <div class="col-md-2"><label class="form-label small">Start</label><input type="time" name="startTime" class="form-control form-control-sm"></div>
+      <div class="col-md-2"><label class="form-label small">End</label><input type="time" name="endTime" class="form-control form-control-sm"></div>
+      <div class="col-md-3"><label class="form-label small">Reason</label><input type="text" name="reason" class="form-control form-control-sm"></div>
+      <div class="col-md-1"><button class="btn btn-sm btn-primary w-100">Save</button></div>
+    </form>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="tab-pane fade card-body" id="history">
+    <table class="table table-sm">
+      <thead><tr><th>Date</th><th>Patient</th><th>Health ID</th><th>Diagnosis</th><th>Status</th></tr></thead>
+      <tbody>
+        <% opdHistory.forEach(function(v) { %>
+          <tr>
+            <td><%= new Date(v.checked_in_at).toLocaleString() %></td>
+            <td><%= v.patient_name %></td>
+            <td><code><%= v.health_id %></code></td>
+            <td><%= v.diagnosis || '—' %></td>
+            <td><%= v.status %></td>
+          </tr>
+        <% }) %>
+        <% if (opdHistory.length === 0) { %><tr><td colspan="5" class="text-muted text-center py-3">No consultations recorded.</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -1,0 +1,47 @@
+<div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+  <div>
+    <h4 class="mb-0">Invoice <code><%= invoice.invoice_number %></code></h4>
+    <div class="text-muted"><%= invoice.doctor_name %> &middot; <%= invoice.department_name %> &middot; <%= new Date(invoice.created_at).toLocaleDateString() %></div>
+  </div>
+  <span class="badge fs-6 text-bg-<%= invoice.status === 'PAID' ? 'success' : 'secondary' %> align-self-center"><%= invoice.status.replace('_',' ') %></span>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-7">
+    <div class="card">
+      <div class="card-header">Line Items</div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>Description</th><th class="text-end">Amount</th></tr></thead>
+          <tbody>
+            <% items.forEach(function(it) { %>
+              <tr><td><%= it.description %></td><td class="text-end">₹<%= Number(it.amount).toFixed(2) %></td></tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer">
+        <div class="d-flex justify-content-between"><span>Gross Amount</span><strong>₹<%= Number(invoice.gross_amount).toFixed(2) %></strong></div>
+        <div class="d-flex justify-content-between text-danger"><span>Discount</span><strong>-₹<%= Number(invoice.discount_amount).toFixed(2) %></strong></div>
+        <div class="d-flex justify-content-between border-top pt-2 mt-1"><span>Net Amount</span><strong class="fs-5">₹<%= Number(invoice.net_amount).toFixed(2) %></strong></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-5">
+    <div class="card">
+      <div class="card-header">Payments</div>
+      <ul class="list-group list-group-flush">
+        <% payments.forEach(function(p) { %>
+          <li class="list-group-item small d-flex justify-content-between align-items-center">
+            <div>
+              <strong>₹<%= Number(p.amount).toFixed(2) %></strong> via <%= p.method %>
+              <div class="text-muted"><%= new Date(p.paid_at).toLocaleString() %></div>
+            </div>
+            <a href="/patient-portal/invoices/<%= invoice.id %>/receipt/<%= p.id %>" target="_blank" class="btn btn-sm btn-outline-secondary">Receipt</a>
+          </li>
+        <% }) %>
+        <% if (payments.length === 0) { %><li class="list-group-item text-muted text-center small py-3">No payments recorded yet.</li><% } %>
+      </ul>
+    </div>
+  </div>
+</div>

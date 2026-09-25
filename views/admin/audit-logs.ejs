@@ -1,0 +1,58 @@
+<h4 class="mb-3">Audit Logs</h4>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <form method="GET" class="row g-2">
+      <div class="col-md-3">
+        <select name="entity" class="form-select form-select-sm">
+          <option value="">All entities</option>
+          <% ['patient','doctor','appointment','opd_visit','prescription','invoice','payment','discount_request','user','branch','department'].forEach(function(e) { %>
+            <option value="<%= e %>" <%= filters.entity === e ? 'selected' : '' %>><%= e.replace('_',' ') %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select name="userId" class="form-select form-select-sm">
+          <option value="">All users</option>
+          <% users.forEach(function(u) { %>
+            <option value="<%= u.id %>" <%= String(filters.userId) === String(u.id) ? 'selected' : '' %>><%= u.name %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-md-2"><button class="btn btn-sm btn-primary w-100">Filter</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-sm table-hover mb-0">
+      <thead><tr><th>When</th><th>User</th><th>Action</th><th>Entity</th><th>ID</th><th>Details</th><th>IP</th></tr></thead>
+      <tbody>
+        <% rows.forEach(function(a) { %>
+          <tr>
+            <td class="text-nowrap"><%= new Date(a.created_at).toLocaleString() %></td>
+            <td><%= a.user_name || 'System' %></td>
+            <td><span class="badge text-bg-secondary"><%= a.action %></span></td>
+            <td><%= a.entity %></td>
+            <td><%= a.entity_id || '—' %></td>
+            <td class="small">
+              <% if (a.new_value) { %><div><strong>New:</strong> <%= JSON.stringify(a.new_value) %></div><% } %>
+              <% if (a.old_value) { %><div><strong>Old:</strong> <%= JSON.stringify(a.old_value) %></div><% } %>
+            </td>
+            <td class="small text-muted"><%= a.ip_address || '—' %></td>
+          </tr>
+        <% }) %>
+        <% if (rows.length === 0) { %><tr><td colspan="7" class="text-center text-muted py-4">No audit records match these filters.</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<% if (totalPages > 1) { %>
+  <nav class="mt-3"><ul class="pagination">
+    <% for (let i = 1; i <= totalPages; i++) { %>
+      <li class="page-item <%= i === page ? 'active' : '' %>"><a class="page-link" href="?page=<%= i %>&entity=<%= filters.entity %>&userId=<%= filters.userId %>"><%= i %></a></li>
+    <% } %>
+  </ul></nav>
+<% } %>

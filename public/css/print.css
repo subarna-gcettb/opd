@@ -1,0 +1,68 @@
+/* Print documents: registration slip, OPD token, prescription, invoice, receipt.
+   These pages use layouts/blank and never render the dashboard chrome. */
+
+body.print-doc {
+  background: #fff;
+  color: #000;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-size: 13px;
+  display: block;
+  min-height: auto;
+}
+
+.print-sheet {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 24px 28px;
+  background: #fff;
+}
+
+.print-header { text-align: center; }
+.print-header .hospital-name { font-size: 24px; font-weight: 700; letter-spacing: .08em; color: #0d6e6e; }
+.print-header .hospital-sub { font-size: 12px; font-weight: 600; color: #333; }
+.print-header .hospital-addr { font-size: 11px; color: #555; }
+.print-rule { border: 0; border-top: 2px solid #0d6e6e; margin: 10px 0 14px; }
+
+.doc-title {
+  text-align: center; font-size: 15px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; margin: 6px 0 14px; padding: 4px 0;
+  border-top: 1px solid #ccc; border-bottom: 1px solid #ccc;
+}
+
+.kv-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px 24px; margin-bottom: 12px; }
+.kv-grid.three { grid-template-columns: repeat(3, 1fr); }
+.kv { display: flex; gap: 6px; }
+.kv .k { font-weight: 600; min-width: 105px; color: #444; }
+.kv .v { flex: 1; }
+
+.print-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+.print-table th, .print-table td { border: 1px solid #bbb; padding: 5px 7px; text-align: left; font-size: 12px; }
+.print-table th { background: #eef5f4; font-weight: 600; }
+.print-table td.num, .print-table th.num { text-align: right; }
+
+.totals { width: 300px; margin-left: auto; }
+.totals .kv { justify-content: space-between; padding: 2px 0; }
+.totals .kv.grand { border-top: 2px solid #333; margin-top: 4px; padding-top: 5px; font-weight: 700; font-size: 14px; }
+
+.section-label { font-weight: 700; font-size: 12px; text-transform: uppercase; color: #0d6e6e; margin: 12px 0 4px; border-bottom: 1px solid #ddd; }
+
+.signature { margin-top: 48px; text-align: right; }
+.signature .line { display: inline-block; border-top: 1px solid #333; padding-top: 4px; min-width: 200px; text-align: center; font-size: 12px; }
+
+.token-box { text-align: center; border: 2px dashed #0d6e6e; border-radius: 8px; padding: 14px; margin: 12px 0; }
+.token-box .token-num { font-size: 46px; font-weight: 800; color: #0d6e6e; line-height: 1; }
+.token-box .token-label { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #555; }
+
+.barcode-area { text-align: center; margin-top: 14px; }
+.barcode-area img { max-width: 260px; }
+
+.print-actions { text-align: center; margin: 18px 0; }
+
+.print-footer-note { margin-top: 18px; font-size: 10px; color: #666; text-align: center; border-top: 1px dashed #ccc; padding-top: 6px; }
+
+@media print {
+  .print-actions, .no-print { display: none !important; }
+  .print-sheet { max-width: none; padding: 0; }
+  body.print-doc { font-size: 12px; }
+  @page { margin: 12mm; }
+}

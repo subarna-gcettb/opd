@@ -1,0 +1,35 @@
+<link rel="stylesheet" href="/css/print.css">
+<script>document.body.className = 'print-doc';</script>
+
+<div class="print-sheet">
+  <%- include('./_header') %>
+
+  <div class="doc-title">Patient Registration Slip</div>
+
+  <div class="kv-grid">
+    <div class="kv"><span class="k">Health ID</span><span class="v"><strong><%= patient.health_id %></strong></span></div>
+    <div class="kv"><span class="k">Registration No.</span><span class="v"><%= patient.registration_number %></span></div>
+    <div class="kv"><span class="k">Patient Name</span><span class="v"><strong><%= patient.name %></strong></span></div>
+    <div class="kv"><span class="k">Father/Husband</span><span class="v"><%= patient.father_name || patient.husband_name || '—' %></span></div>
+    <div class="kv"><span class="k">Age / Gender</span><span class="v"><%= patient.age_years || '—' %> / <%= patient.gender %></span></div>
+    <div class="kv"><span class="k">Blood Group</span><span class="v"><%= patient.blood_group || '—' %></span></div>
+    <div class="kv"><span class="k">Mobile</span><span class="v"><%= patient.mobile %></span></div>
+    <div class="kv"><span class="k">Registered On</span><span class="v"><%= new Date(patient.created_at).toLocaleString() %></span></div>
+    <div class="kv" style="grid-column: 1 / -1;"><span class="k">Address</span><span class="v"><%= [patient.address, patient.village_town, patient.police_station, patient.district, patient.state, patient.pin_code].filter(Boolean).join(', ') || '—' %></span></div>
+    <div class="kv"><span class="k">Branch</span><span class="v"><%= patient.branch_name %></span></div>
+    <div class="kv"><span class="k">Aadhaar</span><span class="v"><%= patient.aadhaar_masked || 'Not provided' %></span></div>
+  </div>
+
+  <div class="barcode-area">
+    <img src="/patients/<%= patient.health_id %>/barcode" alt="Health ID barcode">
+  </div>
+
+  <div class="print-footer-note">
+    Please retain this slip and quote your Health ID on every visit. This Health ID is permanent and will be used across all hospital services.
+  </div>
+
+  <div class="print-actions no-print">
+    <button onclick="window.print()" class="btn btn-primary">Print Slip</button>
+    <button onclick="window.close()" class="btn btn-outline-secondary">Close</button>
+  </div>
+</div>

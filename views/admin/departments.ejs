@@ -1,0 +1,40 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0">Departments</h4>
+  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#newDeptModal"><i class="bi bi-plus-lg"></i> Add Department</button>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Name</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        <% departments.forEach(function(d) { %>
+          <tr>
+            <td><%= d.name %></td>
+            <td><span class="badge text-bg-<%= d.is_active ? 'success' : 'secondary' %>"><%= d.is_active ? 'Active' : 'Inactive' %></span></td>
+            <td>
+              <form method="POST" action="/admin/departments/<%= d.id %>/active">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <input type="hidden" name="isActive" value="<%= d.is_active ? '0' : '1' %>">
+                <button class="btn btn-sm btn-outline-<%= d.is_active ? 'danger' : 'success' %>"><%= d.is_active ? 'Deactivate' : 'Activate' %></button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+        <% if (departments.length === 0) { %><tr><td colspan="3" class="text-center text-muted py-4">No departments configured.</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="newDeptModal" tabindex="-1">
+  <div class="modal-dialog"><form method="POST" action="/admin/departments" class="modal-content">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="modal-header"><h5 class="modal-title">Add Department</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <label class="form-label">Department Name</label>
+      <input type="text" name="name" class="form-control" required>
+    </div>
+    <div class="modal-footer"><button type="submit" class="btn btn-primary">Create</button></div>
+  </form></div>
+</div>

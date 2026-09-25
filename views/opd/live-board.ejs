@@ -1,0 +1,59 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0">Live OPD Board</h4>
+  <form method="GET" class="d-flex gap-2">
+    <input type="date" name="date" value="<%= date %>" class="form-control form-control-sm">
+    <button class="btn btn-sm btn-outline-secondary">Go</button>
+  </form>
+</div>
+
+<div class="row g-3">
+  <% doctors.forEach(function(d) { %>
+    <div class="col-md-6 col-lg-4">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><%= d.doctorName %></span>
+          <% if (!d.isPresent) { %>
+            <span class="badge text-bg-danger">On Leave</span>
+          <% } else if (d.inChamber) { %>
+            <span class="badge text-bg-success">In Chamber</span>
+          <% } else { %>
+            <span class="badge text-bg-secondary">Available</span>
+          <% } %>
+        </div>
+        <div class="card-body">
+          <div class="text-muted small mb-2"><%= d.departmentName || '—' %> &middot; <%= d.scheduledHours %></div>
+
+          <% if (!d.isPresent) { %>
+            <div class="alert alert-danger small mb-0">Not available today<% if (d.leaveReason) { %> — <%= d.leaveReason %><% } %></div>
+          <% } else { %>
+            <% if (d.inChamber) { %>
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="token-badge"><%= String(d.currentToken).padStart(3,'0') %></span>
+                <strong><%= d.currentPatientName %></strong>
+              </div>
+            <% } else { %>
+              <div class="text-muted small mb-2">No patient currently in chamber.</div>
+            <% } %>
+
+            <div class="d-flex gap-3 small mb-2">
+              <span><i class="bi bi-hourglass-split"></i> Waiting: <strong><%= d.waitingCount %></strong></span>
+              <span><i class="bi bi-megaphone"></i> Called: <strong><%= d.calledCount %></strong></span>
+            </div>
+
+            <% if (d.nextInQueue.length) { %>
+              <div class="small text-muted">Next up:</div>
+              <ul class="list-unstyled small mb-0">
+                <% d.nextInQueue.forEach(function(n) { %>
+                  <li><span class="badge text-bg-light text-dark"><%= String(n.token).padStart(3,'0') %></span> <%= n.name %></li>
+                <% }) %>
+              </ul>
+            <% } %>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  <% }) %>
+  <% if (doctors.length === 0) { %>
+    <div class="col-12"><div class="alert alert-info">No doctors are scheduled to hold OPD on this date.</div></div>
+  <% } %>
+</div>

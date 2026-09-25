@@ -1,0 +1,93 @@
+<h4 class="mb-3">Add Doctor</h4>
+
+<form method="POST" action="/doctors/new" class="card">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="card-body">
+    <h6 class="text-uppercase text-muted small mb-3">Personal</h6>
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Doctor Name *</label>
+        <input type="text" name="name" class="form-control" value="<%= formData.name || '' %>" required>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Gender</label>
+        <select name="gender" class="form-select">
+          <option value="">Select</option><option>Male</option><option>Female</option><option>Other</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Date of Birth</label>
+        <input type="date" name="dob" class="form-control">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Mobile</label>
+        <input type="tel" name="mobile" class="form-control">
+      </div>
+      <div class="col-md-12">
+        <label class="form-label">Address</label>
+        <input type="text" name="address" class="form-control">
+      </div>
+    </div>
+
+    <hr class="my-4">
+    <h6 class="text-uppercase text-muted small mb-3">Login Account</h6>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Email (login) *</label>
+        <input type="email" name="email" class="form-control" value="<%= formData.email || '' %>" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Temporary Password *</label>
+        <input type="text" name="temporaryPassword" class="form-control" minlength="8" required>
+        <div class="form-text">The doctor will be forced to change this on first login.</div>
+      </div>
+    </div>
+
+    <hr class="my-4">
+    <h6 class="text-uppercase text-muted small mb-3">Professional</h6>
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Professional Registration No.</label>
+        <input type="text" name="professionalRegNumber" class="form-control">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Qualification</label>
+        <input type="text" name="qualification" class="form-control" placeholder="MBBS, MD">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Specialisation</label>
+        <input type="text" name="specialisation" class="form-control">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Department</label>
+        <select name="departmentId" class="form-select">
+          <option value="">Select</option>
+          <% departments.forEach(function(d) { %><option value="<%= d.id %>"><%= d.name %></option><% }) %>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Branch *</label>
+        <select name="branchId" class="form-select" required>
+          <option value="">Select</option>
+          <% branches.forEach(function(b) { %><option value="<%= b.id %>"><%= b.name %></option><% }) %>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Experience (yrs)</label>
+        <input type="number" name="experienceYears" class="form-control" min="0">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Consultation Fee *</label>
+        <input type="number" step="0.01" min="0" name="consultationFee" class="form-control" value="<%= formData.consultationFee || '' %>" required>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Joining Date</label>
+        <input type="date" name="joiningDate" class="form-control">
+      </div>
+    </div>
+  </div>
+  <div class="card-footer d-flex justify-content-end gap-2">
+    <a href="/doctors" class="btn btn-outline-secondary">Cancel</a>
+    <button type="submit" class="btn btn-primary">Create Doctor</button>
+  </div>
+</form>

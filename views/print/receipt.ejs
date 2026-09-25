@@ -1,0 +1,45 @@
+<link rel="stylesheet" href="/css/print.css">
+<script>document.body.className = 'print-doc';</script>
+
+<div class="print-sheet">
+  <%- include('./_header') %>
+  <div class="doc-title">Receipt</div>
+
+  <div class="kv-grid three">
+    <div class="kv"><span class="k">Receipt No.</span><span class="v"><strong><%= payment.receipt_number %></strong></span></div>
+    <div class="kv"><span class="k">Invoice No.</span><span class="v"><%= invoice.invoice_number %></span></div>
+    <div class="kv"><span class="k">Date</span><span class="v"><%= new Date(payment.paid_at).toLocaleString() %></span></div>
+    <div class="kv"><span class="k">Patient</span><span class="v"><%= invoice.patient_name %></span></div>
+    <div class="kv"><span class="k">Health ID</span><span class="v"><%= invoice.health_id %></span></div>
+    <div class="kv"><span class="k">Doctor</span><span class="v"><%= invoice.doctor_name %></span></div>
+    <div class="kv"><span class="k">Department</span><span class="v"><%= invoice.department_name %></span></div>
+  </div>
+
+  <table class="print-table">
+    <thead><tr><th>Description</th><th class="num">Amount (₹)</th></tr></thead>
+    <tbody>
+      <% items.forEach(function(it) { %>
+        <tr><td><%= it.description %></td><td class="num"><%= Number(it.amount).toFixed(2) %></td></tr>
+      <% }) %>
+    </tbody>
+  </table>
+
+  <div class="totals">
+    <div class="kv"><span>Gross Amount</span><span><%= Number(invoice.gross_amount).toFixed(2) %></span></div>
+    <div class="kv"><span>Discount</span><span>-<%= Number(invoice.discount_amount).toFixed(2) %></span></div>
+    <div class="kv"><span>Net Amount</span><span><%= Number(invoice.net_amount).toFixed(2) %></span></div>
+    <div class="kv grand"><span>Paid (<%= payment.method %>)</span><span>₹<%= Number(payment.amount).toFixed(2) %></span></div>
+  </div>
+  <% if (payment.reference_number) { %>
+    <div class="kv"><span class="k">Reference No.</span><span class="v"><%= payment.reference_number %></span></div>
+  <% } %>
+
+  <div class="signature"><span class="line">Authorized Signature</span></div>
+
+  <div class="print-footer-note">This receipt confirms payment in full for the invoice referenced above.</div>
+
+  <div class="print-actions no-print">
+    <button onclick="window.print()" class="btn btn-primary">Print Receipt</button>
+    <button onclick="window.close()" class="btn btn-outline-secondary">Close</button>
+  </div>
+</div>

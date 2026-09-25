@@ -1,0 +1,31 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0">Doctors</h4>
+  <a href="/doctors/new" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Add Doctor</a>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr><th>Doctor ID</th><th>Name</th><th>Department</th><th>Specialisation</th><th>Fee</th><th>Branch</th><th>Status</th><th></th></tr>
+      </thead>
+      <tbody>
+        <% doctors.forEach(function(d) { %>
+          <tr>
+            <td><code><%= d.doctor_code %></code></td>
+            <td><%= d.name %><div class="text-muted small"><%= d.qualification || '' %></div></td>
+            <td><%= d.department_name || '—' %></td>
+            <td><%= d.specialisation || '—' %></td>
+            <td>₹<%= Number(d.consultation_fee).toFixed(2) %></td>
+            <td><%= d.branch_name %></td>
+            <td><span class="badge text-bg-<%= d.is_active ? 'success' : 'secondary' %>"><%= d.is_active ? 'Active' : 'Inactive' %></span></td>
+            <td><a href="/doctors/<%= d.id %>" class="btn btn-sm btn-outline-primary">Manage</a></td>
+          </tr>
+        <% }) %>
+        <% if (doctors.length === 0) { %>
+          <tr><td colspan="8" class="text-center text-muted py-4">No doctors registered yet.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>

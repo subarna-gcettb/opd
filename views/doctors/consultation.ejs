@@ -1,0 +1,229 @@
+<%
+  const isFinalized = visit.status === 'COMPLETED';
+  const c = consultation || {};
+  const hasPrescription = currentPrescriptions && currentPrescriptions.length > 0;
+%>
+
+<div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+  <div>
+    <h4 class="mb-0"><%= visit.patient_name %>
+      <span class="token-badge ms-2"><%= String(visit.token_number).padStart(3,'0') %></span>
+    </h4>
+    <div class="text-muted">
+      <code><%= visit.health_id %></code> &middot; <%= visit.age_years || '—' %>/<%= visit.gender %> &middot;
+      <%= visit.department_name %> &middot; Visit <%= visit.visit_code %>
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="/patients/<%= visit.health_id %>" class="btn btn-outline-secondary btn-sm">Full Profile</a>
+    <% if (!isFinalized) { %>
+      <form method="POST" action="/doctor/consultation/<%= visit.id %>/complete" data-confirm="Complete this consultation? The clinical record will be finalized and can no longer be edited.">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="btn btn-success btn-sm"><i class="bi bi-check2-all"></i> Complete Consultation</button>
+      </form>
+    <% } %>
+  </div>
+</div>
+
+<% if (isFinalized) { %>
+  <div class="alert alert-secondary"><i class="bi bi-lock"></i> This consultation is finalized. The clinical record is read-only; corrections to the prescription must go through an amendment.</div>
+<% } %>
+
+<% if (visit.allergies) { %>
+  <div class="alert alert-danger"><strong><i class="bi bi-exclamation-triangle"></i> Allergies:</strong> <%= visit.allergies %></div>
+<% } %>
+
+<div class="row g-3">
+  <!-- LEFT: consultation form -->
+  <div class="col-lg-8">
+    <form method="POST" action="/doctor/consultation/<%= visit.id %>" class="card mb-3">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="card-header">Consultation</div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label">Chief Complaint</label>
+          <textarea name="complaints" class="form-control" rows="2" <%= isFinalized ? 'readonly' : '' %>><%= c.complaints || visit.reason || '' %></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Symptoms</label>
+          <textarea name="symptoms" class="form-control" rows="2" <%= isFinalized ? 'readonly' : '' %>><%= c.symptoms || '' %></textarea>
+        </div>
+
+        <h6 class="text-uppercase text-muted small mt-4 mb-2">Vitals</h6>
+        <div class="row g-2">
+          <div class="col-6 col-md-2"><label class="form-label small">BP</label><input type="text" name="bp" class="form-control form-control-sm" placeholder="120/80" value="<%= c.bp || '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
+          <div class="col-6 col-md-2"><label class="form-label small">Pulse</label><input type="number" name="pulse" class="form-control form-control-sm" value="<%= c.pulse || '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
+          <div class="col-6 col-md-2"><label class="form-label small">Temp (°F)</label><input type="number" step="0.1" name="temperature" class="form-control form-control-sm" value="<%= c.temperature || '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
+          <div class="col-6 col-md-2"><label class="form-label small">SpO2 (%)</label><input type="number" name="spo2" class="form-control form-control-sm" value="<%= c.spo2 || '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
+          <div class="col-6 col-md-2"><label class="form-label small">Weight (kg)</label><input type="number" step="0.1" name="weightKg" class="form-control form-control-sm" value="<%= c.weight_kg || visit.profile_weight || '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
+          <div class="col-6 col-md-2"><label class="form-label small">Height (cm)</label><input type="number" step="0.1" name="heightCm" class="form-control form-control-sm" value="<%= c.height_cm || visit.profile_height || '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
+        </div>
+
+        <h6 class="text-uppercase text-muted small mt-4 mb-2">Clinical</h6>
+        <div class="mb-3">
+          <label class="form-label">Allergies (update if changed)</label>
+          <input type="text" name="allergies" class="form-control" value="<%= visit.allergies || '' %>" <%= isFinalized ? 'readonly' : '' %>>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Diagnosis</label>
+          <textarea name="diagnosis" class="form-control" rows="2" <%= isFinalized ? 'readonly' : '' %>><%= c.diagnosis || '' %></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Clinical Notes</label>
+          <textarea name="clinicalNotes" class="form-control" rows="3" <%= isFinalized ? 'readonly' : '' %>><%= c.clinical_notes || '' %></textarea>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-8">
+            <label class="form-label">Investigation Advice</label>
+            <textarea name="investigationAdvice" class="form-control" rows="2" <%= isFinalized ? 'readonly' : '' %>><%= c.investigation_advice || '' %></textarea>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Follow-up Date</label>
+            <input type="date" name="followUpDate" class="form-control" value="<%= c.follow_up_date || '' %>" <%= isFinalized ? 'readonly' : '' %>>
+          </div>
+        </div>
+      </div>
+      <% if (!isFinalized) { %>
+        <div class="card-footer text-end"><button type="submit" class="btn btn-primary">Save Consultation</button></div>
+      <% } %>
+    </form>
+
+    <!-- PRESCRIPTION -->
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Prescription</span>
+        <% if (hasPrescription) { %>
+          <a href="/prescriptions/<%= currentPrescriptions[0].id %>" class="btn btn-sm btn-outline-primary">
+            Open <%= currentPrescriptions[0].prescription_code %> (v<%= currentPrescriptions[0].version %>)
+          </a>
+        <% } %>
+      </div>
+      <div class="card-body">
+        <% if (hasPrescription) { %>
+          <div class="alert alert-info mb-0">
+            A prescription already exists for this visit. Open it to view, print, or amend it — finalized prescriptions are never overwritten.
+          </div>
+        <% } else if (isFinalized) { %>
+          <div class="text-muted">No prescription was issued for this visit.</div>
+        <% } else { %>
+          <form method="POST" action="/prescriptions" id="rxForm">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="visitId" value="<%= visit.id %>">
+
+            <datalist id="medicineList">
+              <% medicines.forEach(function(m) { %>
+                <option value="<%= m.name %><%= m.strength ? ' ' + m.strength : '' %>"></option>
+              <% }) %>
+            </datalist>
+
+            <div class="table-responsive">
+              <table class="table table-sm align-middle" id="rxTable">
+                <thead>
+                  <tr>
+                    <th style="min-width:180px;">Medicine *</th><th>Dosage</th><th>Frequency</th>
+                    <th>Duration</th><th>Route</th><th>Qty</th><th style="min-width:140px;">Instructions</th><th></th>
+                  </tr>
+                </thead>
+                <tbody id="rxBody"></tbody>
+              </table>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="addRowBtn"><i class="bi bi-plus-lg"></i> Add Medicine</button>
+            <div class="text-end mt-3">
+              <button type="submit" class="btn btn-primary"><i class="bi bi-file-earmark-medical"></i> Create Prescription</button>
+            </div>
+          </form>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: history -->
+  <div class="col-lg-4">
+    <div class="card mb-3">
+      <div class="card-header">Patient Summary</div>
+      <div class="card-body small">
+        <div><strong>Blood Group:</strong> <%= visit.blood_group || '—' %></div>
+        <div><strong>Mobile:</strong> <%= visit.mobile %></div>
+        <div><strong>Existing Conditions:</strong> <%= visit.existing_conditions || 'None recorded' %></div>
+        <div><strong>Appointment:</strong> <%= visit.appointment_code %></div>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header">Previous Visits</div>
+      <div class="card-body p-0" style="max-height: 340px; overflow-y: auto;">
+        <ul class="list-group list-group-flush">
+          <% previousVisits.forEach(function(v) { %>
+            <li class="list-group-item small">
+              <div class="d-flex justify-content-between">
+                <strong><%= new Date(v.checked_in_at).toLocaleDateString() %></strong>
+                <span class="text-muted"><%= v.doctor_name %></span>
+              </div>
+              <div><strong>Dx:</strong> <%= v.diagnosis || '—' %></div>
+              <% if (v.bp || v.pulse || v.weight_kg) { %>
+                <div class="text-muted">
+                  <%= v.bp ? 'BP ' + v.bp : '' %>
+                  <%= v.pulse ? ' · Pulse ' + v.pulse : '' %>
+                  <%= v.weight_kg ? ' · ' + v.weight_kg + ' kg' : '' %>
+                </div>
+              <% } %>
+            </li>
+          <% }) %>
+          <% if (previousVisits.length === 0) { %>
+            <li class="list-group-item text-muted small text-center py-3">First visit — no prior history.</li>
+          <% } %>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Previous Prescriptions</div>
+      <div class="card-body p-0" style="max-height: 300px; overflow-y: auto;">
+        <ul class="list-group list-group-flush">
+          <% previousPrescriptions.forEach(function(p) { %>
+            <li class="list-group-item small d-flex justify-content-between align-items-center">
+              <div>
+                <div><strong><%= new Date(p.created_at).toLocaleDateString() %></strong> — <%= p.doctor_name %></div>
+                <div class="text-muted"><%= p.diagnosis || p.prescription_code %></div>
+              </div>
+              <a href="/prescriptions/<%= p.id %>/print" target="_blank" class="btn btn-sm btn-outline-secondary">View</a>
+            </li>
+          <% }) %>
+          <% if (previousPrescriptions.length === 0) { %>
+            <li class="list-group-item text-muted small text-center py-3">No previous prescriptions.</li>
+          <% } %>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const body = document.getElementById('rxBody');
+  if (!body) return;
+
+  function rowHtml() {
+    return '<tr>' +
+      '<td><input type="text" name="medicineName" class="form-control form-control-sm" list="medicineList" required></td>' +
+      '<td><input type="text" name="dosage" class="form-control form-control-sm" placeholder="1 tablet"></td>' +
+      '<td><input type="text" name="frequency" class="form-control form-control-sm" placeholder="3 times daily"></td>' +
+      '<td><input type="text" name="duration" class="form-control form-control-sm" placeholder="5 days"></td>' +
+      '<td><input type="text" name="route" class="form-control form-control-sm" placeholder="Oral"></td>' +
+      '<td><input type="text" name="quantity" class="form-control form-control-sm" placeholder="15"></td>' +
+      '<td><input type="text" name="instructions" class="form-control form-control-sm" placeholder="After food"></td>' +
+      '<td><button type="button" class="btn btn-sm btn-outline-danger remove-row">&times;</button></td>' +
+      '</tr>';
+  }
+
+  function addRow() { body.insertAdjacentHTML('beforeend', rowHtml()); }
+  addRow();
+
+  document.getElementById('addRowBtn').addEventListener('click', addRow);
+  body.addEventListener('click', function (e) {
+    if (e.target.classList.contains('remove-row')) {
+      if (body.rows.length > 1) e.target.closest('tr').remove();
+    }
+  });
+})();
+</script>

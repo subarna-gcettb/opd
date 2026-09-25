@@ -1,0 +1,50 @@
+<h4 class="mb-3">Edit My Profile</h4>
+<div class="alert alert-info small">
+  You can update your contact and basic medical details here. To correct your name, date of birth, gender, or Aadhaar, please contact hospital reception.
+</div>
+
+<form method="POST" action="/patient-portal/edit-profile" class="card">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Mobile Number *</label>
+        <input type="tel" name="mobile" class="form-control" value="<%= patient.mobile %>" pattern="[6-9][0-9]{9}" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Alternate Mobile</label>
+        <input type="tel" name="altMobile" class="form-control" pattern="[6-9][0-9]{9}" value="<%= patient.alt_mobile || '' %>">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Email</label>
+        <input type="email" name="email" class="form-control" value="<%= patient.email || '' %>">
+      </div>
+      <div class="col-12"><label class="form-label">Address</label><input type="text" name="address" class="form-control" value="<%= patient.address || '' %>"></div>
+      <div class="col-md-3"><label class="form-label">Village/Town</label><input type="text" name="villageTown" class="form-control" value="<%= patient.village_town || '' %>"></div>
+      <div class="col-md-3"><label class="form-label">Police Station</label><input type="text" name="policeStation" class="form-control" value="<%= patient.police_station || '' %>"></div>
+      <div class="col-md-3"><label class="form-label">District</label><input type="text" name="district" class="form-control" value="<%= patient.district || '' %>"></div>
+      <div class="col-md-2"><label class="form-label">State</label><input type="text" name="state" class="form-control" value="<%= patient.state || 'West Bengal' %>"></div>
+      <div class="col-md-1"><label class="form-label">PIN</label><input type="text" name="pinCode" class="form-control" pattern="\d{6}" maxlength="6" value="<%= patient.pin_code || '' %>"></div>
+
+      <div class="col-md-2">
+        <label class="form-label">Blood Group</label>
+        <select name="bloodGroup" class="form-select">
+          <option value="">Unknown</option>
+          <% ['A+','A-','B+','B-','O+','O-','AB+','AB-'].forEach(function(bg) { %>
+            <option <%= patient.blood_group === bg ? 'selected' : '' %>><%= bg %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-md-2"><label class="form-label">Height (cm)</label><input type="number" step="0.1" name="heightCm" class="form-control" value="<%= patient.height_cm || '' %>"></div>
+      <div class="col-md-2"><label class="form-label">Weight (kg)</label><input type="number" step="0.1" name="weightKg" class="form-control" value="<%= patient.weight_kg || '' %>"></div>
+      <div class="col-md-6"><label class="form-label">Allergies</label><input type="text" name="allergies" class="form-control" value="<%= patient.allergies || '' %>"></div>
+      <div class="col-md-6"><label class="form-label">Existing Medical Conditions</label><input type="text" name="existingConditions" class="form-control" value="<%= patient.existing_conditions || '' %>"></div>
+      <div class="col-md-3"><label class="form-label">Emergency Contact</label><input type="tel" name="emergencyContact" class="form-control" value="<%= patient.emergency_contact || '' %>"></div>
+      <div class="col-md-3"><label class="form-label">Relationship</label><input type="text" name="emergencyContactRelation" class="form-control" value="<%= patient.emergency_contact_relation || '' %>"></div>
+    </div>
+  </div>
+  <div class="card-footer d-flex justify-content-end gap-2">
+    <a href="/patient-portal" class="btn btn-outline-secondary">Cancel</a>
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+  </div>
+</form>

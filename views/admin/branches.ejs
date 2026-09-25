@@ -1,0 +1,53 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0">Branches</h4>
+  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#newBranchModal"><i class="bi bi-plus-lg"></i> Add Branch</button>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Code</th><th>Name</th><th>Address</th><th>Phone</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        <% branches.forEach(function(b) { %>
+          <tr>
+            <td><code><%= b.code %></code></td>
+            <td><%= b.name %></td>
+            <td><%= b.address || '—' %></td>
+            <td><%= b.phone || '—' %></td>
+            <td><span class="badge text-bg-<%= b.is_active ? 'success' : 'secondary' %>"><%= b.is_active ? 'Active' : 'Inactive' %></span></td>
+            <td><button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editBranch<%= b.id %>">Edit</button></td>
+          </tr>
+          <div class="modal fade" id="editBranch<%= b.id %>" tabindex="-1">
+            <div class="modal-dialog"><form method="POST" action="/admin/branches/<%= b.id %>" class="modal-content">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <div class="modal-header"><h5 class="modal-title">Edit Branch</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+              <div class="modal-body">
+                <div class="mb-2"><label class="form-label">Name</label><input type="text" name="name" class="form-control" value="<%= b.name %>" required></div>
+                <div class="mb-2"><label class="form-label">Address</label><input type="text" name="address" class="form-control" value="<%= b.address || '' %>"></div>
+                <div class="mb-2"><label class="form-label">Phone</label><input type="text" name="phone" class="form-control" value="<%= b.phone || '' %>"></div>
+                <div class="mb-2"><label class="form-label">Email</label><input type="email" name="email" class="form-control" value="<%= b.email || '' %>"></div>
+                <div class="form-check"><input class="form-check-input" type="checkbox" name="isActive" value="1" <%= b.is_active ? 'checked' : '' %>><label class="form-check-label">Active</label></div>
+              </div>
+              <div class="modal-footer"><button type="submit" class="btn btn-primary">Save</button></div>
+            </form></div>
+          </div>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="newBranchModal" tabindex="-1">
+  <div class="modal-dialog"><form method="POST" action="/admin/branches" class="modal-content">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="modal-header"><h5 class="modal-title">Add Branch</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <div class="mb-2"><label class="form-label">Branch Code (2 digits)</label><input type="text" name="code" class="form-control" pattern="\d{2}" maxlength="2" required></div>
+      <div class="mb-2"><label class="form-label">Name</label><input type="text" name="name" class="form-control" required></div>
+      <div class="mb-2"><label class="form-label">Address</label><input type="text" name="address" class="form-control"></div>
+      <div class="mb-2"><label class="form-label">Phone</label><input type="text" name="phone" class="form-control"></div>
+      <div class="mb-2"><label class="form-label">Email</label><input type="email" name="email" class="form-control"></div>
+    </div>
+    <div class="modal-footer"><button type="submit" class="btn btn-primary">Create</button></div>
+  </form></div>
+</div>

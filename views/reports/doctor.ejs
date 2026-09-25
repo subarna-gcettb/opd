@@ -1,0 +1,34 @@
+<h4 class="mb-3">Doctor Report</h4>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <form method="GET" class="row g-2 align-items-end">
+      <div class="col-md-3"><label class="form-label small">From</label><input type="date" name="from" class="form-control form-control-sm" value="<%= from %>"></div>
+      <div class="col-md-3"><label class="form-label small">To</label><input type="date" name="to" class="form-control form-control-sm" value="<%= to %>"></div>
+      <div class="col-md-2"><button class="btn btn-sm btn-primary w-100">Apply</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Doctor</th><th>Department</th><th>Patients</th><th>Completed</th><th>Cancelled</th><th>Revenue</th><th>Discount Given</th></tr></thead>
+      <tbody>
+        <% rows.forEach(function(r) { %>
+          <tr>
+            <td><%= r.doctor_name %></td>
+            <td><%= r.department_name %></td>
+            <td><%= r.total_patients %></td>
+            <td><%= r.completed %></td>
+            <td><%= r.cancelled %></td>
+            <td>₹<%= Number(r.revenue).toFixed(2) %></td>
+            <td>₹<%= Number(r.discount).toFixed(2) %></td>
+          </tr>
+        <% }) %>
+        <% if (rows.length === 0) { %><tr><td colspan="7" class="text-center text-muted py-4">No data for this range.</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<button onclick="window.print()" class="btn btn-outline-secondary btn-sm mt-3 no-print"><i class="bi bi-printer"></i> Print</button>

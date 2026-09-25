@@ -1,0 +1,89 @@
+:root {
+  --hms-primary: #0d6e6e;
+  --hms-primary-dark: #094f4f;
+  --hms-accent: #2f9e8f;
+  --hms-bg: #f4f7f7;
+  --hms-sidebar-bg: #0a3d3d;
+  --hms-sidebar-active: #135e5e;
+  --hms-text: #1f2937;
+  --hms-border: #e2e8e8;
+}
+
+body { background: var(--hms-bg); color: var(--hms-text); font-family: 'Segoe UI', Roboto, Arial, sans-serif; }
+
+.hms-shell { display: flex; min-height: 100vh; }
+
+.hms-sidebar {
+  width: 250px; flex-shrink: 0; background: var(--hms-sidebar-bg); color: #e6f2f0;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto; padding-bottom: 2rem;
+  transition: transform .25s ease;
+}
+.hms-brand { display: flex; align-items: center; gap: .5rem; padding: 1.25rem 1rem; font-weight: 700; font-size: 1.1rem; border-bottom: 1px solid rgba(255,255,255,.1); }
+.hms-nav { padding: .5rem 0; }
+.nav-section { padding: .85rem 1rem .25rem; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: #8fc9c0; }
+.hms-nav .nav-link { color: #dcefec; padding: .55rem 1rem; border-left: 3px solid transparent; font-size: .92rem; }
+.hms-nav .nav-link:hover { background: rgba(255,255,255,.06); }
+.hms-nav .nav-link.active { background: var(--hms-sidebar-active); border-left-color: var(--hms-accent); color: #fff; }
+.hms-nav .nav-link i { width: 1.2rem; margin-right: .4rem; }
+
+.hms-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.hms-header { display: flex; justify-content: space-between; align-items: center; padding: .9rem 1.5rem; background: #fff; border-bottom: 1px solid var(--hms-border); position: sticky; top: 0; z-index: 10; gap: .75rem; flex-wrap: wrap; }
+.hms-header-title { font-weight: 600; font-size: 1.1rem; color: var(--hms-primary-dark); }
+.hms-content { padding: 1.5rem; flex: 1; min-width: 0; }
+
+.hms-sidebar-toggle { display: none; }
+.hms-sidebar-backdrop { display: none; }
+
+/* ---- Mobile / tablet responsiveness ---- */
+@media (max-width: 991.98px) {
+  .hms-sidebar {
+    position: fixed; top: 0; left: 0; z-index: 1050;
+    transform: translateX(-100%);
+  }
+  .hms-sidebar.is-open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,.25); }
+  .hms-sidebar-toggle {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 38px; height: 38px; border: 1px solid var(--hms-border); border-radius: .4rem;
+    background: #fff; color: var(--hms-primary-dark); font-size: 1.2rem;
+  }
+  .hms-sidebar-backdrop.is-open {
+    display: block; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 1040;
+  }
+  .hms-header { padding: .75rem 1rem; }
+  .hms-header-title { font-size: 1rem; order: 2; flex-basis: 100%; }
+  .hms-content { padding: 1rem; }
+  .stat-card .stat-value { font-size: 1.4rem; }
+}
+
+@media (max-width: 575.98px) {
+  .hms-content { padding: .75rem; }
+  .card-body { padding: 1rem; }
+  .table-responsive { font-size: .85rem; }
+  .btn { min-height: 38px; }
+  .landing-hero h1 { font-size: 1.5rem; }
+  .landing-actions .btn { min-width: 100%; }
+}
+
+.hms-blank-body { background: linear-gradient(135deg, var(--hms-primary-dark), var(--hms-primary)); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+
+.card { border: 1px solid var(--hms-border); border-radius: .6rem; }
+.card-header { background: #fff; border-bottom: 1px solid var(--hms-border); font-weight: 600; color: var(--hms-primary-dark); }
+
+.btn-primary { background: var(--hms-primary); border-color: var(--hms-primary); }
+.btn-primary:hover { background: var(--hms-primary-dark); border-color: var(--hms-primary-dark); }
+
+.stat-card { border-radius: .6rem; padding: 1.1rem 1.3rem; background: #fff; border: 1px solid var(--hms-border); }
+.stat-card .stat-value { font-size: 1.7rem; font-weight: 700; color: var(--hms-primary-dark); }
+.stat-card .stat-label { font-size: .8rem; color: #667; text-transform: uppercase; letter-spacing: .03em; }
+
+.token-badge { font-size: 1.1rem; font-weight: 700; background: var(--hms-primary); color: #fff; border-radius: .4rem; padding: .25rem .6rem; }
+
+.table-sticky thead th { position: sticky; top: 0; background: #fff; z-index: 1; }
+
+.masked-aadhaar { letter-spacing: .05em; font-family: monospace; }
+
+@media print {
+  .hms-sidebar, .hms-header, .no-print { display: none !important; }
+  .hms-content { padding: 0 !important; }
+  body { background: #fff !important; }
+}

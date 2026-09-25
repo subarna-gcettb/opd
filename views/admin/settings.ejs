@@ -1,0 +1,105 @@
+<h4 class="mb-3">Site Settings</h4>
+
+<form method="POST" action="/admin/settings" enctype="multipart/form-data">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+  <div class="card mb-3">
+    <div class="card-header">Branding</div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Hospital Name</label>
+          <input type="text" name="hospital_name" class="form-control" value="<%= settings.hospital_name %>">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Tagline</label>
+          <input type="text" name="hospital_tagline" class="form-control" value="<%= settings.hospital_tagline %>">
+        </div>
+      </div>
+
+      <hr class="my-3">
+
+      <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label">Logo <small class="text-muted">(used on every printed letterhead — invoice, receipt, prescription, token, slip — and the sidebar)</small></label>
+          <input type="file" name="logo" class="form-control" accept="image/png,image/jpeg,image/svg+xml,image/webp">
+        </div>
+        <div class="col-md-2 text-center">
+          <% if (settings.logo_path) { %>
+            <img src="<%= settings.logo_path %>" alt="Current logo" style="max-height:60px;max-width:100%;">
+          <% } else { %>
+            <span class="text-muted small">No logo set</span>
+          <% } %>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Favicon</label>
+          <input type="file" name="favicon" class="form-control" accept="image/x-icon,image/png,image/svg+xml">
+        </div>
+        <div class="col-md-2 text-center">
+          <% if (settings.favicon_path) { %><img src="<%= settings.favicon_path %>" alt="Favicon" style="height:24px;"><% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header">Live OPD (Public Page)</div>
+    <div class="card-body">
+      <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" name="live_opd_show_names" value="1" id="liveOpdNames" <%= settings.live_opd_show_names === '1' ? 'checked' : '' %>>
+        <label class="form-check-label" for="liveOpdNames">Show patient names on the public Live OPD page</label>
+      </div>
+      <div class="alert alert-warning small mt-2 mb-0">
+        <strong>Privacy note:</strong> the Live OPD page at <code>/live-opd</code> is public — anyone with the link can view it, not just people in the waiting room. With this on, it shows which patient is currently with which doctor by name. Turn it off to show only token numbers and statuses (no names) if that's a concern for your deployment.
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header">Contact Information</div>
+    <div class="card-body row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Phone</label>
+        <input type="text" name="contact_phone" class="form-control" value="<%= settings.contact_phone %>">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Email</label>
+        <input type="email" name="contact_email" class="form-control" value="<%= settings.contact_email %>">
+      </div>
+      <div class="col-md-12">
+        <label class="form-label">Address</label>
+        <input type="text" name="contact_address" class="form-control" value="<%= settings.contact_address %>">
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header">SEO &amp; Social Sharing</div>
+    <div class="card-body">
+      <div class="mb-3">
+        <label class="form-label">Page Title <small class="text-muted">(shown in browser tabs and search results — keep under ~60 characters)</small></label>
+        <input type="text" name="seo_title" class="form-control" maxlength="70" value="<%= settings.seo_title %>">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Meta Description <small class="text-muted">(shown under the title in search results — aim for 120–158 characters)</small></label>
+        <textarea name="seo_description" class="form-control" rows="2" maxlength="160"><%= settings.seo_description %></textarea>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Keywords <small class="text-muted">(comma-separated; modern search engines weight this lightly, but it's still read)</small></label>
+        <input type="text" name="seo_keywords" class="form-control" value="<%= settings.seo_keywords %>">
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Social Share Image (Open Graph) <small class="text-muted">(shown when the site is shared on social media / messaging apps — recommended 1200×630px)</small></label>
+        <input type="file" name="og_image" class="form-control" accept="image/png,image/jpeg,image/webp">
+        <% if (settings.og_image_path) { %><img src="<%= settings.og_image_path %>" class="mt-2" style="max-width:240px;border-radius:.4rem;"><% } %>
+      </div>
+      <div class="alert alert-info small mb-0">
+        <strong>SEO checklist already handled by this system:</strong> a unique, descriptive <code>&lt;title&gt;</code> and meta description on every page, Open Graph tags for clean social previews, a single canonical hospital name/address (helps local search consistency), fast server-rendered pages (no client-side rendering delay for crawlers), and a mobile-responsive layout. For further gains: submit the site to Google Search Console, list the hospital on Google Business Profile with a matching name/address/phone, and keep this description accurate and specific — generic descriptions rank worse than specific ones.
+      </div>
+    </div>
+  </div>
+
+  <div class="text-end">
+    <button type="submit" class="btn btn-primary">Save Settings</button>
+  </div>
+</form>

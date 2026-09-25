@@ -1,0 +1,58 @@
+<header class="hms-header">
+  <button class="hms-sidebar-toggle" id="sidebarToggle" type="button" aria-label="Open menu">
+    <i class="bi bi-list"></i>
+  </button>
+  <div class="hms-header-title">
+    <%= typeof title !== 'undefined' ? title : '' %>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <% if (currentUser && !currentUser.patientId) { %>
+      <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#scanModal" title="Scan a barcode">
+        <i class="bi bi-upc-scan"></i> Scan
+      </button>
+    <% } %>
+    <div class="hms-header-user dropdown">
+      <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+        <i class="bi bi-person-circle"></i>
+        <%= currentUser ? currentUser.name : '' %>
+        <% if (currentUser && currentUser.roles) { %>
+          <span class="badge text-bg-secondary ms-1"><%= currentUser.roles.join(', ') %></span>
+        <% } %>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li><a class="dropdown-item" href="/auth/reset-password"><i class="bi bi-key"></i> Change Password</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+          <form action="/auth/logout" method="POST">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="dropdown-item text-danger"><i class="bi bi-box-arrow-right"></i> Logout</button>
+          </form>
+        </li>
+      </ul>
+    </div>
+  </div>
+</header>
+
+<% if (currentUser && !currentUser.patientId) { %>
+<div class="modal fade" id="scanModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form method="GET" action="/scan" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-upc-scan"></i> Scan Barcode</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label">Health ID, Appointment, Prescription, or Invoice code</label>
+        <input type="text" name="code" id="scanInput" class="form-control form-control-lg" autocomplete="off"
+               placeholder="Scan with a connected reader, or type and press Enter">
+        <div class="form-text">Connect a USB/Bluetooth barcode reader — it types the code and presses Enter automatically, just like a keyboard. Click into the box above and scan.</div>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+  document.getElementById('scanModal').addEventListener('shown.bs.modal', function () {
+    document.getElementById('scanInput').focus();
+  });
+</script>
+<% } %>
