@@ -80,6 +80,11 @@
                     <button class="btn btn-sm btn-success">Complete</button>
                   </form>
                 <% } %>
+                <a href="/opd/visits/<%= r.visit_id %>/vitals" class="btn btn-sm btn-outline-info"><i class="bi bi-heart-pulse"></i> Vitals</a>
+                <% if (r.visit_status === 'WAITING') { %>
+                  <form method="POST" action="/opd/visits/<%= r.visit_id %>/reorder"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="direction" value="UP"><button class="btn btn-sm btn-outline-secondary" title="Move up">↑</button></form>
+                  <form method="POST" action="/opd/visits/<%= r.visit_id %>/reorder"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="direction" value="DOWN"><button class="btn btn-sm btn-outline-secondary" title="Move down">↓</button></form>
+                <% } %>
                 <a href="/opd/appointments/<%= r.appointment_id %>" class="btn btn-sm btn-outline-secondary">Open</a>
               </div>
             </td>
