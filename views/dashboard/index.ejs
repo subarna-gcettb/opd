@@ -1,0 +1,61 @@
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div><h2 class="mb-1">OPD Dashboard</h2><div class="text-muted">Daily operations overview</div></div>
+  <form class="d-flex gap-2" method="GET" action="/dashboard">
+    <input type="date" name="date" class="form-control" value="<%= date %>">
+    <button class="btn btn-primary">View</button>
+  </form>
+</div>
+
+<div class="row g-3 mb-4">
+  <% const cards = [
+    ['OPD Patients', stats.todaysOpdPatients, 'bi-people'],
+    ['Appointments', stats.todaysAppointments, 'bi-calendar-check'],
+    ['Waiting', stats.waitingPatients, 'bi-hourglass-split'],
+    ['Completed', stats.completedConsultations, 'bi-check-circle'],
+    ['New Patients', stats.newPatientsToday, 'bi-person-plus'],
+    ['Revenue', '₹' + Number(stats.todaysRevenue).toFixed(2), 'bi-currency-rupee'],
+    ['Pending Discounts', stats.pendingDiscountRequests, 'bi-percent'],
+    ['No Shows', stats.noShow, 'bi-person-x']
+  ]; %>
+  <% cards.forEach(([label,value,icon]) => { %>
+    <div class="col-6 col-md-3">
+      <div class="card h-100 shadow-sm"><div class="card-body">
+        <div class="text-muted small"><i class="bi <%= icon %> me-1"></i><%= label %></div>
+        <div class="fs-2 fw-bold mt-1"><%= value %></div>
+      </div></div>
+    </div>
+  <% }) %>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header fw-semibold">7-Day Appointment Trend</div>
+      <div class="card-body"><canvas id="weeklyTrend" height="110"></canvas></div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header fw-semibold">Quick Actions</div>
+      <div class="list-group list-group-flush">
+        <a class="list-group-item list-group-item-action" href="/patients/new"><i class="bi bi-person-plus me-2"></i>Register Patient</a>
+        <a class="list-group-item list-group-item-action" href="/opd/appointments/new"><i class="bi bi-calendar-plus me-2"></i>Book OPD Appointment</a>
+        <a class="list-group-item list-group-item-action" href="/opd/live-board"><i class="bi bi-display me-2"></i>Open Live OPD Board</a>
+        <a class="list-group-item list-group-item-action" href="/billing/discount-requests"><i class="bi bi-percent me-2"></i>Discount Requests</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const trend = <%- JSON.stringify(trend || []) %>;
+new Chart(document.getElementById('weeklyTrend'), {
+  type: 'line',
+  data: {
+    labels: trend.map(x => String(x.d).slice(0,10)),
+    datasets: [{ label: 'Appointments', data: trend.map(x => Number(x.cnt)), tension: .25 }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+});
+</script>
