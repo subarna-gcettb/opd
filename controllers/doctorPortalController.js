@@ -126,7 +126,8 @@ async function completeVisit(req, res, next) {
     await consultationService.assertDoctorCanAccessVisit(req.params.visitId, req.user);
     await opdService.updateVisitStatus(req.params.visitId, 'COMPLETED', req.user.id);
     req.flash('success', 'Consultation completed. The clinical record is now finalized.');
-    res.redirect('/doctor/queue');
+    const [[invoice]] = await pool.execute('SELECT id, status FROM invoices WHERE visit_id = :visitId ORDER BY created_at DESC LIMIT 1', { visitId: req.params.visitId });
+    res.redirect(invoice && invoice.status !== 'PAID' ? '/billing/invoices/' + invoice.id : '/doctor/queue');
   } catch (err) {
     if (err instanceof AppError) {
       req.flash('errors', [{ message: err.message }]);
