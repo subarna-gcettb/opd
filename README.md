@@ -32,6 +32,8 @@ Edit `.env` and set at minimum:
 | `AADHAAR_ENCRYPTION_KEY` | **Exactly 64 hex characters** (32 bytes). Generate with `openssl rand -hex 32` |
 | `AADHAAR_HASH_SECRET` | Any long random string |
 | `SEED_SUPERADMIN_EMAIL` / `SEED_SUPERADMIN_PASSWORD` | Used only by the seed script, once |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `GOOGLE_REDIRECT_URI` | Optional Google patient sign-in; callback defaults to `/auth/google/callback` |
+| `SMTP_HOST` / `SMTP_USER` / `SMTP_PASSWORD` / `SMTP_FROM_EMAIL` | Required for patient email OTP signup, OTP login and password reset |
 
 Never commit `.env` — it's already in `.gitignore`.
 
@@ -87,7 +89,7 @@ tests/        jest unit tests
 
 ## Patient Portal
 
-Patients can get their own login (staff creates it from a patient's profile page — "Create Portal Login" — using an email on file). It reuses the same `users`/`roles`/session infrastructure as staff (`users.patient_id` links the account to exactly one patient record), but every patient-portal route (`/patient-portal/*`) derives its data scope strictly from `req.user.patientId`, resolved server-side from the session — never from a URL parameter, which is what prevents one patient from ever viewing another's records. A patient sees: their own profile/barcode, upcoming appointments, completed-visit history, current prescriptions (view/print), and invoices/receipts. They cannot book, edit, or see anyone else's data.
+Patients can now self-register with email OTP verification, sign in with email/password, phone/password, Health ID/password, or email OTP, and optionally use Google Sign-In. Forgot-password uses email OTP. Existing staff-created patient portal accounts continue to work. It reuses the same `users`/`roles`/session infrastructure as staff (`users.patient_id` links the account to exactly one patient record), but every patient-portal route (`/patient-portal/*`) derives its data scope strictly from `req.user.patientId`, resolved server-side from the session — never from a URL parameter, which is what prevents one patient from ever viewing another's records. A patient sees: their own profile/barcode, upcoming appointments, completed-visit history, current prescriptions (view/print), and invoices/receipts. They cannot book, edit, or see anyone else's data.
 
 ## Email Notifications (SMTP)
 
