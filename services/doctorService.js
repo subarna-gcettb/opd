@@ -247,6 +247,40 @@ async function addScheduleException(doctorId, payload, actorUserId) {
   });
 }
 
+async function getOwnProfile(doctorId) {
+  const [[doctor]] = await pool.execute(
+    `SELECT d.*, u.name, u.email AS login_email
+     FROM doctors d JOIN users u ON u.id = d.user_id
+     WHERE d.id = :id AND d.deleted_at IS NULL`, { id: doctorId }
+  );
+  return doctor || null;
+}
+
+async function updateOwnProfile(doctorId, userId, payload) {
+  return withTransaction(async (conn) => {
+    const [[doctor]] = await conn.execute(
+      'SELECT id, user_id FROM doctors WHERE id = :doctorId AND user_id = :userId AND deleted_at IS NULL FOR UPDATE',
+      { doctorId, userId }
+    );
+    if (!doctor) throw new AppError('Doctor profile not found', 404);
+    await conn.execute(
+      `UPDATE doctors SET gender=:gender, dob=:dob, mobile=:mobile, address=:address,
+        professional_reg_number=:regNo, qualification=:qualification, specialisation=:specialisation
+       WHERE id=:doctorId`,
+      { doctorId, gender: payload.gender || null, dob: payload.dob || null, mobile: payload.mobile || null,
+        address: payload.address || null, regNo: payload.professionalRegNumber || null,
+        qualification: payload.qualification || null, specialisation: payload.specialisation || null }
+    );
+    if (payload.name && payload.name.trim()) {
+      await conn.execute('UPDATE users SET name=:name WHERE id=:userId', { name: payload.name.trim(), userId });
+    }
+    await auditService.log({
+      userId, action: 'DOCTOR_SELF_PROFILE_UPDATED', entity: 'doctor', entityId: doctorId,
+      newValue: { name: payload.name, mobile: payload.mobile, qualification: payload.qualification, specialisation: payload.specialisation }
+    }, conn);
+  });
+}
+
 module.exports = {
   createDoctor,
   updateDoctor,
@@ -254,5 +288,7 @@ module.exports = {
   getDoctor,
   addScheduleTemplate,
   deleteScheduleTemplate,
-  addScheduleException
+  addScheduleException,
+  getOwnProfile,
+  updateOwnProfile
 };
