@@ -102,7 +102,7 @@ async function createPatientFromSignup(payload) {
     pinCode: payload.pinCode
   }, null);
 
-  const hash = await bcrypt.hash(payload.password, authConfig.bcryptRounds);
+  const hash = payload.passwordHash || await bcrypt.hash(payload.password, authConfig.bcryptRounds);
 
   await withTransaction(async (conn) => {
     const [userResult] = await conn.execute(
