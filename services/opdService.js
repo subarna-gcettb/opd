@@ -4,6 +4,18 @@ const scheduleService = require('./scheduleService');
 const auditService = require('./auditService');
 const AppError = require('../utils/AppError');
 
+function calculatePregnancy(lmpDate, pregnancyStatus, asOfDate) {
+  if (pregnancyStatus !== 'PREGNANT' || !lmpDate) {
+    return { status: pregnancyStatus || 'UNKNOWN', weeks: null, days: null, edd: null };
+  }
+  const lmp = new Date(lmpDate + 'T00:00:00Z');
+  const asOf = new Date((asOfDate || new Date().toISOString().slice(0,10)) + 'T00:00:00Z');
+  const diffDays = Math.max(0, Math.floor((asOf - lmp) / 86400000));
+  const eddDate = new Date(lmp.getTime() + 280 * 86400000);
+  const edd = eddDate.toISOString().slice(0,10);
+  return { status: 'PREGNANT', weeks: Math.floor(diffDays / 7), days: diffDays % 7, edd };
+}
+
 /** Appointment code: APT-YYMMDD-NNNN (global daily sequence) */
 async function generateAppointmentCode(conn, dateStr) {
   const compact = dateStr.replace(/-/g, '').slice(2); // YYMMDD
@@ -36,6 +48,7 @@ async function generateToken(conn, doctorId, dateStr) {
 async function bookAppointment(payload, actorUserId) {
   return withTransaction(async (conn) => {
     const { patientId, doctorId, branchId, departmentId, appointmentDate, slotTime, reason } = payload;
+    const obstetric = calculatePregnancy(payload.lmpDate, payload.pregnancyStatus, appointmentDate);
 
     const [[patient]] = await conn.execute(
       'SELECT id, health_id, name, status FROM patients WHERE id = :id AND deleted_at IS NULL',
@@ -63,7 +76,7 @@ async function bookAppointment(payload, actorUserId) {
          appointment_date, slot_time, token_number, reason, status, created_by)
        VALUES
         (:code, :patientId, :doctorId, :branchId, :departmentId,
-         :date, :slotTime, :token, :reason, 'BOOKED', :createdBy)`,
+         :date, :slotTime, :token, :reason, :lmpDate, :gravida, :para, :abortions, :pregnancyStatus, :gaWeeks, :gaDays, :edd, :obstetricNotes, 'BOOKED', :createdBy)`,
       {
         code: appointmentCode,
         patientId,
@@ -74,6 +87,15 @@ async function bookAppointment(payload, actorUserId) {
         slotTime,
         token,
         reason: reason || null,
+        lmpDate: payload.lmpDate || null,
+        gravida: payload.gravida === '' ? null : (payload.gravida ?? null),
+        para: payload.para === '' ? null : (payload.para ?? null),
+        abortions: payload.abortions === '' ? null : (payload.abortions ?? null),
+        pregnancyStatus: obstetric.status,
+        gaWeeks: obstetric.weeks,
+        gaDays: obstetric.days,
+        edd: obstetric.edd,
+        obstetricNotes: payload.obstetricNotes || null,
         createdBy: actorUserId
       }
     );
@@ -81,9 +103,9 @@ async function bookAppointment(payload, actorUserId) {
 
     const visitCode = await generateVisitCode(conn, appointmentDate);
     const [visitResult] = await conn.execute(
-      `INSERT INTO opd_visits (visit_code, appointment_id, patient_id, doctor_id, branch_id, status)
-       VALUES (:visitCode, :appointmentId, :patientId, :doctorId, :branchId, 'WAITING')`,
-      { visitCode, appointmentId, patientId, doctorId, branchId }
+      `INSERT INTO opd_visits (visit_code, appointment_id, patient_id, doctor_id, branch_id, status, queue_position)
+       VALUES (:visitCode, :appointmentId, :patientId, :doctorId, :branchId, 'WAITING', :queuePosition)`,
+      { visitCode, appointmentId, patientId, doctorId, branchId, queuePosition: token }
     );
 
     await auditService.log(
@@ -350,6 +372,7 @@ async function updateVisitStatus(visitId, newStatus, actorUserId) {
 }
 
 module.exports = {
+  calculatePregnancy,
   bookAppointment,
   rescheduleAppointment,
   cancelAppointment,
