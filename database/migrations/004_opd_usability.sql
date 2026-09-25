@@ -14,5 +14,5 @@ ON DUPLICATE KEY UPDATE description = VALUES(description);
 
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id FROM roles r JOIN permissions p ON p.code = 'patient.suspend'
-WHERE r.code IN ('SUPER_ADMIN','ADMIN')
+WHERE r.code IN ('SUPER_ADMIN','ADMIN','OPD_STAFF')
 ON DUPLICATE KEY UPDATE role_id = role_id;
