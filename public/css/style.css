@@ -166,3 +166,65 @@ img, video, canvas { max-width: 100%; height: auto; }
   .clinic-photo-large, .clinic-photo-small { min-height: 230px; }
   .clinic-hero::after { background: linear-gradient(90deg, rgba(7,37,56,.92), rgba(7,37,56,.68)), var(--hero-image) center/cover no-repeat; }
 }
+
+/* Hero polish + reliable landing-page image presentation */
+.clinic-hero {
+  min-height: 650px;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+.clinic-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 78% 48%, rgba(72, 209, 185, .18), transparent 34%);
+  z-index: 1;
+  pointer-events: none;
+}
+.hero-visual-wrap {
+  position: relative;
+  padding-top: 1.4rem;
+}
+.hero-visual-badge {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  right: 1.2rem;
+  padding: .55rem .85rem;
+  border: 1px solid rgba(255,255,255,.28);
+  border-radius: 999px;
+  background: rgba(5,43,47,.72);
+  backdrop-filter: blur(10px);
+  color: #e5fffa;
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  box-shadow: 0 12px 30px rgba(0,0,0,.18);
+}
+.hero-live-card {
+  position: relative;
+  z-index: 2;
+  margin-top: .5rem;
+  background: rgba(4, 43, 46, .68);
+  border-color: rgba(255,255,255,.3);
+  box-shadow: 0 28px 80px rgba(0,0,0,.25);
+}
+.clinic-hero .btn-light {
+  color: #07524f;
+  font-weight: 700;
+}
+.clinic-hero .btn-outline-light {
+  border-width: 1.5px;
+  font-weight: 650;
+}
+@media (max-width: 991.98px) {
+  .clinic-hero { min-height: auto; }
+  .hero-visual-wrap { margin-top: 1.5rem; }
+}
+@media (max-width: 767.98px) {
+  .clinic-hero::after {
+    background: linear-gradient(180deg, rgba(7,37,56,.95) 0%, rgba(7,37,56,.84) 100%), var(--hero-image) center/cover no-repeat;
+  }
+  .hero-visual-badge { right: .75rem; }
+}
