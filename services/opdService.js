@@ -314,10 +314,42 @@ async function getQueue({ date, doctorId = null, branchId = null }) {
        AND (:doctorId IS NULL OR v.doctor_id = :doctorId)
        AND (:branchId IS NULL OR v.branch_id = :branchId)
        AND v.status <> 'CANCELLED'
-     ORDER BY a.token_number`,
+     ORDER BY CASE WHEN v.status = 'IN_CONSULTATION' THEN 0 WHEN v.status = 'CALLED' THEN 1 WHEN v.status = 'WAITING' THEN 2 ELSE 3 END, v.queue_position, a.token_number`,
     { date, doctorId, branchId }
   );
   return rows;
+}
+
+async function reorderQueue(visitId, direction, actorUserId) {
+  return withTransaction(async (conn) => {
+    const [[current]] = await conn.execute(
+      `SELECT v.*, a.appointment_date FROM opd_visits v JOIN appointments a ON a.id=v.appointment_id
+       WHERE v.id=:id FOR UPDATE`, { id: visitId }
+    );
+    if (!current) throw new AppError('Visit not found', 404);
+    if (current.status !== 'WAITING') throw new AppError('Only waiting patients can be moved in the queue', 409);
+
+    const [waiting] = await conn.execute(
+      `SELECT v.id, v.queue_position FROM opd_visits v JOIN appointments a ON a.id=v.appointment_id
+       WHERE v.doctor_id=:doctorId AND a.appointment_date=:date AND v.status='WAITING'
+       ORDER BY v.queue_position, a.token_number FOR UPDATE`,
+      { doctorId: current.doctor_id, date: current.appointment_date }
+    );
+    const index = waiting.findIndex(x => x.id === current.id);
+    const targetIndex = direction === 'UP' ? index - 1 : index + 1;
+    if (index < 0 || targetIndex < 0 || targetIndex >= waiting.length) return false;
+
+    const other = waiting[targetIndex];
+    const currentPos = current.queue_position || index + 1;
+    const otherPos = other.queue_position || targetIndex + 1;
+    await conn.execute('UPDATE opd_visits SET queue_position=:pos WHERE id=:id', { pos: otherPos, id: current.id });
+    await conn.execute('UPDATE opd_visits SET queue_position=:pos WHERE id=:id', { pos: currentPos, id: other.id });
+    await auditService.log({
+      userId: actorUserId, action: 'QUEUE_REORDERED', entity: 'opd_visit', entityId: visitId,
+      newValue: { direction, fromIndex:index, toIndex:targetIndex }
+    }, conn);
+    return true;
+  });
 }
 
 /** Visit lifecycle transitions — separate from the appointment lifecycle. */
@@ -380,5 +412,6 @@ module.exports = {
   listAppointments,
   getAppointment,
   getQueue,
+  reorderQueue,
   updateVisitStatus
 };
