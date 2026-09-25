@@ -40,6 +40,8 @@ router.post(
 );
 
 router.get('/appointments', requirePermission('appointment.create', 'queue.manage'), asyncHandler(opdController.listAppointments));
+router.get('/appointments/:id/edit', requirePermission('appointment.reschedule', 'queue.manage'), asyncHandler(opdController.editAppointment));
+router.post('/appointments/:id/edit', requirePermission('appointment.reschedule', 'queue.manage'), csrfProtection, asyncHandler(opdController.updateAppointmentDetails));
 router.get('/appointments/:id', requirePermission('appointment.create', 'queue.manage'), asyncHandler(opdController.viewAppointment));
 router.get('/appointments/:id/barcode', requirePermission('appointment.create', 'patient.view'), asyncHandler(opdController.appointmentBarcode));
 router.get('/appointments/:id/token', requirePermission('appointment.create', 'queue.manage'), asyncHandler(opdController.printToken));
