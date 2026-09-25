@@ -61,13 +61,13 @@ async function getStaffBoard(date = todayStr()) {
 
   const [visits] = await pool.execute(
     `SELECT v.id AS visit_id, v.doctor_id, v.status AS visit_status,
-            a.token_number, a.slot_time,
+            a.token_number, a.slot_time, v.queue_position,
             p.name AS patient_name, p.health_id
      FROM opd_visits v
      JOIN appointments a ON a.id = v.appointment_id
      JOIN patients p ON p.id = v.patient_id
      WHERE a.appointment_date = :date AND v.status <> 'CANCELLED'
-     ORDER BY a.token_number`,
+     ORDER BY v.doctor_id, CASE WHEN v.status = 'IN_CONSULTATION' THEN 0 WHEN v.status = 'CALLED' THEN 1 WHEN v.status = 'WAITING' THEN 2 ELSE 3 END, v.queue_position, a.token_number`,
     { date }
   );
 
