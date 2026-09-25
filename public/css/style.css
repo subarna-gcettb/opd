@@ -102,3 +102,46 @@ body { background: var(--hms-bg); color: var(--hms-text); font-family: 'Segoe UI
 
 /* Premium public clinic website */
 .clinic-site{background:#f7fbfa;color:#18312f}.clinic-hero{background:linear-gradient(135deg,#063f3f,#0d6e6e 60%,#168b7d);color:#fff}.clinic-hero h1{letter-spacing:-.04em}.clinic-hero h1 span{color:#9de4d8}.hero-eyebrow,.section-heading>div>span,.live-hero .hero-eyebrow{font-size:.72rem;font-weight:800;letter-spacing:.13em;color:#79d8c9}.hero-copy{font-size:1.1rem;line-height:1.7;color:#d9efec;max-width:680px}.hero-trust{display:flex;gap:1rem;flex-wrap:wrap;color:#d9efec;font-size:.88rem}.hero-trust i{color:#8ee3d5}.hero-live-card{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.25);backdrop-filter:blur(12px);border-radius:1.4rem;padding:1.5rem;box-shadow:0 25px 70px #0003}.hero-live-card a{color:#d9efec;text-decoration:none}.live-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#63e6be;box-shadow:0 0 0 6px #63e6be22;margin-right:.5rem}.hero-token-count{font-size:5rem;font-weight:900;line-height:1}.mini-stat{background:#0002;border-radius:.8rem;padding:.7rem}.mini-stat strong{display:block;font-size:1.4rem}.mini-stat span{font-size:.75rem;color:#cfeae5}.clinic-stat-strip{background:#fff;border-bottom:1px solid #e4eeee}.clinic-stat{text-align:center;padding:1.3rem;border-right:1px solid #e4eeee}.clinic-stat i{display:block;color:#168b7d;font-size:1.25rem}.clinic-stat strong{display:block;font-size:1.5rem;color:#0b5550}.clinic-stat span{font-size:.78rem;color:#71807f}.clinic-section{padding:5rem 0}.clinic-soft{background:#eef8f6}.section-heading{display:flex;justify-content:space-between;align-items:end;gap:1rem;margin-bottom:2rem}.section-heading h2{font-size:2.1rem;letter-spacing:-.035em;color:#103f3c}.feature-card{display:block;height:100%;background:#fff;border:1px solid #dfeceb;border-radius:1rem;padding:1.35rem;text-decoration:none;color:inherit;transition:.2s;box-shadow:0 8px 30px #0b46420a}.feature-card:hover{transform:translateY(-4px);color:inherit;box-shadow:0 15px 35px #0b46421a}.feature-icon{width:46px;height:46px;border-radius:.8rem;background:#e6f6f3;color:#08756d;display:grid;place-items:center}.feature-card h5{margin-top:1rem}.feature-card p{font-size:.86rem;color:#6d7d7b}.feature-card span{font-size:.82rem;font-weight:700;color:#08756d}.doctor-profile-card{display:flex;gap:1rem;align-items:center;background:#fff;border:1px solid #dfeceb;border-radius:1rem;padding:1.25rem;height:100%}.doctor-avatar{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#0d6e6e,#35a896);color:#fff;font-size:1.35rem;font-weight:800;flex-shrink:0}.doctor-profile-card h5{margin:0}.doctor-profile-card p{margin:.2rem 0;color:#08756d;font-weight:600}.portal-callout,.live-preview{display:flex;align-items:center;justify-content:space-between;gap:2rem;padding:2.5rem;border-radius:1.5rem}.portal-callout{background:#e8f7f4;border:1px solid #cdebe6}.portal-callout h2,.live-preview h2{margin:.4rem 0;font-size:2rem}.portal-callout p{margin:0;color:#627471}.live-preview{background:linear-gradient(135deg,#063f3f,#0d6e6e);color:#fff}.live-preview p{color:#cfeae5}.live-hero{background:linear-gradient(135deg,#063f3f,#0d6e6e);color:#fff}.live-refresh{padding:.6rem 1rem;border:1px solid #ffffff33;border-radius:999px;color:#d9efec;font-size:.84rem}.live-now-card{background:#fff;border:1px solid #dfeceb;border-radius:1.4rem;padding:2rem;box-shadow:0 18px 50px #0d6e6e14}.now-token{font-size:clamp(5rem,12vw,9rem);font-weight:950;line-height:.9;color:#0b625d}.status-pill{display:inline-flex;padding:.45rem .8rem;border-radius:999px;font-size:.78rem;font-weight:800;background:#e7f7ef;color:#16784c}.current-title,.upcoming-title{font-size:.72rem;font-weight:800;letter-spacing:.1em;color:#788987;text-transform:uppercase}.current-patient{font-size:2rem;font-weight:800;color:#173e3a;margin-top:.35rem}.current-doctor{color:#0b756d}.live-counter{background:#fff;border:1px solid #dfeceb;border-radius:1rem;padding:1.3rem;text-align:center}.live-counter strong{display:block;font-size:2rem;color:#0b625d}.live-counter span{font-size:.8rem;color:#71807f}.queue-card{background:#fff;border:1px solid #dfeceb;border-radius:1.1rem;padding:1.25rem;height:100%}.queue-card h4{margin:0;font-size:1.05rem}.queue-card p{margin:.2rem 0;color:#73817f;font-size:.82rem}.doctor-state{padding:.35rem .55rem;border-radius:999px;font-size:.7rem;font-weight:800}.doctor-state.online{background:#e7f7ef;color:#16784c}.doctor-state.offline{background:#fbecec;color:#a73d3d}.queue-current{margin-top:1rem;padding:1rem;border-radius:.9rem;background:#e9f8f5;text-align:center}.queue-current span{font-size:.68rem;font-weight:800;color:#08756d}.queue-current strong{display:block;font-size:3rem;line-height:1;color:#0b625d}.queue-current div{font-weight:700}.queue-current small{color:#168b7d}.queue-idle{margin-top:1rem;padding:1.7rem 1rem;border-radius:.9rem;background:#f5f8f8;text-align:center;color:#71807f}.queue-meta{display:flex;gap:1rem;padding:.9rem 0;border-bottom:1px solid #edf1f0;font-size:.8rem;color:#71807f}.upcoming-list{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.55rem}.queue-token{display:inline-flex;align-items:center;gap:.45rem;padding:.45rem .55rem;border:1px solid #dfeceb;border-radius:.65rem;background:#fbfdfd}.queue-token b{color:#0b625d}.queue-token span{font-size:.75rem;font-weight:600}.empty-live{padding:4rem;text-align:center;background:#fff;border:1px dashed #cbdad8;border-radius:1rem;color:#71807f}@media(max-width:767px){.clinic-hero .display-3{font-size:2.6rem}.clinic-section{padding:3.5rem 0}.section-heading,.portal-callout,.live-preview{align-items:flex-start;flex-direction:column}.section-heading h2{font-size:1.8rem}.clinic-stat{min-height:105px}.current-patient{font-size:1.45rem}.live-now-card{padding:1.2rem}}
+
+/* ------------------------------------------------------------------
+   Mobile / PWA usability hardening
+   ------------------------------------------------------------------ */
+html { -webkit-text-size-adjust: 100%; }
+body { overflow-x: hidden; }
+img, video, canvas { max-width: 100%; height: auto; }
+.table-responsive { -webkit-overflow-scrolling: touch; }
+.form-control, .form-select, .btn { min-height: 42px; }
+.card { overflow: hidden; }
+.hms-content { min-width: 0; }
+@media (max-width: 991.98px) {
+  .hms-sidebar { transform: translateX(-100%); transition: transform .2s ease; }
+  .hms-sidebar.is-open { transform: translateX(0); }
+  .hms-main { margin-left: 0 !important; width: 100%; }
+  .hms-content { padding: 1rem !important; }
+  .table { font-size: .86rem; }
+  .display-3 { font-size: 2.4rem; }
+}
+@media (max-width: 767.98px) {
+  .container { --bs-gutter-x: 1rem; }
+  .clinic-hero { padding-top: 2rem !important; padding-bottom: 2rem !important; }
+  .clinic-hero .display-3 { font-size: 2.1rem; line-height: 1.1; }
+  .clinic-section { padding: 2rem 0 !important; }
+  .section-heading { align-items: flex-start; flex-direction: column; gap: .75rem; }
+  .hero-live-card { margin-top: .5rem; }
+  .live-now-card { padding: 1.25rem !important; }
+  .now-token { font-size: 4rem !important; }
+  .current-patient { font-size: 1.35rem !important; }
+  .auth-card { width: min(100%, 420px) !important; margin: 1rem auto; }
+  .d-flex.justify-content-between.align-items-start { gap: .75rem; }
+  .btn { white-space: normal; }
+  .modal-dialog { margin: .5rem; }
+}
+@media (max-width: 575.98px) {
+  .hms-content { padding: .75rem !important; }
+  .card-body { padding: .9rem; }
+  .table-responsive .table { min-width: 700px; }
+  .clinic-stat { padding: .9rem .5rem !important; }
+  .clinic-stat strong { font-size: 1.25rem !important; }
+  .queue-card { padding: 1rem !important; }
+  .live-counter { padding: 1rem .5rem !important; }
+}
