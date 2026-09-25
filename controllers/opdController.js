@@ -6,7 +6,7 @@ const { pool } = require('../config/database');
 const AppError = require('../utils/AppError');
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  return new Intl.DateTimeFormat('en-CA', { timeZone: process.env.APP_TIMEZONE || 'Asia/Kolkata' }).format(new Date());
 }
 
 async function showBookingForm(req, res, next) {
