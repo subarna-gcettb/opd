@@ -265,7 +265,7 @@ function showGoogleComplete(req, res) {
   res.render('auth/google-complete', { layout: 'layouts/blank', title: 'Complete Patient Sign Up', googlePending: req.session.googlePending });
 }
 
-async function googleComplete(req, res) {
+async function googleComplete(req, res, next) {
   try {
     const pending = req.session.googlePending;
     if (!pending) throw new AppError('Google signup session expired. Please try again.', 400);
@@ -328,6 +328,7 @@ module.exports = {
   resetPassword,
   showSignup,
   showVerifySignup,
+  showForgotPassword,
   signupRequestOtp,
   verifySignup,
   requestLoginOtp,
