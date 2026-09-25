@@ -188,6 +188,21 @@ async function rescheduleAppointment(appointmentId, { newDate, newTime, reason }
   });
 }
 
+async function updateAppointmentDetails(appointmentId, payload, actorUserId) {
+  const data = await getAppointment(appointmentId);
+  if (!data) throw new AppError('Appointment not found', 404);
+  if (['CANCELLED','COMPLETED'].includes(data.appointment.status)) throw new AppError('This appointment can no longer be edited', 409);
+
+  if (payload.newDate !== data.appointment.appointment_date || payload.newTime !== String(data.appointment.slot_time).slice(0,5)) {
+    await rescheduleAppointment(appointmentId, { newDate: payload.newDate, newTime: payload.newTime, reason: payload.reason || 'Appointment details edited' }, actorUserId);
+  }
+  await pool.execute('UPDATE appointments SET reason=:reason WHERE id=:id', { reason: payload.reason || null, id: appointmentId });
+  await auditService.log({
+    userId: actorUserId, action: 'APPOINTMENT_DETAILS_UPDATED', entity: 'appointment', entityId: appointmentId,
+    newValue: { reason: payload.reason || null, date: payload.newDate, time: payload.newTime }
+  });
+}
+
 async function cancelAppointment(appointmentId, reason, actorUserId) {
   return withTransaction(async (conn) => {
     const [[appt]] = await conn.execute('SELECT * FROM appointments WHERE id = :id FOR UPDATE', { id: appointmentId });
@@ -407,6 +422,7 @@ module.exports = {
   calculatePregnancy,
   bookAppointment,
   rescheduleAppointment,
+  updateAppointmentDetails,
   cancelAppointment,
   markNoShow,
   listAppointments,
