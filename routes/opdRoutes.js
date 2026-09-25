@@ -11,6 +11,8 @@ const asyncHandler = require('../utils/asyncHandler');
 router.use(requireAuth);
 
 router.get('/queue', requirePermission('queue.manage'), asyncHandler(opdController.queue));
+router.get('/visits/:visitId/vitals', requirePermission('queue.manage'), asyncHandler(opdController.showVitals));
+router.post('/visits/:visitId/vitals', requirePermission('queue.manage'), csrfProtection, asyncHandler(opdController.saveVitals));
 router.get('/live-board', requirePermission('queue.manage', 'consultation.create'), asyncHandler(opdController.liveBoard));
 router.post(
   '/visits/:visitId/status',
