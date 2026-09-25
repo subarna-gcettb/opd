@@ -40,9 +40,10 @@ async function getConsultationContext(visitId) {
   if (!visit) return null;
 
   const [[consultation]] = await pool.execute(
-    `SELECT c.*, vt.bp, vt.pulse, vt.temperature, vt.spo2, vt.weight_kg, vt.height_cm
+    `SELECT c.*, COALESCE(vt.bp,av.bp) AS bp, COALESCE(vt.pulse,av.pulse) AS pulse, COALESCE(vt.temperature,av.temperature) AS temperature, COALESCE(vt.spo2,av.spo2) AS spo2, COALESCE(vt.weight_kg,av.weight_kg) AS weight_kg, COALESCE(vt.height_cm,av.height_cm) AS height_cm
      FROM opd_consultations c
      LEFT JOIN vitals vt ON vt.consultation_id = c.id
+     LEFT JOIN appointment_vitals av ON av.visit_id = v.id
      WHERE c.visit_id = :id`,
     { id: visitId }
   );
