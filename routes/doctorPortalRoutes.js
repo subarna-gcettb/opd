@@ -9,6 +9,9 @@ const asyncHandler = require('../utils/asyncHandler');
 router.use(requireAuth);
 
 router.get('/', requirePermission('consultation.create'), asyncHandler(doctorPortalController.dashboard));
+router.get('/profile', requirePermission('consultation.create'), asyncHandler(doctorPortalController.profile));
+router.post('/profile', requirePermission('consultation.create'), csrfProtection, asyncHandler(doctorPortalController.updateProfile));
+
 router.get('/queue', requirePermission('consultation.create'), asyncHandler(doctorPortalController.queue));
 router.post('/queue/call-next', requirePermission('consultation.create'), csrfProtection, asyncHandler(doctorPortalController.callNext));
 
