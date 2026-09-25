@@ -42,7 +42,13 @@ async function book(req, res, next) {
         departmentId: req.body.departmentId,
         appointmentDate: req.body.appointmentDate,
         slotTime: req.body.slotTime,
-        reason: req.body.reason
+        reason: req.body.reason,
+        lmpDate: req.body.lmpDate,
+        gravida: req.body.gravida,
+        para: req.body.para,
+        abortions: req.body.abortions,
+        pregnancyStatus: req.body.pregnancyStatus,
+        obstetricNotes: req.body.obstetricNotes
       },
       req.user.id
     );
