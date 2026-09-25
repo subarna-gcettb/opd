@@ -280,5 +280,6 @@ module.exports = {
   queue,
   updateVisitStatus,
   printToken,
+  appointmentBarcode,
   liveBoard
 };
