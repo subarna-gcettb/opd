@@ -57,7 +57,7 @@ app.use(
         // silently drops all of that JS and pages look "broken" with no
         // console-visible server error.
         scriptSrc: ["'self'", "'unsafe-inline'", 'cdn.jsdelivr.net'],
-        imgSrc: ["'self'", 'data:'],
+        imgSrc: ["'self'", 'data:', 'https://images.pexels.com'],
         fontSrc: ["'self'", 'cdn.jsdelivr.net']
       }
     }
