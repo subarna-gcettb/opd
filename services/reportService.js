@@ -1,7 +1,7 @@
 const { pool } = require('../config/database');
 
 function defaultRange() {
-  const to = new Date().toISOString().slice(0, 10);
+  const to = new Intl.DateTimeFormat('en-CA', { timeZone: process.env.APP_TIMEZONE || 'Asia/Kolkata' }).format(new Date());
   const fromDate = new Date();
   fromDate.setDate(fromDate.getDate() - 29);
   const from = fromDate.toISOString().slice(0, 10);
