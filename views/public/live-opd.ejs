@@ -1,67 +1,8 @@
 <%- include('../partials/public-nav') %>
-<style>
-.live-board-hero{background:linear-gradient(135deg,var(--hms-primary-dark),var(--hms-primary));color:#fff;padding:2rem 0}
-.current-token{font-size:clamp(5rem,14vw,10rem);line-height:.9;font-weight:900;letter-spacing:-.06em}
-.doctor-live-card{background:#fff;border:1px solid var(--hms-border);border-radius:1rem;padding:1.25rem;height:100%}
-.waiting-token{font-size:2rem;font-weight:800}
-</style>
-<div class="landing-body">
-  <section class="live-board-hero">
-    <div class="container text-center">
-      <div class="text-uppercase small fw-semibold opacity-75">Live OPD • Today</div>
-      <h1 class="mt-2 mb-0">Now Serving</h1>
-      <div id="hero-token" class="current-token">—</div>
-      <div id="hero-doctor" class="fs-4 fw-semibold">Waiting for the next patient</div>
-      <div class="mt-3"><span class="badge text-bg-light text-dark px-3 py-2" id="hero-status">Live</span></div>
-    </div>
-  </section>
-
-  <section class="landing-section">
-    <div class="container">
-      <div class="row g-3 mb-4 text-center">
-        <div class="col-6 col-md-3"><div class="card h-100"><div class="card-body"><div class="fs-2 fw-bold" id="s-doctors"><%= summary.doctorsActive %></div><div class="text-muted">Doctors Active</div></div></div></div>
-        <div class="col-6 col-md-3"><div class="card h-100"><div class="card-body"><div class="fs-2 fw-bold" id="s-waiting"><%= summary.waiting %></div><div class="text-muted">Patients Waiting</div></div></div></div>
-        <div class="col-6 col-md-3"><div class="card h-100"><div class="card-body"><div class="fs-2 fw-bold" id="s-consult"><%= summary.inConsultation %></div><div class="text-muted">In Consultation</div></div></div></div>
-        <div class="col-6 col-md-3"><div class="card h-100"><div class="card-body"><div class="fs-2 fw-bold" id="s-total"><%= summary.totalVisitsToday %></div><div class="text-muted">Today's Visits</div></div></div></div>
-      </div>
-
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="mb-0">Doctor-wise Live Queue</h2>
-        <span class="small text-muted">Auto-refreshes every 10 seconds</span>
-      </div>
-      <div class="row g-3" id="doctor-board">
-        <% board.forEach(function(d){ %>
-          <div class="col-md-6 col-lg-4">
-            <div class="doctor-live-card">
-              <div class="d-flex justify-content-between align-items-start">
-                <div><h5 class="mb-1"><%= d.doctorName %></h5><div class="small text-muted"><%= d.departmentName || 'OPD' %></div></div>
-                <span class="badge text-bg-<%= d.isPresent ? (d.inChamber ? 'success' : 'secondary') : 'danger' %>"><%= d.isPresent ? (d.inChamber ? 'In Chamber' : 'Available') : 'On Leave' %></span>
-              </div>
-              <hr>
-              <% if (d.inChamber) { %><div class="small text-muted">Currently consulting</div><div class="waiting-token"><%= String(d.currentToken).padStart(3,'0') %></div><% } else { %><div class="text-muted py-3">No patient currently in consultation.</div><% } %>
-              <div class="d-flex gap-3 small mt-2"><span>Waiting <strong><%= d.waitingCount %></strong></span><span>Called <strong><%= d.calledCount %></strong></span></div>
-              <% if (d.nextInQueue.length) { %><div class="mt-3 small text-muted">Next tokens</div><div class="d-flex gap-2 flex-wrap mt-1"><% d.nextInQueue.forEach(n => { %><span class="badge text-bg-light border text-dark px-3 py-2"><%= String(n.token).padStart(3,'0') %></span><% }) %></div><% } %>
-            </div>
-          </div>
-        <% }) %>
-      </div>
-    </div>
-  </section>
-</div>
-<%- include('../partials/public-footer') %>
+<div class="clinic-site"><section class="live-hero"><div class="container py-4"><div class="d-flex justify-content-between align-items-center flex-wrap gap-3"><div><span class="hero-eyebrow">REAL-TIME OPD BOARD</span><h1 class="mb-1">Live OPD</h1><p class="mb-0 text-white-50">Running consultation and upcoming queue, updated automatically.</p></div><div class="live-refresh"><i class="bi bi-broadcast"></i> LIVE · 10 sec refresh</div></div></div></section>
+<section class="clinic-section pt-4"><div class="container"><div class="live-now-card mb-4"><div class="row align-items-center g-4"><div class="col-lg-5 text-center"><div class="current-title">Now serving</div><div id="hero-token" class="now-token">—</div><div id="hero-status" class="status-pill">Waiting for next consultation</div></div><div class="col-lg-7"><div class="current-title">Currently in consultation</div><div id="hero-patient" class="current-patient">No active consultation</div><div id="hero-doctor" class="current-doctor">Please check the queue below.</div><div class="small text-muted mt-3">Patient-name display is controlled by the hospital's Live OPD privacy setting.</div></div></div></div>
+<div class="row g-3 mb-5"><div class="col-6 col-lg-3"><div class="live-counter"><strong id="s-doctors"><%= summary.doctorsActive %></strong><span>Doctors active</span></div></div><div class="col-6 col-lg-3"><div class="live-counter"><strong id="s-waiting"><%= summary.waiting %></strong><span>Waiting</span></div></div><div class="col-6 col-lg-3"><div class="live-counter"><strong id="s-consult"><%= summary.inConsultation %></strong><span>In consultation</span></div></div><div class="col-6 col-lg-3"><div class="live-counter"><strong id="s-total"><%= summary.totalVisitsToday %></strong><span>Today's visits</span></div></div></div>
+<div class="section-heading mb-3"><div><span>LIVE QUEUE</span><h2>Doctor-wise queue</h2></div></div><div class="row g-4" id="doctor-board"></div></div></section></div><%- include('../partials/public-footer') %>
 <script>
-(function(){
-  function render(d){
-    document.getElementById('s-doctors').textContent=d.summary.doctorsActive;
-    document.getElementById('s-waiting').textContent=d.summary.waiting;
-    document.getElementById('s-consult').textContent=d.summary.inConsultation;
-    document.getElementById('s-total').textContent=d.summary.totalVisitsToday;
-    const current=d.board.find(x=>x.inChamber);
-    document.getElementById('hero-token').textContent=current ? String(current.currentToken).padStart(3,'0') : '—';
-    document.getElementById('hero-doctor').textContent=current ? current.doctorName : 'Waiting for the next patient';
-    document.getElementById('hero-status').textContent=current ? (current.departmentName || 'OPD') : 'No active consultation';
-  }
-  fetch('/live-opd.json').then(r=>r.json()).then(render).catch(()=>{});
-  setInterval(()=>fetch('/live-opd.json').then(r=>r.json()).then(render).catch(()=>{}),10000);
-})();
+(function(){const board=document.getElementById('doctor-board');function e(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}function render(d){document.getElementById('s-doctors').textContent=d.summary.doctorsActive;document.getElementById('s-waiting').textContent=d.summary.waiting;document.getElementById('s-consult').textContent=d.summary.inConsultation;document.getElementById('s-total').textContent=d.summary.totalVisitsToday;const c=d.board.find(x=>x.inChamber);document.getElementById('hero-token').textContent=c?String(c.currentToken).padStart(3,'0'):'—';document.getElementById('hero-patient').textContent=c?(c.currentPatientName||'Patient in consultation'):'No active consultation';document.getElementById('hero-doctor').textContent=c?'Dr. '+c.doctorName+' · '+(c.departmentName||'OPD'):'Please check back shortly.';board.innerHTML=d.board.map(x=>{const cur=x.inChamber?'<div class="queue-current"><span>NOW SERVING</span><strong>'+e(String(x.currentToken).padStart(3,'0'))+'</strong><div>'+e(x.currentPatientName||'Patient in consultation')+'</div><small>IN CONSULTATION</small></div>':'<div class="queue-idle">No patient currently in consultation</div>';const next=x.nextInQueue?.length?x.nextInQueue.map(n=>'<span class="queue-token"><b>'+e(String(n.token).padStart(3,'0'))+'</b>'+(n.name?'<span>'+e(n.name)+'</span>':'')+'<small>WAITING</small></span>').join(''):'<span class="text-muted small">No one waiting.</span>';return '<div class="col-md-6 col-xl-4"><div class="queue-card"><div class="d-flex justify-content-between gap-2"><div><h4>'+e(x.doctorName)+'</h4><p>'+e(x.departmentName||'OPD')+'</p></div><span class="doctor-state '+(x.isPresent?'online':'offline')+'">'+(x.isPresent?(x.inChamber?'Consulting':'Available'):'On leave')+'</span></div>'+cur+'<div class="queue-meta"><span>Waiting <b>'+x.waitingCount+'</b></span><span>Called <b>'+x.calledCount+'</b></span></div><div class="upcoming-title mt-3">Upcoming in queue</div><div class="upcoming-list">'+next+'</div></div></div>'}).join('')||'<div class="col-12"><div class="empty-live">No OPD queue is active today.</div></div>'}function refresh(){fetch('/live-opd.json',{cache:'no-store'}).then(r=>r.json()).then(render).catch(()=>{})}refresh();setInterval(refresh,10000)})();
 </script>
