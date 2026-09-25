@@ -73,7 +73,7 @@
     <hr class="my-4">
 
     <h6 class="text-uppercase text-muted small mb-2">4. Reason / Chief Complaint</h6>
-    <textarea name="reason" class="form-control" rows="2" placeholder="e.g. Fever and body ache for 3 days"></textarea>
+    <textarea name="reason" class="form-control" rows="2" placeholder="e.g. Fever and body ache for 3 days"></textarea><div class="col-12 obstetric-section" style="display:none"><div class="alert alert-info small mb-2"><strong>Women’s health / pregnancy details</strong> — these values are calculated and shown to the doctor for clinical context.</div><div class="row g-2"><div class="col-md-3"><label class="form-label small">LMP</label><input type="date" name="lmpDate" id="lmpDate" class="form-control"></div><div class="col-md-2"><label class="form-label small">Pregnancy</label><select name="pregnancyStatus" id="pregnancyStatus" class="form-select"><option value="UNKNOWN">Unknown</option><option value="NOT_PREGNANT">Not pregnant</option><option value="PREGNANT">Pregnant</option></select></div><div class="col-md-2"><label class="form-label small">Gravida</label><input type="number" name="gravida" min="0" class="form-control"></div><div class="col-md-2"><label class="form-label small">Para</label><input type="number" name="para" min="0" class="form-control"></div><div class="col-md-2"><label class="form-label small">Abortions</label><input type="number" name="abortions" min="0" class="form-control"></div><div class="col-md-12"><label class="form-label small">Obstetric notes</label><textarea name="obstetricNotes" class="form-control" rows="2"></textarea></div></div></div>
   </div>
 
   <div class="card-footer d-flex justify-content-end gap-2">
@@ -89,6 +89,8 @@
   const patientPicker = document.getElementById('patientPicker');
   const patientSelected = document.getElementById('patientSelected');
   const patientIdField = document.getElementById('patientId');
+  const obstetricSection = document.querySelector('.obstetric-section');
+  function toggleObstetric(gender) { if (obstetricSection) obstetricSection.style.display = String(gender || '').toLowerCase() === 'female' ? '' : 'none'; }
 
   function runPatientSearch() {
     const q = patientSearch.value.trim();
@@ -105,7 +107,7 @@
         patientResults.innerHTML = '<div class="list-group">' + data.results.map(function (p) {
           return '<button type="button" class="list-group-item list-group-item-action" ' +
             'data-id="' + p.id + '" data-name="' + p.name + '" data-hid="' + p.health_id + '" ' +
-            'data-meta="' + (p.age_years || '—') + ' / ' + p.gender + '">' +
+            'data-meta="' + (p.age_years || '—') + ' / ' + p.gender + '" data-gender="' + p.gender + '">' +
             '<strong>' + p.name + '</strong> <code>' + p.health_id + '</code> · ' +
             (p.age_years || '—') + '/' + p.gender + ' · ' + p.mobile + '</button>';
         }).join('') + '</div>';
@@ -126,8 +128,10 @@
     document.getElementById('selPatientName').textContent = btn.dataset.name;
     document.getElementById('selPatientHid').textContent = btn.dataset.hid;
     document.getElementById('selPatientMeta').textContent = btn.dataset.meta;
+    toggleObstetric(btn.dataset.gender);
     patientPicker.classList.add('d-none');
     patientSelected.classList.remove('d-none');
+    toggleObstetric('<%= patient ? patient.gender : '' %>');
   });
 
   document.getElementById('changePatientBtn').addEventListener('click', function () {
