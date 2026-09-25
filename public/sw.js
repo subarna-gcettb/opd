@@ -1,4 +1,4 @@
-const CACHE='chhayabithi-hms-v1';
+const CACHE='chhayabithi-hms-v2';
 const SHELL=['/','/css/style.css','/js/main.js','/manifest.json'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));
