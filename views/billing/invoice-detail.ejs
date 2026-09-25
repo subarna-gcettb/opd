@@ -54,7 +54,7 @@
       </ul>
       <% if (can('discount.request') && invoice.status !== 'PAID' && !discountRequests.some(d => d.status === 'PENDING')) { %>
         <div class="card-body border-top">
-          <button class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#discountModal"><i class="bi bi-percent"></i> Request Discount</button>
+          <div class="d-flex gap-2 flex-wrap"><button class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#discountModal"><i class="bi bi-percent"></i> Request Discount</button><% if (currentUser && currentUser.doctorId) { %><button type="button" class="btn btn-sm btn-outline-success" onclick="openComplementaryRequest()"><i class="bi bi-gift"></i> Request Complementary (100%)</button><% } %></div>
         </div>
       <% } %>
     </div>
@@ -122,11 +122,11 @@
         <div class="text-center text-muted small mb-2">— OR —</div>
         <div class="mb-3">
           <label class="form-label">Discount Percentage (%)</label>
-          <input type="number" step="0.01" name="percentage" class="form-control">
+          <input type="number" step="0.01" name="percentage" id="discountPercentage" class="form-control">
         </div>
         <div class="mb-3">
           <label class="form-label">Reason *</label>
-          <textarea name="reason" class="form-control" rows="2" required></textarea>
+          <textarea name="reason" id="discountReason" class="form-control" rows="2" required></textarea>
         </div>
         <div class="alert alert-info small mb-0">This request will be sent to a Super Admin for approval. You cannot approve your own request.</div>
       </div>
@@ -139,6 +139,12 @@
 </div>
 
 <script>
+  function openComplementaryRequest() {
+    const modal = document.getElementById('discountModal');
+    document.getElementById('discountPercentage').value = '100';
+    document.getElementById('discountReason').value = 'Complementary consultation — doctor requested 100% waiver after checkup.';
+    bootstrap.Modal.getOrCreateInstance(modal).show();
+  }
   const methodSelect = document.getElementById('methodSelect');
   const refField = document.getElementById('refField');
   if (methodSelect) {
