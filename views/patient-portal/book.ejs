@@ -49,6 +49,8 @@
   const dateInput = document.getElementById('appointmentDate');
   const slotContainer = document.getElementById('slotContainer');
   const slotTimeField = document.getElementById('slotTime');
+  const obstetricSection = document.querySelector('.obstetric-section');
+  if (obstetricSection) obstetricSection.style.display = '<%= patient.gender %>' === 'Female' ? '' : 'none';
 
   function loadDoctors() {
     const deptId = deptSel.value;
