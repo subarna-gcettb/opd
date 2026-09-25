@@ -1,78 +1,10 @@
 <%- include('../partials/public-nav') %>
-
-<div class="landing-body">
-  <section class="landing-hero">
-    <div class="container">
-      <h1><%= siteSettings.hospital_name %> Hospital Management System</h1>
-      <p class="lead"><%= siteSettings.seo_description %></p>
-      <div class="d-flex gap-2 flex-wrap mt-3">
-        <a href="/auth/login" class="btn btn-light btn-lg"><i class="bi bi-hospital"></i> Staff &amp; Doctor Sign In</a>
-        <a href="/patient-portal-info" class="btn btn-outline-light btn-lg"><i class="bi bi-person-heart"></i> Patient Portal</a>
-      </div>
-
-      <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);border-radius:.6rem;padding:1rem 1.2rem;margin-top:2rem;max-width:560px;">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <strong><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ade80;margin-right:6px;"></span>Live OPD — Today</strong>
-          <a href="/live-opd" class="small text-white-50 text-decoration-none">View live board &rarr;</a>
-        </div>
-        <div class="row g-2 text-center" id="homeLiveStats">
-          <div class="col"><div style="font-size:1.4rem;font-weight:700;" id="ls-doctors"><%= liveSummary.doctorsActive %></div><div class="small" style="color:#cfeae4;">Doctors Active</div></div>
-          <div class="col"><div style="font-size:1.4rem;font-weight:700;" id="ls-inconsult"><%= liveSummary.inConsultation %></div><div class="small" style="color:#cfeae4;">In Consultation</div></div>
-          <div class="col"><div style="font-size:1.4rem;font-weight:700;" id="ls-waiting"><%= liveSummary.waiting %></div><div class="small" style="color:#cfeae4;">Waiting</div></div>
-          <div class="col"><div style="font-size:1.4rem;font-weight:700;" id="ls-total"><%= liveSummary.totalVisitsToday %></div><div class="small" style="color:#cfeae4;">Total Visits</div></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="landing-section">
-    <div class="container">
-      <h2>Services</h2>
-      <div class="row g-3">
-        <% departments.forEach(function(dept) { %>
-          <div class="col-6 col-md-3">
-            <div class="service-card">
-              <i class="bi bi-heart-pulse" style="color:var(--hms-primary);font-size:1.3rem;"></i>
-              <div class="fw-semibold mt-1"><%= dept.name %></div>
-            </div>
-          </div>
-        <% }) %>
-      </div>
-      <a href="/services" class="btn btn-outline-primary btn-sm mt-3">View All Services</a>
-    </div>
-  </section>
-
-  <section class="landing-section section-alt" style="background:#fff;">
-    <div class="container">
-      <h2>Our Doctors</h2>
-      <div class="row g-3">
-        <% doctors.forEach(function(doc) { %>
-          <div class="col-md-6 col-lg-4">
-            <div class="doctor-card d-flex gap-3">
-              <div class="avatar"><%= doc.name.charAt(0) %></div>
-              <div>
-                <div class="fw-semibold"><%= doc.name %></div>
-                <div class="text-muted small"><%= doc.specialisation || doc.department_name || '—' %></div>
-              </div>
-            </div>
-          </div>
-        <% }) %>
-      </div>
-      <a href="/our-doctors" class="btn btn-outline-primary btn-sm mt-3">View All Doctors</a>
-    </div>
-  </section>
-</div>
-
-<%- include('../partials/public-footer') %>
-
-<script>
-  function refreshLiveOpd() {
-    fetch('/live-opd.json').then(function (r) { return r.json(); }).then(function (d) {
-      document.getElementById('ls-doctors').textContent = d.summary.doctorsActive;
-      document.getElementById('ls-inconsult').textContent = d.summary.inConsultation;
-      document.getElementById('ls-waiting').textContent = d.summary.waiting;
-      document.getElementById('ls-total').textContent = d.summary.totalVisitsToday;
-    }).catch(function () {});
-  }
-  setInterval(refreshLiveOpd, 30000);
-</script>
+<div class="clinic-site">
+<section class="clinic-hero"><div class="container py-5"><div class="row align-items-center g-5"><div class="col-lg-7"><span class="hero-eyebrow"><i class="bi bi-shield-check"></i> TRUSTED HEALTHCARE • MODERN OPD CARE</span><h1 class="display-3 fw-bold mt-3">Healthcare that puts <span>patients first.</span></h1><p class="hero-copy"><%= siteSettings.seo_description || 'Compassionate clinical care, experienced doctors and a seamless digital patient experience.' %></p><div class="d-flex flex-wrap gap-3 mt-4"><a href="/patient-portal-info" class="btn btn-light btn-lg px-4"><i class="bi bi-calendar2-check me-2"></i>Book an Appointment</a><a href="/live-opd" class="btn btn-outline-light btn-lg px-4"><i class="bi bi-broadcast me-2"></i>Live OPD</a></div><div class="hero-trust mt-4"><span><i class="bi bi-check-circle-fill"></i> Experienced doctors</span><span><i class="bi bi-check-circle-fill"></i> Digital records</span><span><i class="bi bi-check-circle-fill"></i> Patient-first care</span></div></div><div class="col-lg-5"><div class="hero-live-card"><div class="d-flex justify-content-between"><strong><span class="live-dot"></span>OPD LIVE NOW</strong><a href="/live-opd">Open board <i class="bi bi-arrow-up-right"></i></a></div><div class="mt-4 small text-white-50">Patients currently in consultation</div><div class="hero-token-count" id="home-live-consult"><%= liveSummary.inConsultation %></div><div class="row g-2 mt-3"><div class="col-6"><div class="mini-stat"><strong id="home-live-wait"><%= liveSummary.waiting %></strong><span>Waiting</span></div></div><div class="col-6"><div class="mini-stat"><strong id="home-live-total"><%= liveSummary.totalVisitsToday %></strong><span>Today's visits</span></div></div></div></div></div></div></div></section>
+<section class="clinic-stat-strip"><div class="container"><div class="row g-0"><div class="col-6 col-lg-3"><div class="clinic-stat"><i class="bi bi-people"></i><strong><%= liveSummary.totalVisitsToday %></strong><span>Visits today</span></div></div><div class="col-6 col-lg-3"><div class="clinic-stat"><i class="bi bi-person-badge"></i><strong><%= liveSummary.doctorsActive %></strong><span>Doctors active</span></div></div><div class="col-6 col-lg-3"><div class="clinic-stat"><i class="bi bi-hourglass-split"></i><strong><%= liveSummary.waiting %></strong><span>Patients waiting</span></div></div><div class="col-6 col-lg-3"><div class="clinic-stat"><i class="bi bi-heart-pulse"></i><strong>24/7</strong><span>Care-focused support</span></div></div></div></div></section>
+<section class="clinic-section"><div class="container"><div class="section-heading"><div><span>CARE SERVICES</span><h2>Everything you need, in one place.</h2></div><a href="/services" class="btn btn-outline-primary">View all services <i class="bi bi-arrow-right"></i></a></div><div class="row g-4"><% departments.forEach(function(dept){ %><div class="col-6 col-md-4 col-lg-3"><a class="feature-card" href="/services"><div class="feature-icon"><i class="bi bi-heart-pulse"></i></div><h5><%= dept.name %></h5><p>Professional OPD consultation and patient care.</p><span>Explore <i class="bi bi-arrow-right"></i></span></a></div><% }) %></div></div></section>
+<section class="clinic-section clinic-soft"><div class="container"><div class="section-heading"><div><span>OUR DOCTORS</span><h2>Meet our clinical team.</h2></div><a href="/our-doctors" class="btn btn-outline-primary">View doctors <i class="bi bi-arrow-right"></i></a></div><div class="row g-4"><% doctors.forEach(function(doc){ %><div class="col-md-6 col-lg-4"><div class="doctor-profile-card"><div class="doctor-avatar"><%= doc.name.charAt(0) %></div><div><h5><%= doc.name %></h5><p><%= doc.specialisation || doc.department_name || 'Medical Specialist' %></p><small><%= doc.qualification || '' %></small></div></div></div><% }) %></div></div></section>
+<section class="clinic-section"><div class="container"><div class="portal-callout"><div><span>PATIENT PORTAL</span><h2>Your care, always within reach.</h2><p>Manage appointments, prescriptions, invoices and your health information from one secure portal.</p></div><a href="/patient-portal-info" class="btn btn-primary btn-lg">Open Patient Portal <i class="bi bi-arrow-right ms-2"></i></a></div></div></section>
+<section class="clinic-section"><div class="container"><div class="live-preview"><div><span>LIVE OPD</span><h2>See the queue before you arrive.</h2><p>View the running token, consultation status and upcoming queue in real time.</p></div><a href="/live-opd" class="btn btn-light btn-lg">View Live OPD <i class="bi bi-broadcast ms-2"></i></a></div></div></section>
+</div><%- include('../partials/public-footer') %>
+<script>(function(){function r(){fetch('/live-opd.json',{cache:'no-store'}).then(x=>x.json()).then(d=>{document.getElementById('home-live-consult').textContent=d.summary.inConsultation;document.getElementById('home-live-wait').textContent=d.summary.waiting;document.getElementById('home-live-total').textContent=d.summary.totalVisitsToday}).catch(()=>{})}setInterval(r,15000)})();</script>
