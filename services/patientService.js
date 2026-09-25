@@ -361,39 +361,45 @@ async function updatePatient(patientId, payload, actorUserId) {
  * Refuses to delete a patient with an active/future appointment, so a
  * record can't disappear out from under an in-progress visit.
  */
-async function softDeletePatient(patientId, actorUserId) {
+async function suspendPatient(patientId, actorUserId, reason) {
   return withTransaction(async (conn) => {
-    const [[patient]] = await conn.execute('SELECT * FROM patients WHERE id = :id AND deleted_at IS NULL FOR UPDATE', {
-      id: patientId
-    });
+    const [[patient]] = await conn.execute(
+      "SELECT * FROM patients WHERE id = :id AND deleted_at IS NULL FOR UPDATE", { id: patientId }
+    );
     if (!patient) throw new AppError('Patient not found', 404);
+    if (patient.status === 'SUSPENDED') throw new AppError('Patient is already suspended', 409);
 
-    const [activeAppointments] = await conn.execute(
-      `SELECT id FROM appointments
-       WHERE patient_id = :id AND status IN ('BOOKED','RESCHEDULED') AND appointment_date >= CURDATE()
-       LIMIT 1`,
+    await conn.execute(
+      "UPDATE patients SET status = 'SUSPENDED', suspended_at = NOW(), suspended_by = :actor, suspension_reason = :reason WHERE id = :id",
+      { id: patientId, actor: actorUserId, reason: reason || null }
+    );
+    await conn.execute("UPDATE users SET is_active = 0 WHERE patient_id = :id", { id: patientId });
+    await auditService.log({
+      userId: actorUserId, action: 'PATIENT_SUSPENDED', entity: 'patient', entityId: patientId,
+      oldValue: { status: patient.status }, newValue: { status: 'SUSPENDED', reason: reason || null }
+    }, conn);
+  });
+}
+
+async function restorePatient(patientId, actorUserId) {
+  return withTransaction(async (conn) => {
+    const [[patient]] = await conn.execute(
+      "SELECT * FROM patients WHERE id = :id AND deleted_at IS NULL FOR UPDATE", { id: patientId }
+    );
+    if (!patient) throw new AppError('Patient not found', 404);
+    if (patient.status !== 'SUSPENDED') throw new AppError('Patient is already active', 409);
+
+    await conn.execute(
+      "UPDATE patients SET status = 'ACTIVE', suspended_at = NULL, suspended_by = NULL, suspension_reason = NULL WHERE id = :id",
       { id: patientId }
     );
-    if (activeAppointments.length) {
-      throw new AppError('This patient has an upcoming appointment — cancel it before deleting the record', 409);
-    }
-
-    await conn.execute('UPDATE patients SET deleted_at = NOW() WHERE id = :id', { id: patientId });
-
-    // Deactivate any linked patient-portal login too, but keep the row
-    // (and its audit trail) intact.
-    await conn.execute("UPDATE users SET is_active = 0 WHERE patient_id = :id", { id: patientId });
-
-    await auditService.log(
-      {
-        userId: actorUserId,
-        action: 'PATIENT_DELETED',
-        entity: 'patient',
-        entityId: patientId,
-        oldValue: { name: patient.name, healthId: patient.health_id }
-      },
-      conn
+    await conn.execute(
+      "UPDATE users SET is_active = 1 WHERE patient_id = :id", { id: patientId }
     );
+    await auditService.log({
+      userId: actorUserId, action: 'PATIENT_RESTORED', entity: 'patient', entityId: patientId,
+      oldValue: { status: 'SUSPENDED' }, newValue: { status: 'ACTIVE' }
+    }, conn);
   });
 }
 
@@ -403,5 +409,7 @@ module.exports = {
   listPatients,
   getPatientProfile,
   updatePatient,
-  softDeletePatient
+  softDeletePatient,
+  suspendPatient,
+  restorePatient
 };
