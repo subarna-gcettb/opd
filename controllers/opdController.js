@@ -131,6 +131,30 @@ async function viewAppointment(req, res, next) {
   }
 }
 
+async function editAppointment(req, res, next) {
+  try {
+    const data = await opdService.getAppointment(req.params.id);
+    if (!data) throw new AppError('Appointment not found', 404);
+    res.render('opd/appointment-edit', { title: 'Edit Appointment', appointment: data.appointment });
+  } catch (err) { next(err); }
+}
+
+async function updateAppointmentDetails(req, res, next) {
+  try {
+    await opdService.updateAppointmentDetails(req.params.id, {
+      newDate: req.body.newDate, newTime: req.body.newTime, reason: req.body.reason
+    }, req.user.id);
+    req.flash('success', 'Appointment details updated.');
+    res.redirect('/opd/appointments/' + req.params.id);
+  } catch (err) {
+    if (err instanceof AppError) {
+      req.flash('errors', [{message: err.message}]);
+      return res.redirect('/opd/appointments/' + req.params.id + '/edit');
+    }
+    next(err);
+  }
+}
+
 async function reschedule(req, res, next) {
   try {
     const result = await opdService.rescheduleAppointment(
@@ -323,7 +347,7 @@ async function liveBoard(req, res, next) {
   }
 }
 
-module.exports = { reorderQueue, showVitals, saveVitals,
+module.exports = { editAppointment, updateAppointmentDetails, reorderQueue, showVitals, saveVitals,
   showBookingForm,
   book,
   listAppointments,
