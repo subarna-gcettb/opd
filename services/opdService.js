@@ -38,10 +38,11 @@ async function bookAppointment(payload, actorUserId) {
     const { patientId, doctorId, branchId, departmentId, appointmentDate, slotTime, reason } = payload;
 
     const [[patient]] = await conn.execute(
-      'SELECT id, health_id, name FROM patients WHERE id = :id AND deleted_at IS NULL',
+      'SELECT id, health_id, name, status FROM patients WHERE id = :id AND deleted_at IS NULL',
       { id: patientId }
     );
     if (!patient) throw new AppError('Patient not found', 404);
+    if (patient.status === 'SUSPENDED') throw new AppError('This patient is suspended. Restore the patient before booking an appointment.', 409);
 
     const [[doctor]] = await conn.execute(
       'SELECT id, consultation_fee FROM doctors WHERE id = :id AND deleted_at IS NULL AND is_active = 1',

@@ -14,6 +14,7 @@
   </div>
   <div class="d-flex gap-2">
     <a href="/opd/appointments/<%= appointment.id %>/token" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="bi bi-printer"></i> Token</a>
+    <a href="/opd/appointments/<%= appointment.id %>/barcode" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="bi bi-upc-scan"></i> Barcode</a>
     <% if (can('billing.create') && appointment.visit_id) { %>
       <a href="/billing/invoices/new?visitId=<%= appointment.visit_id %>" class="btn btn-primary btn-sm"><i class="bi bi-receipt"></i> Generate Bill</a>
     <% } %>

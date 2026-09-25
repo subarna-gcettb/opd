@@ -30,6 +30,7 @@ INSERT INTO permissions (code, description) VALUES
   ('patient.create', 'Register new patients'),
   ('patient.view', 'View patient profiles'),
   ('patient.edit', 'Edit patient information'),
+  ('patient.suspend', 'Suspend or restore a patient record without deleting medical history'),
   ('appointment.create', 'Book OPD appointments'),
   ('appointment.reschedule', 'Reschedule appointments'),
   ('appointment.cancel', 'Cancel appointments'),
@@ -61,7 +62,7 @@ ON DUPLICATE KEY UPDATE role_id = role_id;
 -- ADMIN: OPD operations, no discount approval / user management / settings
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id FROM roles r JOIN permissions p
-  ON p.code IN ('patient.create','patient.view','patient.edit',
+  ON p.code IN ('patient.create','patient.view','patient.suspend','patient.edit','patient.suspend',
                 'appointment.create','appointment.reschedule','appointment.cancel',
                 'queue.manage','billing.create','billing.view','payment.record',
                 'discount.request','report.view')

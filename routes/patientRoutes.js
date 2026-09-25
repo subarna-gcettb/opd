@@ -68,7 +68,8 @@ router.post(
   handleValidation,
   asyncHandler(patientController.update)
 );
-router.post('/:healthId/delete', requirePermission('patient.delete'), csrfProtection, asyncHandler(patientController.remove));
+router.post('/:healthId/suspend', requirePermission('patient.suspend'), csrfProtection, asyncHandler(patientController.suspend));
+router.post('/:healthId/restore', requirePermission('patient.suspend'), csrfProtection, asyncHandler(patientController.restore));
 router.get('/:healthId', requirePermission('patient.view'), asyncHandler(patientController.profile));
 
 module.exports = router;

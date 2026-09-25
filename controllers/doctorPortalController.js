@@ -136,4 +136,30 @@ async function completeVisit(req, res, next) {
   }
 }
 
-module.exports = { dashboard, queue, callNext, consultation, saveConsultation, completeVisit };
+async function profile(req, res, next) {
+  try {
+    const doctorId = requireDoctorContext(req);
+    const doctorService = require('../services/doctorService');
+    const doctor = await doctorService.getOwnProfile(doctorId);
+    if (!doctor) throw new AppError('Doctor profile not found', 404);
+    res.render('doctors/portal-profile', { title: 'My Profile', doctor });
+  } catch (err) { next(err); }
+}
+
+async function updateProfile(req, res, next) {
+  try {
+    const doctorId = requireDoctorContext(req);
+    const doctorService = require('../services/doctorService');
+    await doctorService.updateOwnProfile(doctorId, req.user.id, req.body);
+    req.flash('success', 'Your doctor profile has been updated.');
+    res.redirect('/doctor/profile');
+  } catch (err) {
+    if (err instanceof AppError) {
+      req.flash('errors', [{ message: err.message }]);
+      return res.redirect('/doctor/profile');
+    }
+    next(err);
+  }
+}
+
+module.exports = { dashboard, queue, callNext, consultation, saveConsultation, completeVisit, profile, updateProfile };

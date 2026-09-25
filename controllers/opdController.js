@@ -249,6 +249,16 @@ async function printToken(req, res, next) {
   }
 }
 
+async function appointmentBarcode(req, res, next) {
+  try {
+    const data = await opdService.getAppointment(req.params.id);
+    if (!data) throw new AppError('Appointment not found', 404);
+    const barcodeService = require('../services/barcodeService');
+    const png = await barcodeService.generateCode128(data.appointment.appointment_code);
+    res.set('Content-Type', 'image/png').send(png);
+  } catch (err) { next(err); }
+}
+
 async function liveBoard(req, res, next) {
   try {
     const date = req.query.date || liveOpdService.todayStr();
@@ -270,5 +280,6 @@ module.exports = {
   queue,
   updateVisitStatus,
   printToken,
+  appointmentBarcode,
   liveBoard
 };

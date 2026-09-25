@@ -72,13 +72,18 @@ async function getConsultationContext(visitId) {
     { patientId: visit.patient_id }
   );
 
+  const [[invoice]] = await pool.execute(
+    `SELECT id, invoice_number, gross_amount, discount_amount, net_amount, status
+     FROM invoices WHERE visit_id = :visitId ORDER BY created_at DESC LIMIT 1`, { visitId }
+  );
+
   const [currentPrescriptions] = await pool.execute(
     `SELECT pr.id, pr.prescription_code, pr.version FROM prescriptions pr
      WHERE pr.visit_id = :visitId AND pr.is_current = 1`,
     { visitId }
   );
 
-  return { visit, consultation: consultation || null, previousVisits, previousPrescriptions, currentPrescriptions };
+  return { visit, consultation: consultation || null, previousVisits, previousPrescriptions, currentPrescriptions, invoice: invoice || null };
 }
 
 /**
