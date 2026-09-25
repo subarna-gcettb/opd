@@ -88,6 +88,21 @@
       <% } %>
     </form>
 
+    <% if (invoice) { %>
+      <div class="card mb-3 border-warning">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-receipt"></i> OPD Billing</span>
+          <span class="badge text-bg-<%= invoice.status === 'PAID' ? 'success' : 'secondary' %>"><%= invoice.status %></span>
+        </div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div><strong><%= invoice.invoice_number %></strong><div class="small text-muted">Net ₹<%= Number(invoice.net_amount).toFixed(2) %></div></div>
+            <a href="/billing/invoices/<%= invoice.id %>" class="btn btn-sm btn-outline-warning">View / Request Discount</a>
+          </div>
+        </div>
+      </div>
+    <% } %>
+
     <!-- PRESCRIPTION -->
     <div class="card">
       <div class="card-header d-flex justify-content-between align-items-center">
