@@ -29,9 +29,27 @@
   <div class="alert alert-secondary"><i class="bi bi-lock"></i> This consultation is finalized. The clinical record is read-only; corrections to the prescription must go through an amendment.</div>
 <% } %>
 
-<% if (visit.gender === 'Female' && (visit.lmp_date || visit.pregnancy_status || visit.gravida !== null)) { %>
-<div class="alert alert-info mb-3"><div class="fw-semibold mb-1"><i class="bi bi-heart-pulse"></i> Obstetric / Pregnancy Summary</div>
-<div class="row g-2 small"><div class="col-6 col-md-3"><strong>LMP:</strong> <%= visit.lmp_date ? new Date(visit.lmp_date).toLocaleDateString() : '—' %></div><div class="col-6 col-md-3"><strong>Status:</strong> <%= visit.pregnancy_status || 'Unknown' %></div><div class="col-6 col-md-3"><strong>Gravida:</strong> <%= visit.gravida ?? '—' %></div><div class="col-6 col-md-3"><strong>Para:</strong> <%= visit.para ?? '—' %></div><div class="col-6 col-md-3"><strong>Abortions:</strong> <%= visit.abortions ?? '—' %></div><% if (visit.pregnancy_status === 'PREGNANT') { %><div class="col-6 col-md-3"><strong>Gestational age:</strong> <%= visit.gestational_age_weeks %>w <%= visit.gestational_age_days %>d</div><div class="col-6 col-md-3"><strong>EDD:</strong> <%= visit.estimated_due_date ? new Date(visit.estimated_due_date).toLocaleDateString() : '—' %></div><div class="col-12"><strong>Obstetric notes:</strong> <%= visit.obstetric_notes || '—' %></div><% } %></div></div>
+<% if (String(visit.gender || '').toLowerCase() === 'female') { %>
+<div class="pregnancy-doctor-card mb-3">
+  <div class="pregnancy-doctor-card__head">
+    <div><span class="small text-uppercase fw-bold">Female / Obstetric Assessment</span><h5 class="mb-0 mt-1"><i class="bi bi-gender-female me-1"></i> Pregnancy information</h5></div>
+    <span class="badge text-bg-<%= visit.pregnancy_status === 'PREGNANT' ? 'success' : 'secondary' %>"><%= visit.pregnancy_status || 'UNKNOWN' %></span>
+  </div>
+  <div class="row g-2 mt-1 small">
+    <div class="col-6 col-md-3"><strong>LMP</strong><span><%= visit.lmp_date ? new Date(visit.lmp_date).toLocaleDateString() : '—' %></span></div>
+    <div class="col-6 col-md-3"><strong>Gravida (G)</strong><span><%= visit.gravida ?? '—' %></span></div>
+    <div class="col-6 col-md-3"><strong>Para (P)</strong><span><%= visit.para ?? '—' %></span></div>
+    <div class="col-6 col-md-3"><strong>Abortions (A)</strong><span><%= visit.abortions ?? '—' %></span></div>
+    <% if (pregnancyCalculation) { %>
+      <div class="col-6 col-md-3"><strong>Gestational age</strong><span><%= pregnancyCalculation.gestationalAgeLabel %></span></div>
+      <div class="col-6 col-md-3"><strong>EDD</strong><span><%= pregnancyCalculation.estimatedDueDate %></span></div>
+      <div class="col-6 col-md-3"><strong>Trimester</strong><span><%= pregnancyCalculation.trimester %></span></div>
+      <div class="col-6 col-md-3"><strong>Remaining</strong><span><%= pregnancyCalculation.remainingWeeks %>w <%= pregnancyCalculation.remainingExtraDays %>d</span></div>
+      <div class="col-12"><strong>Status</strong><span><%= pregnancyCalculation.termStatus %></span></div>
+    <% } %>
+    <% if (visit.obstetric_notes) { %><div class="col-12"><strong>Obstetric notes</strong><span><%= visit.obstetric_notes %></span></div><% } %>
+  </div>
+</div>
 <% } %>
 <% if (visit.allergies) { %>
   <div class="alert alert-danger"><strong><i class="bi bi-exclamation-triangle"></i> Allergies:</strong> <%= visit.allergies %></div>
