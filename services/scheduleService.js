@@ -149,14 +149,80 @@ async function getAvailableDates(doctorId, fromDateStr, days = 90) {
   const start = new Date(`${fromDateStr}T00:00:00`);
   if (Number.isNaN(start.getTime())) return [];
   const safeDays = Math.min(180, Math.max(1, Number.parseInt(days, 10) || 90));
+  const end = new Date(start);
+  end.setDate(start.getDate() + safeDays - 1);
+  const from = start.toISOString().slice(0, 10);
+  const to = end.toISOString().slice(0, 10);
+
+  const [templates] = await pool.execute(
+    `SELECT weekday, start_time, end_time, slot_duration_minutes, max_patients_per_slot
+     FROM doctor_schedule_templates
+     WHERE doctor_id = :doctorId AND is_active = 1
+     ORDER BY weekday, start_time`,
+    { doctorId }
+  );
+
+  const [exceptions] = await pool.execute(
+    `SELECT exception_date, is_unavailable, start_time, end_time
+     FROM doctor_schedule_exceptions
+     WHERE doctor_id = :doctorId AND exception_date BETWEEN :from AND :to`,
+    { doctorId, from, to }
+  );
+  const exceptionMap = new Map(exceptions.map((e) => [String(e.exception_date), e]));
+
+  const [booked] = await pool.execute(
+    `SELECT appointment_date, slot_time, COUNT(*) AS cnt
+     FROM appointments
+     WHERE doctor_id = :doctorId
+       AND appointment_date BETWEEN :from AND :to
+       AND status IN ('BOOKED','COMPLETED')
+     GROUP BY appointment_date, slot_time`,
+    { doctorId, from, to }
+  );
+  const bookedMap = new Map(
+    booked.map((b) => [`${String(b.appointment_date)}|${String(b.slot_time)}`, Number(b.cnt)])
+  );
+
   const dates = [];
   for (let i = 0; i < safeDays; i += 1) {
     const date = new Date(start);
     date.setDate(start.getDate() + i);
     const dateStr = date.toISOString().slice(0, 10);
-    const slots = await getAvailableSlots(doctorId, dateStr);
-    if (slots.some((slot) => slot.available > 0)) dates.push(dateStr);
+    const weekday = date.getDay();
+    const exception = exceptionMap.get(dateStr);
+
+    if (exception && exception.is_unavailable) continue;
+
+    let windows = templates.filter((t) => Number(t.weekday) === weekday);
+    if (exception && !exception.is_unavailable && exception.start_time && exception.end_time) {
+      const base = windows[0] || { slot_duration_minutes: 15, max_patients_per_slot: 1 };
+      windows = [{
+        start_time: exception.start_time,
+        end_time: exception.end_time,
+        slot_duration_minutes: base.slot_duration_minutes,
+        max_patients_per_slot: base.max_patients_per_slot
+      }];
+    }
+
+    let available = false;
+    for (const w of windows) {
+      const startMinutes = toMinutes(w.start_time);
+      const endMinutes = toMinutes(w.end_time);
+      const step = w.slot_duration_minutes || 15;
+      const capacity = w.max_patients_per_slot || 1;
+      for (let t = startMinutes; t + step <= endMinutes; t += step) {
+        const slot = toTimeString(t);
+        const count = bookedMap.get(`${dateStr}|${slot}`) || 0;
+        if (count < capacity) {
+          available = true;
+          break;
+        }
+      }
+      if (available) break;
+    }
+    if (available) dates.push(dateStr);
   }
+
   return dates;
 }
 
