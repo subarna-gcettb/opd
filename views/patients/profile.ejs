@@ -59,8 +59,47 @@
         <% if (!opdHistory.length) { %><tr><td colspan="4" class="text-center text-muted py-3">No OPD history.</td></tr><% } %>
       </tbody></table></div>
     </div>
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-file-earmark-image"></i> Hard-copy Prescriptions</span>
+        <span class="badge text-bg-secondary"><%= (prescriptionAttachments || []).length %></span>
+      </div>
+      <div class="card-body">
+        <% if (can('prescription.attachment.upload')) { %>
+          <div class="alert alert-info small">After a doctor completes a checkup, reception can upload a clear photo/scan of the signed hard-copy prescription to this patient record.</div>
+        <% } %>
+        <% (prescriptionAttachments || []).forEach(function(a) { %>
+          <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2">
+            <div class="small">
+              <strong><%= a.original_name %></strong>
+              <div class="text-muted">Visit <%= a.visit_code %> · <%= new Date(a.created_at).toLocaleString() %> · <%= a.uploaded_by_name %></div>
+            </div>
+            <a class="btn btn-sm btn-outline-primary" href="/prescriptions/attachments/<%= a.id %>" target="_blank">View</a>
+          </div>
+        <% }) %>
+        <% if (!(prescriptionAttachments || []).length) { %><div class="text-muted small">No hard-copy prescription uploaded.</div><% } %>
+
+        <% if (can('prescription.attachment.upload')) { %>
+          <hr>
+          <% const completedVisits = (opdHistory || []).filter(v => v.status === 'COMPLETED'); %>
+          <% if (completedVisits.length) { %>
+            <form method="POST" action="/prescriptions/visits/<%= completedVisits[0].visit_id %>/hard-copy" enctype="multipart/form-data">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <label class="form-label small fw-semibold">Upload for latest completed visit</label>
+              <div class="input-group input-group-sm">
+                <input type="file" name="prescriptionPhoto" class="form-control" accept="image/jpeg,image/png,image/webp" required>
+                <button class="btn btn-primary">Upload Prescription</button>
+              </div>
+              <div class="form-text">JPG, PNG or WEBP · maximum 5 MB.</div>
+            </form>
+          <% } else { %>
+            <div class="text-muted small">Upload becomes available after a doctor completes a visit.</div>
+          <% } %>
+        <% } %>
+      </div>
+    </div>
+
     <div class="card">
-      <div class="card-header">Billing</div>
       <div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>Invoice</th><th>Date</th><th>Net</th><th>Status</th></tr></thead><tbody>
         <% billing.forEach(b => { %><tr><td><%= b.invoice_number %></td><td><%= new Date(b.created_at).toLocaleDateString() %></td><td>₹<%= Number(b.net_amount).toFixed(2) %></td><td><%= b.status %></td></tr><% }) %>
         <% if (!billing.length) { %><tr><td colspan="4" class="text-center text-muted py-3">No billing records.</td></tr><% } %>
