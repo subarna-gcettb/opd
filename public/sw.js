@@ -1,7 +1,8 @@
-const CACHE='chhayabithi-hms-v4';
+const CACHE='chhayabithi-hms-v5';
 const STATIC_ASSETS=[
   '/css/style.css',
   '/css/public-bootstrap-fallback.css',
+  '/css/landing-v2.css',
   '/js/main.js',
   '/manifest.json'
 ];
