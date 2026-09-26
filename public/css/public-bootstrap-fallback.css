@@ -64,3 +64,35 @@
   .clinic-site .d-md-none{display:none!important;}
   .clinic-site .d-md-block{display:block!important;}
 }
+
+/* Public navigation fallback */
+.clinic-site .landing-topbar { width:100%; }
+.clinic-site .landing-topbar .container { min-height:52px; }
+.clinic-site .public-mobile-menu { position:relative; }
+.clinic-site .public-mobile-menu .dropdown-menu {
+  position:absolute;
+  top:calc(100% + .5rem);
+  right:0;
+  min-width:210px;
+  margin:0;
+  padding:.5rem;
+  background:#fff;
+  border:1px solid #dfeceb;
+  border-radius:.75rem;
+  box-shadow:0 14px 35px rgba(0,0,0,.18);
+  z-index:1000;
+}
+.clinic-site .public-mobile-menu .dropdown-item {
+  display:block;
+  padding:.6rem .75rem;
+  border-radius:.5rem;
+  color:#173e3a;
+  text-decoration:none;
+}
+.clinic-site .public-mobile-menu .dropdown-item:hover { background:#eef8f6; color:#08756d; }
+@media(max-width:767.98px){
+  .clinic-site .landing-topbar { padding:.7rem 0; }
+  .clinic-site .landing-topbar .brand { min-width:0; }
+  .clinic-site .landing-topbar .brand img { max-width:150px; object-fit:contain; }
+  .clinic-site .landing-topbar .container>.d-flex { gap:.5rem; }
+}
