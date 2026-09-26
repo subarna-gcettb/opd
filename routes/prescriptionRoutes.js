@@ -25,6 +25,12 @@ router.get(
   requirePermission('patient.view'),
   asyncHandler(prescriptionController.downloadHardCopy)
 );
+router.get(
+  '/attachments/:attachmentId',
+  requirePermission('patient.view'),
+  asyncHandler(prescriptionController.downloadHardCopy)
+);
+
 router.get('/:id', requirePermission('patient.view', 'prescription.create'), asyncHandler(prescriptionController.view));
 router.get('/:id/print', requirePermission('patient.view', 'prescription.create'), asyncHandler(prescriptionController.print));
 router.post('/:id/amend', requirePermission('prescription.amend'), csrfProtection, asyncHandler(prescriptionController.amend));
