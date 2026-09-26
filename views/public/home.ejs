@@ -1,25 +1,158 @@
 <%- include('../partials/public-nav') %>
-<div class="clinic-site landing-v2">
-<section class="landing-hero-v2"><div class="landing-hero-v2__backdrop"></div><div class="container landing-hero-v2__inner"><div class="row align-items-center g-5">
-<div class="col-lg-5 order-2 order-lg-1"><div class="landing-hero-panel">
-<div class="landing-hero-panel__top"><div><span class="landing-panel-label"><span class="live-dot"></span> LIVE OPD</span><h3>Know the queue before you arrive.</h3></div><a href="/live-opd" class="landing-panel-link">Open board <i class="bi bi-arrow-up-right"></i></a></div>
-<div class="landing-live-number"><span>Patients in consultation</span><strong id="home-live-consult"><%= liveSummary.inConsultation %></strong></div>
-<div class="landing-live-grid"><div><strong id="home-live-wait"><%= liveSummary.waiting %></strong><span>Waiting</span></div><div><strong id="home-live-total"><%= liveSummary.totalVisitsToday %></strong><span>Visits today</span></div><div><strong><%= liveSummary.doctorsActive %></strong><span>Doctors active</span></div></div>
-<a href="/live-opd" class="landing-panel-bottom"><span><span class="live-dot"></span> Real-time queue updates</span><i class="bi bi-arrow-right"></i></a>
-</div></div>
-<div class="col-lg-7 order-1 order-lg-2">
-<div class="landing-kicker"><span class="landing-kicker__dot"></span> MODERN OPD • DIGITAL PATIENT CARE</div>
-<h1>Better healthcare.<br><span>Closer to you.</span></h1>
-<p class="landing-hero-copy"><%= siteSettings.seo_description || 'Compassionate clinical care, experienced doctors and a seamless digital patient experience.' %></p>
-<div class="landing-hero-actions"><a href="/patient-portal-info" class="btn btn-light btn-lg"><i class="bi bi-calendar2-check"></i> Book an Appointment</a><a href="/auth/signup" class="btn btn-outline-light btn-lg"><i class="bi bi-person-plus"></i> Create Patient Account</a><button type="button" class="btn btn-outline-light btn-lg pwa-install-hero" id="pwaInstallHero" hidden><i class="bi bi-download"></i> Install App</button></div>
-<div class="landing-trust-row"><span><i class="bi bi-shield-check"></i> Secure digital records</span><span><i class="bi bi-people"></i> Experienced clinical team</span><span><i class="bi bi-clock-history"></i> Smarter OPD experience</span></div>
-</div></div></div></div><div class="landing-hero-v2__curve"></div></section>
-<section class="landing-trust-strip"><div class="container"><div class="row g-0"><div class="col-6 col-lg-3"><div class="landing-trust-stat"><i class="bi bi-heart-pulse"></i><div><strong><%= liveSummary.totalVisitsToday %></strong><span>Visits today</span></div></div></div><div class="col-6 col-lg-3"><div class="landing-trust-stat"><i class="bi bi-person-badge"></i><div><strong><%= liveSummary.doctorsActive %></strong><span>Active doctors</span></div></div></div><div class="col-6 col-lg-3"><div class="landing-trust-stat"><i class="bi bi-hourglass-split"></i><div><strong><%= liveSummary.waiting %></strong><span>Currently waiting</span></div></div></div><div class="col-6 col-lg-3"><div class="landing-trust-stat"><i class="bi bi-shield-lock"></i><div><strong>Secure</strong><span>Digital patient portal</span></div></div></div></div></div></section>
-<section class="landing-section-v2"><div class="container"><div class="landing-section-head"><div><span class="landing-overline">CARE SERVICES</span><h2>Everything you need for a smoother visit.</h2><p>From consultation to digital records, your care journey stays connected.</p></div><a href="/services" class="landing-text-link">Explore all services <i class="bi bi-arrow-right"></i></a></div><div class="row g-4"><% departments.forEach(function(dept,index){ %><div class="col-6 col-md-4 col-lg-3"><a class="landing-service-card" href="/services"><span class="landing-service-icon"><i class="bi <%= ['bi-heart-pulse','bi-person-hearts','bi-activity','bi-capsule-pill'][index % 4] %>"></i></span><span class="landing-service-number">0<%= index + 1 %></span><h3><%= dept.name %></h3><p>Professional OPD consultation and coordinated patient care.</p><span class="landing-card-arrow"><i class="bi bi-arrow-up-right"></i></span></a></div><% }) %></div></div></section>
-<section class="landing-section-v2 landing-doctors"><div class="container"><div class="landing-section-head"><div><span class="landing-overline">OUR CLINICAL TEAM</span><h2>Care led by people who listen.</h2><p>Meet the doctors available through our OPD services.</p></div><a href="/our-doctors" class="landing-text-link">Meet all doctors <i class="bi bi-arrow-right"></i></a></div><div class="row g-4"><% doctors.forEach(function(doc){ %><div class="col-md-6 col-lg-4"><div class="landing-doctor-card"><div class="landing-doctor-avatar"><%= doc.name.charAt(0) %></div><div class="landing-doctor-info"><span><%= doc.specialisation || doc.department_name || 'Medical Specialist' %></span><h3><%= doc.name %></h3><p><%= doc.qualification || 'Experienced medical professional' %></p></div><i class="bi bi-arrow-up-right landing-card-arrow"></i></div></div><% }) %></div></div></section>
-<section class="landing-section-v2 landing-facility"><div class="container"><div class="row align-items-end g-5"><div class="col-lg-5"><span class="landing-overline">THE CARE EXPERIENCE</span><h2>A hospital experience designed around you.</h2><p class="landing-lead">Comfortable visits, coordinated clinical care and accessible diagnostics — supported by a digital system that keeps your information connected.</p><div class="landing-feature-list"><div><i class="bi bi-check2-circle"></i><span><strong>Digital patient journey</strong><small>Appointments, prescriptions and invoices in one place.</small></span></div><div><i class="bi bi-check2-circle"></i><span><strong>Live OPD visibility</strong><small>Check the current queue before you travel.</small></span></div><div><i class="bi bi-check2-circle"></i><span><strong>Connected care</strong><small>Clinical information stays organised for your visit.</small></span></div></div><a href="/contact" class="btn btn-primary btn-lg mt-3">Visit / Contact us <i class="bi bi-arrow-right ms-2"></i></a></div>
-<div class="col-lg-7"><div class="landing-photo-grid"><a class="landing-photo landing-photo-main" href="https://images.pexels.com/photos/6129681/pexels-photo-6129681.jpeg?auto=compress&dpr=1&h=1100&w=1600" target="_blank" rel="noopener"><img src="https://images.pexels.com/photos/6129681/pexels-photo-6129681.jpeg?auto=compress&dpr=1&h=1100&w=1600" alt="Doctors and nurse discussing patient care" loading="lazy"><span>Patient-focused care</span></a><a class="landing-photo" href="https://images.pexels.com/photos/29329917/pexels-photo-29329917/free-photo-of-modern-hospital-interior-with-staircase-and-elevators.jpeg?auto=compress&dpr=1&h=700&w=1100" target="_blank" rel="noopener"><img src="https://images.pexels.com/photos/29329917/pexels-photo-29329917/free-photo-of-modern-hospital-interior-with-staircase-and-elevators.jpeg?auto=compress&dpr=1&h=700&w=1100" alt="Modern hospital interior" loading="lazy"><span>Modern facility</span></a><a class="landing-photo" href="https://images.pexels.com/photos/33105678/pexels-photo-33105678/free-photo-of-medical-laboratory-professionals-in-action.jpeg?auto=compress&dpr=1&h=700&w=1100" target="_blank" rel="noopener"><img src="https://images.pexels.com/photos/33105678/pexels-photo-33105678/free-photo-of-medical-laboratory-professionals-in-action.jpeg?auto=compress&dpr=1&h=700&w=1100" alt="Medical laboratory professionals working" loading="lazy"><span>Diagnostics & laboratory</span></a></div></div></div><p class="landing-photo-credit">Photography: Pexels contributors. Images are free to use under the Pexels License.</p></div></section>
-<section class="landing-portal"><div class="container"><div class="landing-portal-card"><div class="landing-portal-icon"><i class="bi bi-phone"></i></div><div class="landing-portal-copy"><span class="landing-overline">PATIENT PORTAL</span><h2>Your healthcare, in your hands.</h2><p>Book appointments, view prescriptions, track invoices and manage your patient information securely.</p></div><a href="/patient-portal-info" class="btn btn-light btn-lg">Explore Patient Portal <i class="bi bi-arrow-right ms-2"></i></a></div></div></section>
-<section class="landing-final-cta"><div class="landing-final-cta__glow"></div><div class="container"><div class="landing-final-content"><span class="landing-overline">READY WHEN YOU ARE</span><h2>Take the next step in your care.</h2><p>Book your OPD visit or check today's live queue.</p><div class="landing-hero-actions justify-content-center"><a href="/patient-portal-info" class="btn btn-light btn-lg">Book an Appointment <i class="bi bi-calendar2-check ms-2"></i></a><a href="/live-opd" class="btn btn-outline-light btn-lg">View Live OPD <i class="bi bi-broadcast ms-2"></i></a></div></div></div></section>
-</div><%- include('../partials/public-footer') %>
-<script>(function(){function refreshLive(){fetch('/live-opd.json',{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){var s=d.summary||{};['home-live-consult','home-live-wait','home-live-total'].forEach(function(id,i){var e=document.getElementById(id);if(e)e.textContent=[s.inConsultation,s.waiting,s.totalVisitsToday][i]??0})}).catch(function(){})}setInterval(refreshLive,15000)})();</script>
+<div class="clinic-site landing-v2 landing-premium">
+  <section class="landing-hero-v2 landing-hero-premium">
+    <div class="landing-hero-premium__bg"></div>
+    <div class="container landing-hero-premium__inner">
+      <div class="row align-items-center g-5">
+        <div class="col-lg-6">
+          <div class="landing-kicker"><span class="landing-kicker__dot"></span> CHHAYABITHI HOSPITAL · DIGITAL OPD</div>
+          <h1>Healthcare that feels <span>simple.</span></h1>
+          <p class="landing-hero-copy">Book your consultation, manage your appointments and access your prescriptions and invoices — all from one secure patient experience.</p>
+          <div class="landing-hero-actions">
+            <a href="/patient-portal-info" class="btn btn-light btn-lg"><i class="bi bi-calendar2-check"></i> Book an Appointment</a>
+            <a href="/auth/signup" class="btn btn-outline-light btn-lg"><i class="bi bi-person-plus"></i> Create Patient Account</a>
+            <button type="button" class="btn btn-outline-light btn-lg pwa-install-hero" id="pwaInstallHero" hidden><i class="bi bi-download"></i> Install App</button>
+          </div>
+          <div class="landing-hero-assurance">
+            <span><i class="bi bi-shield-check"></i> Secure patient records</span>
+            <span><i class="bi bi-phone"></i> Digital patient portal</span>
+            <span><i class="bi bi-heart-pulse"></i> Connected OPD care</span>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="landing-hero-visual">
+            <img src="https://images.pexels.com/photos/6129681/pexels-photo-6129681.jpeg?auto=compress&dpr=1&w=1400" alt="Healthcare professionals providing patient care" loading="eager">
+            <div class="landing-hero-visual__card">
+              <span class="landing-hero-visual__icon"><i class="bi bi-heart-pulse"></i></span>
+              <div><strong>Care, connected.</strong><small>Appointments · Prescriptions · Billing</small></div>
+            </div>
+            <div class="landing-hero-visual__badge"><i class="bi bi-check-circle-fill"></i> Patient-first experience</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="landing-hero-v2__curve"></div>
+  </section>
+
+  <section class="landing-quick-actions">
+    <div class="container">
+      <div class="landing-quick-grid">
+        <a href="/patient-portal-info" class="landing-quick-card landing-quick-card--primary">
+          <span class="landing-quick-icon"><i class="bi bi-calendar2-plus"></i></span>
+          <span><small>START YOUR VISIT</small><strong>Book an appointment</strong><em>Choose a doctor and available time</em></span>
+          <i class="bi bi-arrow-up-right landing-quick-arrow"></i>
+        </a>
+        <a href="/patient-portal-info" class="landing-quick-card">
+          <span class="landing-quick-icon"><i class="bi bi-person-vcard"></i></span>
+          <span><small>PATIENT PORTAL</small><strong>Manage your care</strong><em>Appointments, prescriptions and invoices</em></span>
+          <i class="bi bi-arrow-up-right landing-quick-arrow"></i>
+        </a>
+        <a href="/live-opd" class="landing-quick-card">
+          <span class="landing-quick-icon"><i class="bi bi-broadcast-pin"></i></span>
+          <span><small>OPD INFORMATION</small><strong>Check Live OPD</strong><em>See today's queue before you arrive</em></span>
+          <i class="bi bi-arrow-up-right landing-quick-arrow"></i>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="landing-section-v2 landing-services-premium">
+    <div class="container">
+      <div class="landing-section-head">
+        <div><span class="landing-overline">OUR SERVICES</span><h2>Everything you need for your care journey.</h2><p>Professional OPD services supported by a connected digital experience.</p></div>
+        <a href="/services" class="landing-text-link">Explore services <i class="bi bi-arrow-right"></i></a>
+      </div>
+      <div class="row g-4">
+        <% departments.forEach(function(dept,index){ %>
+          <div class="col-6 col-md-4 col-lg-3">
+            <a class="landing-service-card landing-service-card--premium" href="/services">
+              <span class="landing-service-icon"><i class="bi <%= ['bi-heart-pulse','bi-person-hearts','bi-activity','bi-capsule-pill'][index % 4] %>"></i></span>
+              <span class="landing-service-number">0<%= index + 1 %></span>
+              <h3><%= dept.name %></h3>
+              <p>Professional consultation and coordinated patient care.</p>
+              <span class="landing-card-arrow"><i class="bi bi-arrow-up-right"></i></span>
+            </a>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  </section>
+
+  <section class="landing-section-v2 landing-doctors landing-doctors-premium">
+    <div class="container">
+      <div class="landing-section-head">
+        <div><span class="landing-overline">OUR DOCTORS</span><h2>Experienced care, with a human touch.</h2><p>Meet the clinical team available through our OPD services.</p></div>
+        <a href="/our-doctors" class="landing-text-link">Meet all doctors <i class="bi bi-arrow-right"></i></a>
+      </div>
+      <div class="row g-4">
+        <% doctors.forEach(function(doc){ %>
+          <div class="col-md-6 col-lg-4">
+            <div class="landing-doctor-card landing-doctor-card--premium">
+              <div class="landing-doctor-avatar"><%= doc.name.charAt(0) %></div>
+              <div class="landing-doctor-info"><span><%= doc.specialisation || doc.department_name || 'Medical Specialist' %></span><h3><%= doc.name %></h3><p><%= doc.qualification || 'Experienced medical professional' %></p></div>
+              <i class="bi bi-arrow-up-right landing-card-arrow"></i>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  </section>
+
+  <section class="landing-section-v2 landing-care-story">
+    <div class="container">
+      <div class="row align-items-center g-5">
+        <div class="col-lg-5">
+          <span class="landing-overline">A BETTER CARE EXPERIENCE</span>
+          <h2>Less paperwork. More time for care.</h2>
+          <p class="landing-lead">Chhayabithi's digital OPD experience keeps the important parts of your visit connected, from booking through prescriptions and billing.</p>
+          <div class="landing-feature-list">
+            <div><i class="bi bi-check2-circle"></i><span><strong>Simple appointment booking</strong><small>Find available doctors and schedule your OPD visit.</small></span></div>
+            <div><i class="bi bi-check2-circle"></i><span><strong>One secure patient portal</strong><small>Keep appointments, prescriptions and invoices together.</small></span></div>
+            <div><i class="bi bi-check2-circle"></i><span><strong>Digital-first OPD workflow</strong><small>A smoother journey for patients and the clinical team.</small></span></div>
+          </div>
+          <a href="/patient-portal-info" class="btn btn-primary btn-lg mt-3">Explore Patient Portal <i class="bi bi-arrow-right ms-2"></i></a>
+        </div>
+        <div class="col-lg-7">
+          <div class="landing-photo-grid landing-photo-grid--premium">
+            <a class="landing-photo landing-photo-main" href="https://images.pexels.com/photos/6129681/pexels-photo-6129681.jpeg?auto=compress&dpr=1&h=1100&w=1600" target="_blank" rel="noopener">
+              <img src="https://images.pexels.com/photos/6129681/pexels-photo-6129681.jpeg?auto=compress&dpr=1&h=1100&w=1600" alt="Doctors and nurse discussing patient care" loading="lazy"><span>Patient-focused care</span>
+            </a>
+            <a class="landing-photo" href="https://images.pexels.com/photos/29329917/pexels-photo-29329917/free-photo-of-modern-hospital-interior-with-staircase-and-elevators.jpeg?auto=compress&dpr=1&h=700&w=1100" target="_blank" rel="noopener">
+              <img src="https://images.pexels.com/photos/29329917/pexels-photo-29329917/free-photo-of-modern-hospital-interior-with-staircase-and-elevators.jpeg?auto=compress&dpr=1&h=700&w=1100" alt="Modern hospital interior" loading="lazy"><span>Modern facility</span>
+            </a>
+            <a class="landing-photo" href="https://images.pexels.com/photos/33105678/pexels-photo-33105678/free-photo-of-medical-laboratory-professionals-in-action.jpeg?auto=compress&dpr=1&h=700&w=1100" target="_blank" rel="noopener">
+              <img src="https://images.pexels.com/photos/33105678/pexels-photo-33105678/free-photo-of-medical-laboratory-professionals-in-action.jpeg?auto=compress&dpr=1&h=700&w=1100" alt="Medical laboratory professionals working" loading="lazy"><span>Diagnostics & laboratory</span>
+            </a>
+          </div>
+        </div>
+      </div>
+      <p class="landing-photo-credit">Photography: Pexels contributors. Images are free to use under the Pexels License.</p>
+    </div>
+  </section>
+
+  <section class="landing-portal landing-portal-premium">
+    <div class="container">
+      <div class="landing-portal-card">
+        <div class="landing-portal-icon"><i class="bi bi-phone"></i></div>
+        <div class="landing-portal-copy"><span class="landing-overline">YOUR DIGITAL CARE COMPANION</span><h2>Your healthcare, in your hands.</h2><p>Book appointments, view prescriptions, track invoices and manage your patient information securely.</p></div>
+        <a href="/auth/login" class="btn btn-light btn-lg">Open Patient Portal <i class="bi bi-arrow-right ms-2"></i></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="landing-final-cta landing-final-cta--premium">
+    <div class="landing-final-cta__glow"></div>
+    <div class="container">
+      <div class="landing-final-content">
+        <span class="landing-overline">YOUR NEXT VISIT STARTS HERE</span>
+        <h2>Good care starts with an easy first step.</h2>
+        <p>Book your OPD consultation or create your secure patient account today.</p>
+        <div class="landing-hero-actions justify-content-center">
+          <a href="/patient-portal-info" class="btn btn-light btn-lg">Book an Appointment <i class="bi bi-calendar2-check ms-2"></i></a>
+          <a href="/contact" class="btn btn-outline-light btn-lg">Contact Hospital <i class="bi bi-arrow-right ms-2"></i></a>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+<%- include('../partials/public-footer') %>
