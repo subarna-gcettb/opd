@@ -110,7 +110,21 @@ async function getConsultationContext(visitId) {
     { visitId }
   );
 
-  return { visit, consultation: consultation || null, previousVisits, previousPrescriptions, currentPrescriptions, invoice: invoice || null };
+  const { calculatePregnancy } = require('../utils/pregnancyCalculator');
+  const pregnancyCalculation = String(visit.gender || '').toLowerCase() === 'female' &&
+    visit.pregnancy_status === 'PREGNANT' && visit.lmp_date
+    ? calculatePregnancy(visit.lmp_date)
+    : null;
+
+  return {
+    visit,
+    consultation: consultation || null,
+    previousVisits,
+    previousPrescriptions,
+    currentPrescriptions,
+    invoice: invoice || null,
+    pregnancyCalculation
+  };
 }
 
 /**
