@@ -28,7 +28,7 @@ async function run() {
     const [tables] = await connection.query(
       `SELECT TABLE_NAME
        FROM information_schema.TABLES
-       WHERE TABLE_SCHEMA = ?`,
+       WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'`,
       [process.env.DB_NAME]
     );
 
