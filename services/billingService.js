@@ -31,7 +31,7 @@ async function generateReceiptNumber(conn, dateStr) {
 async function createInvoice(visitId, otherCharges, actorUserId) {
   return withTransaction(async (conn) => {
     const [[visit]] = await conn.execute(
-      `SELECT v.id, v.patient_id, v.doctor_id, v.branch_id, a.department_id, d.consultation_fee
+      `SELECT v.id, v.status, v.patient_id, v.doctor_id, v.branch_id, a.department_id, d.consultation_fee
        FROM opd_visits v
        JOIN appointments a ON a.id = v.appointment_id
        JOIN doctors d ON d.id = v.doctor_id
@@ -39,6 +39,9 @@ async function createInvoice(visitId, otherCharges, actorUserId) {
       { id: visitId }
     );
     if (!visit) throw new AppError('Visit not found', 404);
+    if (visit.status !== 'COMPLETED') {
+      throw new AppError('The OPD bill can only be created after the doctor completes the checkup.', 409);
+    }
 
     const [existing] = await conn.execute("SELECT id FROM invoices WHERE visit_id = :id AND status <> 'CANCELLED'", {
       id: visitId
