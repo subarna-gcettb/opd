@@ -34,7 +34,7 @@
     if (text) text.textContent = 'On iPhone or iPad, open this site in Safari, tap Share, then choose “Add to Home Screen”.';
     if (now) now.textContent = 'Got it';
     prompt.hidden = false;
-    if (now) now.textContent = 'Close';
+    if (now) { now.textContent = 'Close'; now.dataset.closeOnly = 'true'; }
   }
 
   window.addEventListener('beforeinstallprompt', function (event) {
