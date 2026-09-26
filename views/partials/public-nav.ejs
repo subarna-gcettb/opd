@@ -31,11 +31,11 @@
       <a href="/live-opd" class="<%= currentPage === 'live-opd' ? 'active' : '' %>">Live OPD</a>
       <a href="/contact" class="<%= currentPage === 'contact' ? 'active' : '' %>">Contact</a>
     </nav>
-    <div class="d-md-none dropdown">
-      <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+    <div class="d-md-none dropdown public-mobile-menu">
+      <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" id="publicMenuToggle" aria-expanded="false" aria-controls="publicMenu">
         <i class="bi bi-list"></i> Menu
       </button>
-      <ul class="dropdown-menu dropdown-menu-end">
+      <ul class="dropdown-menu dropdown-menu-end" id="publicMenu">
         <li><a class="dropdown-item" href="/">Home</a></li>
         <li><a class="dropdown-item" href="/patient-portal-info">Patient Portal</a></li>
         <li><a class="dropdown-item" href="/services">Services</a></li>
@@ -48,3 +48,21 @@
     <div class="d-flex gap-2"><a href="/auth/signup" class="btn btn-outline-light btn-sm">Patient Sign Up</a><a href="/auth/login" class="btn btn-light btn-sm">Sign In</a></div>
   </div>
 </div>
+
+<script>
+(function () {
+  var toggle = document.getElementById('publicMenuToggle');
+  var menu = document.getElementById('publicMenu');
+  if (!toggle || !menu) return;
+  toggle.addEventListener('click', function () {
+    var open = menu.classList.toggle('show');
+    toggle.setAttribute('aria-expanded', String(open));
+  });
+  document.addEventListener('click', function (event) {
+    if (!event.target.closest('.public-mobile-menu')) {
+      menu.classList.remove('show');
+      toggle.setAttribute('aria-expanded', 'false');
+    }
+  });
+})();
+</script>
