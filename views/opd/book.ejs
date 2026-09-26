@@ -185,8 +185,12 @@
       dateFormat: 'Y-m-d',
       minDate: '<%= today %>',
       disable: [function(date) {
-        const value = date.toISOString().slice(0, 10);
-        return availableDates.length > 0 && !availableDates.includes(value);
+        const value = [
+          date.getFullYear(),
+          String(date.getMonth() + 1).padStart(2, '0'),
+          String(date.getDate()).padStart(2, '0')
+        ].join('-');
+        return availableDates.length === 0 || !availableDates.includes(value);
       }],
       onChange: function(selectedDates, dateStr) {
         if (dateStr) loadSlots();
