@@ -146,10 +146,14 @@ app.get('/manifest.json', async (req, res, next) => {
       name: settings.hospital_name + ' HMS',
       short_name: settings.hospital_name,
       description: settings.seo_description,
-      start_url: '/splash',
+      start_url: '/',
+      scope: '/',
+      id: '/',
+      display_override: ['window-controls-overlay', 'standalone'],
       display: 'standalone',
       background_color: '#0a3d3d',
       theme_color: '#0d6e6e',
+      orientation: 'portrait-primary',
       icons: [
         { src: icon, sizes: '192x192', type: 'image/png', purpose: 'any' },
         { src: icon, sizes: '512x512', type: 'image/png', purpose: 'any' }
