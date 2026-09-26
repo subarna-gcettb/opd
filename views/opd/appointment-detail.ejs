@@ -16,8 +16,11 @@
     <a href="/opd/appointments/<%= appointment.id %>/token" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="bi bi-printer"></i> Token</a>
     <a href="/opd/appointments/<%= appointment.id %>/barcode" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="bi bi-upc-scan"></i> Barcode</a>
     <% if (can('appointment.reschedule') || can('queue.manage')) { %><a href="/opd/appointments/<%= appointment.id %>/edit" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil"></i> Edit</a><% } %>
-    <% if (can('billing.create') && appointment.visit_id) { %>
-      <a href="/billing/invoices/new?visitId=<%= appointment.visit_id %>" class="btn btn-primary btn-sm"><i class="bi bi-receipt"></i> Generate Bill</a>
+    <% if (can('billing.create') && appointment.visit_id && appointment.visit_status === 'COMPLETED') { %>
+      <a href="/billing/invoices/new?visitId=<%= appointment.visit_id %>" class="btn btn-danger btn-sm"><i class="bi bi-receipt"></i> Create Bill</a>
+    <% } %>
+    <% if (can('payment.record') && appointment.invoice_id && appointment.invoice_status !== 'PAID') { %>
+      <a href="/billing/invoices/<%= appointment.invoice_id %>" class="btn btn-warning btn-sm"><i class="bi bi-cash-coin"></i> Collect Bill</a>
     <% } %>
   </div>
 </div>
@@ -49,12 +52,12 @@
       <div class="card-body">
         <div style="font-size:3rem;font-weight:800;color:var(--hms-primary);"><%= String(appointment.token_number).padStart(3,'0') %></div>
         <div class="mb-2">
-          <span class="badge text-bg-<%= appointment.status === 'COMPLETED' ? 'success' : (appointment.status === 'CANCELLED' || appointment.status === 'NO_SHOW' ? 'danger' : 'primary') %>">
+          <span class="badge text-bg-<%= appointment.status === 'COMPLETED' ? 'success' : (appointment.status === 'CANCELLED' || appointment.status === 'NO_SHOW' ? 'danger' : (appointment.status === 'RESCHEDULED' ? 'warning' : 'primary')) %>">
             Appointment: <%= appointment.status.replace('_',' ') %>
           </span>
         </div>
         <% if (appointment.visit_status) { %>
-          <div><span class="badge text-bg-info">Visit: <%= appointment.visit_status.replace('_',' ') %></span></div>
+          <div><span class="badge text-bg-<%= appointment.visit_status === 'COMPLETED' ? 'success' : (appointment.visit_status === 'IN_CONSULTATION' ? 'info' : (appointment.visit_status === 'CALLED' ? 'warning' : 'secondary')) %>">Visit: <%= appointment.visit_status.replace('_',' ') %></span></div>
         <% } %>
       </div>
     </div>
