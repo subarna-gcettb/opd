@@ -22,7 +22,7 @@
       <% if (siteSettings.logo_path) { %><img src="<%= siteSettings.logo_path %>" alt="Logo" style="height:26px;"><% } else { %><i class="bi bi-hospital"></i><% } %>
       <%= siteSettings.hospital_name.toUpperCase() %>
     </a>
-    <nav class="d-none d-md-block">
+    <nav class="public-desktop-nav">
       <a href="/" class="<%= currentPage === 'home' ? 'active' : '' %>">Home</a>
       <a href="/patient-portal-info" class="<%= currentPage === 'patient-portal' ? 'active' : '' %>">Patient Portal</a>
       <a href="/services" class="<%= currentPage === 'services' ? 'active' : '' %>">Services</a>
@@ -31,7 +31,7 @@
       <a href="/live-opd" class="<%= currentPage === 'live-opd' ? 'active' : '' %>">Live OPD</a>
       <a href="/contact" class="<%= currentPage === 'contact' ? 'active' : '' %>">Contact</a>
     </nav>
-    <div class="d-md-none dropdown public-mobile-menu">
+    <div class="public-mobile-menu">
       <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" id="publicMenuToggle" aria-expanded="false" aria-controls="publicMenu">
         <i class="bi bi-list"></i> Menu
       </button>
@@ -45,7 +45,7 @@
         <li><a class="dropdown-item" href="/contact">Contact</a></li>
       </ul>
     </div>
-    <div class="d-flex gap-2"><a href="/auth/signup" class="btn btn-outline-light btn-sm">Patient Sign Up</a><a href="/auth/login" class="btn btn-light btn-sm">Sign In</a></div>
+    <div class="landing-nav-actions"><a href="/auth/signup" class="btn btn-outline-light btn-sm">Patient Sign Up</a><a href="/auth/login" class="btn btn-light btn-sm">Sign In</a></div>
   </div>
 </div>
 
