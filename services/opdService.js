@@ -300,7 +300,8 @@ async function getAppointment(appointmentId) {
   const [[appt]] = await pool.execute(
     `SELECT a.*, p.health_id, p.name AS patient_name, p.age_years, p.gender, p.mobile, p.email AS patient_email,
             u.name AS doctor_name, d.consultation_fee, dept.name AS department_name,
-            b.name AS branch_name, v.id AS visit_id, v.visit_code, v.status AS visit_status
+            b.name AS branch_name, v.id AS visit_id, v.visit_code, v.status AS visit_status,
+            i.id AS invoice_id, i.status AS invoice_status, i.net_amount
      FROM appointments a
      JOIN patients p ON p.id = a.patient_id
      JOIN doctors d ON d.id = a.doctor_id
@@ -308,6 +309,7 @@ async function getAppointment(appointmentId) {
      JOIN departments dept ON dept.id = a.department_id
      JOIN branches b ON b.id = a.branch_id
      LEFT JOIN opd_visits v ON v.appointment_id = a.id
+     LEFT JOIN invoices i ON i.visit_id = v.id
      WHERE a.id = :id`,
     { id: appointmentId }
   );
