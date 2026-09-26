@@ -12,6 +12,9 @@
   <% if (siteSettings.og_image_path) { %><meta property="og:image" content="<%= siteSettings.og_image_path %>"><% } %>
   <meta name="twitter:card" content="summary_large_image">
   <link rel="manifest" href="/manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="theme-color" content="#0d6e6e">
   <% if (siteSettings.favicon_path) { %><link rel="icon" href="<%= siteSettings.favicon_path %>"><% } %>
   <link href="/css/public-bootstrap-fallback.css" rel="stylesheet">
@@ -19,11 +22,12 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link href="/css/style.css" rel="stylesheet">
   <link href="/css/landing-v2.css" rel="stylesheet">
+  <link href="/css/pwa-install.css" rel="stylesheet">
 </head>
 <body>
   <%- body %>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/pwa-install.js" defer></script>
 </body>
 </html>
 
-<script>(function(){if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});}})();</script>
