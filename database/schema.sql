@@ -246,7 +246,7 @@ CREATE TABLE IF NOT EXISTS appointments (
   CONSTRAINT fk_appt_branch FOREIGN KEY (branch_id) REFERENCES branches(id),
   CONSTRAINT fk_appt_dept FOREIGN KEY (department_id) REFERENCES departments(id),
   CONSTRAINT fk_appt_created_by FOREIGN KEY (created_by) REFERENCES users(id),
-  UNIQUE KEY uk_appt_date_token (appointment_date, token_number),
+  UNIQUE KEY uk_appt_doctor_date_token (doctor_id, appointment_date, token_number),
   INDEX idx_appt_patient (patient_id),
   INDEX idx_appt_doctor_date (doctor_id, appointment_date),
   INDEX idx_appt_date_status (appointment_date, status)
