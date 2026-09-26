@@ -50,7 +50,7 @@ async function run() {
     // Demo data for development / staging. Idempotent and isolated by
     // DEMO-* codes/emails so production records are never overwritten.
     // ---------------------------------------------------------------
-    console.log('[seed] Ensuring demo doctors, patients and OPD queue ...');
+    console.log('[seed] Ensuring demo doctors and patients ...');
 
     const demoPasswordHash = await bcrypt.hash('Demo@12345', 12);
     const [[demoBranch]] = await connection.query(
@@ -187,58 +187,28 @@ async function run() {
       patientIds[patient.health] = patientId;
     }
 
-    const demoAppointments = [
-      { code: 'DEMO-APPT-01', visit: 'DEMO-VISIT-01', health: '26010000001', doctor: 'DEMO-DOC-01', token: 1, time: '10:00:00', status: 'BOOKED', visitStatus: 'WAITING', position: 1 },
-      { code: 'DEMO-APPT-02', visit: 'DEMO-VISIT-02', health: '26010000002', doctor: 'DEMO-DOC-01', token: 2, time: '10:15:00', status: 'BOOKED', visitStatus: 'CALLED', position: 2 },
-      { code: 'DEMO-APPT-03', visit: 'DEMO-VISIT-03', health: '26010000003', doctor: 'DEMO-DOC-01', token: 3, time: '10:30:00', status: 'BOOKED', visitStatus: 'IN_CONSULTATION', position: 3 },
-      { code: 'DEMO-APPT-04', visit: 'DEMO-VISIT-04', health: '26010000004', doctor: 'DEMO-DOC-02', token: 1, time: '11:00:00', status: 'COMPLETED', visitStatus: 'COMPLETED', position: 1 },
-      { code: 'DEMO-APPT-05', visit: 'DEMO-VISIT-05', health: '26010000005', doctor: 'DEMO-DOC-02', token: 2, time: '11:15:00', status: 'COMPLETED', visitStatus: 'COMPLETED', position: 2 },
-      { code: 'DEMO-APPT-06', visit: 'DEMO-VISIT-06', health: '26010000006', doctor: 'DEMO-DOC-03', token: 1, time: '12:00:00', status: 'BOOKED', visitStatus: 'WAITING', position: 1 }
-    ];
-
-    for (const item of demoAppointments) {
-      const [[existingAppt]] = await connection.query(
-        'SELECT id FROM appointments WHERE appointment_code = ? LIMIT 1',
-        [item.code]
-      );
-      let appointmentId = existingAppt?.id;
-
-      const doctor = doctorIds[item.doctor];
-      if (!appointmentId) {
-        const [result] = await connection.query(
-          `INSERT INTO appointments
-            (appointment_code, patient_id, doctor_id, branch_id, department_id,
-             appointment_date, slot_time, token_number, reason, status, created_by)
-           VALUES (?, ?, ?, ?, ?, CURDATE(), ?, ?, ?, ?, ?)`,
-          [
-            item.code, patientIds[item.health], doctor.id, branchId, doctor.departmentId,
-            item.time, item.token, 'Demo OPD visit', item.status, adminUser.id
-          ]
-        );
-        appointmentId = result.insertId;
-      }
-
-      const [existingVisit] = await connection.query(
-        'SELECT id FROM opd_visits WHERE visit_code = ? LIMIT 1',
-        [item.visit]
-      );
-      if (!existingVisit.length) {
-        await connection.query(
-          `INSERT INTO opd_visits
-            (visit_code, appointment_id, patient_id, doctor_id, branch_id, status,
-             queue_position, checked_in_at, called_at, consultation_started_at, completed_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, NOW() - INTERVAL ? MINUTE,
-                   CASE WHEN ? IN ('CALLED','IN_CONSULTATION','COMPLETED') THEN NOW() - INTERVAL 20 MINUTE END,
-                   CASE WHEN ? IN ('IN_CONSULTATION','COMPLETED') THEN NOW() - INTERVAL 12 MINUTE END,
-                   CASE WHEN ? = 'COMPLETED' THEN NOW() - INTERVAL 4 MINUTE END)`,
-          [item.visit, appointmentId, patientIds[item.health], doctor.id, branchId,
-           item.visitStatus, item.position, 35 - item.token * 3,
-           item.visitStatus, item.visitStatus, item.visitStatus]
-        );
-      }
+    // Demo environment intentionally contains doctors and patients only.
+    // Remove any legacy DEMO appointment/visit data from earlier seed versions.
+    const [legacyVisits] = await connection.query(
+      `SELECT v.id FROM opd_visits v
+       JOIN appointments a ON a.id = v.appointment_id
+       WHERE a.appointment_code LIKE 'DEMO-%'`
+    );
+    const legacyVisitIds = legacyVisits.map((v) => v.id);
+    if (legacyVisitIds.length) {
+      const placeholders = legacyVisitIds.map(() => '?').join(',');
+      await connection.query(`DELETE FROM prescription_attachments WHERE visit_id IN (${placeholders})`, legacyVisitIds);
+      await connection.query(`DELETE FROM payments WHERE invoice_id IN (SELECT id FROM invoices WHERE visit_id IN (${placeholders}))`, legacyVisitIds);
+      await connection.query(`DELETE FROM invoice_items WHERE invoice_id IN (SELECT id FROM invoices WHERE visit_id IN (${placeholders}))`, legacyVisitIds);
+      await connection.query(`DELETE FROM discount_requests WHERE invoice_id IN (SELECT id FROM invoices WHERE visit_id IN (${placeholders}))`, legacyVisitIds);
+      await connection.query(`DELETE FROM invoices WHERE visit_id IN (${placeholders})`, legacyVisitIds);
+      await connection.query(`DELETE FROM appointment_vitals WHERE visit_id IN (${placeholders})`, legacyVisitIds);
+      await connection.query(`DELETE FROM opd_consultations WHERE visit_id IN (${placeholders})`, legacyVisitIds);
+      await connection.query(`DELETE FROM opd_visits WHERE id IN (${placeholders})`, legacyVisitIds);
     }
+    await connection.query(`DELETE a FROM appointments a WHERE a.appointment_code LIKE 'DEMO-%'`);
 
-    console.log('[seed] Demo data ready. Demo doctor password: Demo@12345');
+    console.log('[seed] Demo doctors and patients ready. No demo appointments or queue records are created. Demo doctor password: Demo@12345');
 
     console.log('[seed] Done.');
   } finally {
