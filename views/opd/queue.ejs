@@ -3,6 +3,7 @@
 .opd-row td{border-color:#edf1f1}
 </style>
 <%
+  const can = (p) => currentUser && currentUser.permissions.includes(p);
   const statusBadge = { WAITING: 'secondary', CALLED: 'warning', IN_CONSULTATION: 'info', COMPLETED: 'success', CANCELLED: 'danger' };
   const counts = rows.reduce(function(acc, r) { acc[r.visit_status] = (acc[r.visit_status] || 0) + 1; return acc; }, {});
 %>
