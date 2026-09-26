@@ -283,7 +283,8 @@ async function reorderQueue(req, res, next) {
 async function showVitals(req, res, next) {
   try {
     const [[visit]] = await pool.execute(
-      `SELECT v.id, v.status, a.token_number, a.appointment_date, p.name AS patient_name, p.health_id, p.age_years, p.gender, u.name AS doctor_name
+      `SELECT v.id, v.status, a.id AS appointment_id, a.token_number, a.appointment_date,
+              p.name AS patient_name, p.health_id, p.age_years, p.gender, u.name AS doctor_name
        FROM opd_visits v JOIN appointments a ON a.id = v.appointment_id
        JOIN patients p ON p.id = v.patient_id
        JOIN doctors d ON d.id = v.doctor_id JOIN users u ON u.id = d.user_id
@@ -291,27 +292,111 @@ async function showVitals(req, res, next) {
       { id: req.params.visitId }
     );
     if (!visit) throw new AppError('Visit not found', 404);
-    const [[vitals]] = await pool.execute('SELECT * FROM appointment_vitals WHERE visit_id = :id', { id: req.params.visitId });
-    res.render('opd/vitals', { title: `Vitals — ${visit.patient_name}`, visit, vitals: vitals || {} });
+
+    const [[vitals]] = await pool.execute(
+      'SELECT * FROM appointment_vitals WHERE visit_id = :id',
+      { id: req.params.visitId }
+    );
+    const [[pregnancy]] = await pool.execute(
+      `SELECT lmp_date, gravida, para, abortions, pregnancy_status,
+              gestational_age_weeks, gestational_age_days, estimated_due_date, obstetric_notes
+       FROM appointments WHERE id = :appointmentId`,
+      { appointmentId: visit.appointment_id }
+    );
+
+    const { calculatePregnancy } = require('../utils/pregnancyCalculator');
+    const pregnancyCalculation = pregnancy && pregnancy.pregnancy_status === 'PREGNANT'
+      ? calculatePregnancy(pregnancy.lmp_date)
+      : null;
+
+    res.render('opd/vitals', {
+      title: `Vitals — ${visit.patient_name}`,
+      visit,
+      vitals: vitals || {},
+      pregnancy: pregnancy || {},
+      pregnancyCalculation
+    });
   } catch (err) { next(err); }
 }
 
 async function saveVitals(req, res, next) {
   try {
-    const [[visit]] = await pool.execute('SELECT id FROM opd_visits WHERE id = :id', { id: req.params.visitId });
-    if (!visit) throw new AppError('Visit not found', 404);
-    await pool.execute(
-      `INSERT INTO appointment_vitals (visit_id, bp, pulse, spo2, temperature, height_cm, weight_kg, respiratory_rate, pain_score, recorded_by)
-       VALUES (:visitId, :bp, :pulse, :spo2, :temperature, :height, :weight, :respiratory, :pain, :recordedBy)
-       ON DUPLICATE KEY UPDATE bp=VALUES(bp), pulse=VALUES(pulse), spo2=VALUES(spo2), temperature=VALUES(temperature),
-       height_cm=VALUES(height_cm), weight_kg=VALUES(weight_kg), respiratory_rate=VALUES(respiratory_rate), pain_score=VALUES(pain_score), recorded_by=VALUES(recorded_by)`,
-      { visitId:req.params.visitId, bp:req.body.bp||null, pulse:req.body.pulse||null, spo2:req.body.spo2||null, temperature:req.body.temperature||null,
-        height:req.body.heightCm||null, weight:req.body.weightKg||null, respiratory:req.body.respiratoryRate||null, pain:req.body.painScore||null, recordedBy:req.user.id }
+    const [[visit]] = await pool.execute(
+      `SELECT v.id, v.appointment_id, p.gender
+       FROM opd_visits v JOIN appointments a ON a.id = v.appointment_id
+       JOIN patients p ON p.id = v.patient_id
+       WHERE v.id = :id`,
+      { id: req.params.visitId }
     );
-    req.flash('success', 'Patient vitals saved.');
+    if (!visit) throw new AppError('Visit not found', 404);
+
+    await pool.execute(
+      `INSERT INTO appointment_vitals
+        (visit_id, bp, pulse, spo2, temperature, height_cm, weight_kg, respiratory_rate, pain_score, recorded_by)
+       VALUES (:visitId, :bp, :pulse, :spo2, :temperature, :height, :weight, :respiratory, :pain, :recordedBy)
+       ON DUPLICATE KEY UPDATE
+         bp=VALUES(bp), pulse=VALUES(pulse), spo2=VALUES(spo2), temperature=VALUES(temperature),
+         height_cm=VALUES(height_cm), weight_kg=VALUES(weight_kg),
+         respiratory_rate=VALUES(respiratory), pain_score=VALUES(pain_score),
+         recorded_by=VALUES(recorded_by)`,
+      {
+        visitId: req.params.visitId,
+        bp: req.body.bp || null,
+        pulse: req.body.pulse || null,
+        spo2: req.body.spo2 || null,
+        temperature: req.body.temperature || null,
+        height: req.body.heightCm || null,
+        weight: req.body.weightKg || null,
+        respiratory: req.body.respiratoryRate || null,
+        pain: req.body.painScore || null,
+        recordedBy: req.user.id
+      }
+    );
+
+    if (String(visit.gender || '').toLowerCase() === 'female') {
+      const status = ['PREGNANT', 'NOT_PREGNANT', 'UNKNOWN'].includes(req.body.pregnancyStatus)
+        ? req.body.pregnancyStatus
+        : 'UNKNOWN';
+      const gravida = req.body.gravida === '' ? null : Math.max(0, parseInt(req.body.gravida, 10) || 0);
+      const para = req.body.para === '' ? null : Math.max(0, parseInt(req.body.para, 10) || 0);
+      const abortions = req.body.abortions === '' ? null : Math.max(0, parseInt(req.body.abortions, 10) || 0);
+      const lmpDate = req.body.lmpDate || null;
+
+      const { calculatePregnancy } = require('../utils/pregnancyCalculator');
+      const calculation = status === 'PREGNANT' && lmpDate ? calculatePregnancy(lmpDate) : null;
+      if (status === 'PREGNANT' && !calculation) {
+        throw new AppError('Please enter a valid LMP date before marking the patient as pregnant.', 400);
+      }
+
+      await pool.execute(
+        `UPDATE appointments SET
+           lmp_date = :lmpDate, gravida = :gravida, para = :para, abortions = :abortions,
+           pregnancy_status = :pregnancyStatus,
+           gestational_age_weeks = :weeks, gestational_age_days = :days,
+           estimated_due_date = :edd, obstetric_notes = :notes
+         WHERE id = :appointmentId`,
+        {
+          lmpDate,
+          gravida,
+          para,
+          abortions,
+          pregnancyStatus: status,
+          weeks: calculation ? calculation.gestationalAgeWeeks : null,
+          days: calculation ? calculation.gestationalAgeDays : null,
+          edd: calculation ? calculation.estimatedDueDate : null,
+          notes: req.body.obstetricNotes || null,
+          appointmentId: visit.appointment_id
+        }
+      );
+    }
+
+    req.flash('success', 'Patient vitals and clinical pregnancy details saved.');
     res.redirect('/opd/queue');
   } catch (err) {
-    if (err instanceof AppError) { req.flash('errors', [{message:err.message}]); return res.redirect('/opd/queue'); }
+    if (err instanceof AppError) {
+      req.flash('errors', [{message: err.message}]);
+      return res.redirect('/opd/queue');
+    }
     next(err);
   }
 }
