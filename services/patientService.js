@@ -147,39 +147,42 @@ async function registerPatient(payload, actorUserId) {
  * Aadhaar last-4. Never searches by raw Aadhaar.
  */
 async function searchPatients({ q, limit = 10 }) {
-  if (!q || q.trim().length < 2) return [];
-  const like = `%${q.trim()}%`;
-  const isDigits = /^\d+$/.test(q.trim());
+  const term = String(q || '').trim();
+  if (term.length < 2) return [];
 
-  // NOTE: pool.query (not pool.execute) is deliberate here — mysql2's
-  // execute() uses server-side prepared statements, which fail with
-  // "Incorrect arguments to mysqld_stmt_execute" when LIMIT is bound as
-  // a placeholder on some MySQL 8.0.x point releases. query() still
-  // parameterizes safely (no string concatenation), it just doesn't use
-  // a server-side prepared statement, which sidesteps that bug. Applied
-  // to every LIMIT/OFFSET-bound query in this codebase — see the same
-  // note in listPatients below, and in opdService/billingService/
-  // adminService's paginated list queries.
-  const [rows] = await pool.query(
-    `SELECT p.id, p.health_id, p.registration_number, p.name, p.gender, p.age_years, p.mobile,
-            p.aadhaar_last4, pa.district,
-            (SELECT MAX(v.checked_in_at) FROM opd_visits v WHERE v.patient_id = p.id) AS last_visit
-     FROM patients p
-     LEFT JOIN patient_addresses pa ON pa.patient_id = p.id
-     WHERE p.deleted_at IS NULL
-       AND (
-         p.health_id = :exact
-         OR p.registration_number LIKE :like
-         OR p.name LIKE :like
-         OR p.mobile LIKE :like
-         OR (:isDigits AND LENGTH(:q) = 4 AND p.aadhaar_last4 = :q)
-       )
-     ORDER BY p.created_at DESC
-     LIMIT :limit`,
-    { exact: q.trim(), like, isDigits: isDigits ? 1 : 0, q: q.trim(), limit }
+  const safeLimit = Math.min(50, Math.max(1, Number.parseInt(limit, 10) || 10));
+  const like = `%${term}%`;
+  const isAadhaarLast4 = /^\d{4}$/.test(term);
+
+  const baseSql = `
+    SELECT p.id, p.health_id, p.registration_number, p.name, p.gender, p.age_years, p.mobile,
+           p.aadhaar_last4, pa.district,
+           (SELECT MAX(v.checked_in_at) FROM opd_visits v WHERE v.patient_id = p.id) AS last_visit
+    FROM patients p
+    LEFT JOIN patient_addresses pa ON pa.patient_id = p.id
+    WHERE p.deleted_at IS NULL
+      AND (
+        p.health_id = :exact
+        OR p.registration_number LIKE :like
+        OR p.name LIKE :like
+        OR p.mobile LIKE :like
+        ${isAadhaarLast4 ? 'OR p.aadhaar_last4 = :aadhaarLast4' : ''}
+      )
+    ORDER BY p.created_at DESC
+    LIMIT ${safeLimit}
+  `;
+
+  const [rows] = await pool.execute(
+    baseSql,
+    isAadhaarLast4
+      ? { exact: term, like, aadhaarLast4: term }
+      : { exact: term, like }
   );
 
-  return rows.map((r) => ({ ...r, aadhaar_masked: aadhaarUtil.mask(r.aadhaar_last4) }));
+  return rows.map((r) => ({
+    ...r,
+    aadhaar_masked: aadhaarUtil.mask(r.aadhaar_last4)
+  }));
 }
 
 async function listPatients({ page = 1, pageSize = 20 }) {
