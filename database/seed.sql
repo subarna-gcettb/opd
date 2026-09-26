@@ -38,6 +38,7 @@ INSERT INTO permissions (code, description) VALUES
   ('consultation.create', 'Record doctor consultation'),
   ('prescription.create', 'Create prescriptions'),
   ('prescription.amend', 'Amend/version prescriptions'),
+  ('prescription.attachment.upload', 'Upload a scanned hard-copy prescription for a completed visit'),
   ('billing.create', 'Generate invoices'),
   ('billing.view', 'View billing information'),
   ('payment.record', 'Record payments'),
@@ -75,7 +76,7 @@ SELECT r.id, p.id FROM roles r JOIN permissions p
   ON p.code IN ('patient.create','patient.view',
                 'appointment.create','appointment.reschedule',
                 'queue.manage','billing.create','billing.view','payment.record',
-                'discount.request')
+                'discount.request','prescription.attachment.upload')
 WHERE r.code = 'OPD_STAFF'
 ON DUPLICATE KEY UPDATE role_id = role_id;
 
