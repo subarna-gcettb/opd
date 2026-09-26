@@ -39,14 +39,39 @@ async function getConsultationContext(visitId) {
   );
   if (!visit) return null;
 
+  // Doctor consultation must remain usable on databases that predate the
+  // receptionist-vitals migration. Read the core consultation + legacy vitals
+  // first, then optionally overlay appointment_vitals when that table exists.
   const [[consultation]] = await pool.execute(
-    `SELECT c.*, COALESCE(vt.bp,av.bp) AS bp, COALESCE(vt.pulse,av.pulse) AS pulse, COALESCE(vt.temperature,av.temperature) AS temperature, COALESCE(vt.spo2,av.spo2) AS spo2, COALESCE(vt.weight_kg,av.weight_kg) AS weight_kg, COALESCE(vt.height_cm,av.height_cm) AS height_cm
+    `SELECT c.*, vt.bp, vt.pulse, vt.temperature, vt.spo2, vt.weight_kg, vt.height_cm
      FROM opd_consultations c
      LEFT JOIN vitals vt ON vt.consultation_id = c.id
-     LEFT JOIN appointment_vitals av ON av.visit_id = v.id
      WHERE c.visit_id = :id`,
     { id: visitId }
   );
+
+  if (consultation) {
+    try {
+      const [[appointmentVitals]] = await pool.execute(
+        `SELECT bp, pulse, temperature, spo2, weight_kg, height_cm
+         FROM appointment_vitals
+         WHERE visit_id = :id
+         LIMIT 1`,
+        { id: visitId }
+      );
+      if (appointmentVitals) {
+        for (const field of ['bp', 'pulse', 'temperature', 'spo2', 'weight_kg', 'height_cm']) {
+          if (appointmentVitals[field] !== null && appointmentVitals[field] !== undefined) {
+            consultation[field] = appointmentVitals[field];
+          }
+        }
+      }
+    } catch (err) {
+      // Older installations do not have appointment_vitals yet. The doctor
+      // can still use the consultation using the legacy vitals table.
+      if (err.code !== 'ER_NO_SUCH_TABLE' && err.code !== 'ER_BAD_TABLE_ERROR') throw err;
+    }
+  }
 
   // Previous visits (excluding this one), with diagnosis and vitals trend.
   const [previousVisits] = await pool.execute(
