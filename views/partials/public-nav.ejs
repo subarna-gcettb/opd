@@ -32,10 +32,10 @@
       <a href="/contact" class="<%= currentPage === 'contact' ? 'active' : '' %>">Contact</a>
     </nav>
     <div class="public-mobile-menu">
-      <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" id="publicMenuToggle" aria-expanded="false" aria-controls="publicMenu">
+      <button class="btn btn-outline-light btn-sm" type="button" id="publicMenuToggle" aria-expanded="false" aria-controls="publicMenu">
         <i class="bi bi-list"></i> Menu
       </button>
-      <ul class="dropdown-menu dropdown-menu-end" id="publicMenu">
+      <div class="public-mobile-dropdown" id="publicMenu">
         <li><a class="dropdown-item" href="/">Home</a></li>
         <li><a class="dropdown-item" href="/patient-portal-info">Patient Portal</a></li>
         <li><a class="dropdown-item" href="/services">Services</a></li>
@@ -43,7 +43,7 @@
         <li><a class="dropdown-item" href="/lab-diagnostics">Lab &amp; Diagnostics</a></li>
         <li><a class="dropdown-item" href="/live-opd">Live OPD</a></li>
         <li><a class="dropdown-item" href="/contact">Contact</a></li>
-      </ul>
+      </div>
     </div>
     <div class="landing-nav-actions"><a href="/auth/signup" class="btn btn-outline-light btn-sm">Patient Sign Up</a><a href="/auth/login" class="btn btn-light btn-sm">Sign In</a></div>
   </div>
