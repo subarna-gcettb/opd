@@ -126,7 +126,30 @@ async function isSlotBookable(conn, doctorId, dateStr, slotTime) {
     return { ok: false, reason: 'Doctor does not hold OPD on this day' };
   }
 
-  const capacity = templates.length ? templates[0].max_patients_per_slot : 1;
+  let windows = templates;
+  if (exception && !exception.is_unavailable && exception.start_time && exception.end_time) {
+    const base = templates[0] || { slot_duration_minutes: 15, max_patients_per_slot: 1 };
+    windows = [{
+      start_time: exception.start_time,
+      end_time: exception.end_time,
+      slot_duration_minutes: base.slot_duration_minutes,
+      max_patients_per_slot: base.max_patients_per_slot
+    }];
+  }
+
+  const requestedMinutes = toMinutes(slotTime);
+  const matchingWindow = windows.find((w) => {
+    const start = toMinutes(w.start_time);
+    const end = toMinutes(w.end_time);
+    const step = w.slot_duration_minutes || 15;
+    return requestedMinutes >= start && requestedMinutes + step <= end &&
+      ((requestedMinutes - start) % step === 0);
+  });
+  if (!matchingWindow) {
+    return { ok: false, reason: 'The selected time is not an available slot for this doctor' };
+  }
+
+  const capacity = matchingWindow.max_patients_per_slot || 1;
 
   // Lock the existing appointments for this doctor/date/slot so two
   // concurrent bookings cannot both see capacity as available.
