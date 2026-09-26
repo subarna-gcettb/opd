@@ -1,3 +1,11 @@
+<script>
+function closePrintWindow(){
+  window.close();
+  setTimeout(function(){
+    if (!window.closed && window.history.length > 1) window.history.back();
+  }, 120);
+}
+</script>
 <link rel="stylesheet" href="/css/print.css">
 <script>document.body.className = 'print-doc';</script>
 
@@ -30,6 +38,6 @@
 
   <div class="print-actions no-print">
     <button onclick="window.print()" class="btn btn-primary">Print Slip</button>
-    <button onclick="window.close()" class="btn btn-outline-secondary">Close</button>
+    <button onclick="closePrintWindow()" class="btn btn-outline-secondary">Close</button>
   </div>
 </div>
