@@ -126,6 +126,16 @@ async function availableSlots(req, res, next) {
   }
 }
 
+async function availableDates(req, res, next) {
+  try {
+    const from = req.query.from || new Date().toISOString().slice(0, 10);
+    const dates = await scheduleService.getAvailableDates(req.params.id, from, req.query.days || 90);
+    res.json({ dates });
+  } catch (err) {
+    next(err);
+  }
+}
+
 /** JSON endpoint: doctors filtered by department/branch, for booking form cascade. */
 async function doctorsByFilter(req, res, next) {
   try {
@@ -149,5 +159,6 @@ module.exports = {
   removeSchedule,
   addException,
   availableSlots,
+  availableDates,
   doctorsByFilter
 };
