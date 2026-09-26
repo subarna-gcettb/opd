@@ -145,3 +145,24 @@
 @media(max-width:575.98px){
  .landing-topbar{padding:.5rem 0!important}.landing-nav-container{gap:.55rem!important}.brand-mark{width:32px;height:32px;flex-basis:32px}.brand-name{font-size:.65rem;max-width:155px}.mobile-menu-toggle{padding:.5rem .58rem}
 }
+
+/* Shared public-page finishing pass */
+.clinic-site:not(.landing-premium){min-height:calc(100vh - 60px)}
+.clinic-site:not(.landing-premium) .clinic-section{padding:5.5rem 0}
+.clinic-site:not(.landing-premium) .section-heading{padding-bottom:.5rem}
+.clinic-site:not(.landing-premium) .section-heading h1{font-size:clamp(2.35rem,5vw,4rem);line-height:1.05;letter-spacing:-.05em;color:#103f3c;margin:.4rem 0}
+.clinic-site:not(.landing-premium) .section-heading>div>span{display:inline-block}
+.clinic-site:not(.landing-premium) .feature-card,.clinic-site:not(.landing-premium) .doctor-profile-card,.clinic-site:not(.landing-premium) .live-now-card,.clinic-site:not(.landing-premium) .queue-card{box-shadow:0 12px 35px rgba(11,70,66,.06)}
+.clinic-site:not(.landing-premium) .feature-card{border-radius:1.15rem;padding:1.5rem}
+.clinic-site:not(.landing-premium) .feature-card h5{font-size:1.08rem}
+.clinic-site:not(.landing-premium) .portal-callout{padding:3rem;border-radius:1.6rem;box-shadow:0 18px 45px rgba(11,70,66,.06)}
+.clinic-site:not(.landing-premium) .portal-callout h1{font-size:clamp(2.25rem,5vw,4rem);letter-spacing:-.05em;color:#103f3c}
+.clinic-site:not(.landing-premium) .live-hero{padding:1rem 0;background:linear-gradient(135deg,#063f3f,#0d6e6e 65%,#168b7d)}
+@media(max-width:767.98px){
+ .clinic-site:not(.landing-premium) .clinic-section{padding:3.7rem 0}
+ .clinic-site:not(.landing-premium) .section-heading{gap:1.25rem}
+ .clinic-site:not(.landing-premium) .section-heading .btn{width:100%}
+ .clinic-site:not(.landing-premium) .portal-callout{padding:1.5rem}
+ .clinic-site:not(.landing-premium) .portal-callout .btn{width:100%}
+ .clinic-site:not(.landing-premium) .live-hero h1{font-size:2.5rem}
+}
