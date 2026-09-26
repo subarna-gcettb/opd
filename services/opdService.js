@@ -156,7 +156,7 @@ async function rescheduleAppointment(appointmentId, { newDate, newTime, reason }
     if (!check.ok) throw new AppError(check.reason, 409);
 
     // New date => new token in that date's per-doctor sequence.
-    const newToken = await generateToken(conn, appt.doctor_id, newDate);
+    const newToken = await generateToken(conn, newDate);
     const obstetric = calculatePregnancy(appt.lmp_date, appt.pregnancy_status, newDate);
 
     await conn.execute(
