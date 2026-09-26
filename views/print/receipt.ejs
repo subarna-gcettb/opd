@@ -1,10 +1,26 @@
 <script>
-function closePrintWindow(){
-  window.close();
-  setTimeout(function(){
-    if (!window.closed && window.history.length > 1) window.history.back();
-  }, 120);
-}
+(function () {
+  window.printDocument = function () {
+    window.focus();
+    window.print();
+  };
+  window.closePrintWindow = function () {
+    if (window.opener && !window.opener.closed) {
+      window.close();
+      return;
+    }
+    var referrer = document.referrer;
+    if (referrer && referrer.indexOf(window.location.origin) === 0) {
+      window.location.replace(referrer);
+      return;
+    }
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+    window.location.href = '/';
+  };
+})();
 </script>
 <link rel="stylesheet" href="/css/print.css">
 <script>document.body.className = 'print-doc';</script>
@@ -47,7 +63,7 @@ function closePrintWindow(){
   <div class="print-footer-note">This receipt confirms payment in full for the invoice referenced above.</div>
 
   <div class="print-actions no-print">
-    <button onclick="window.print()" class="btn btn-primary">Print Receipt</button>
+    <button onclick="printDocument()" class="btn btn-primary">Print Receipt</button>
     <button onclick="closePrintWindow()" class="btn btn-outline-secondary">Close</button>
   </div>
 </div>
