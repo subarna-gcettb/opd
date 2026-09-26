@@ -144,4 +144,20 @@ async function isSlotBookable(conn, doctorId, dateStr, slotTime) {
   return { ok: true };
 }
 
-module.exports = { getAvailableSlots, isSlotBookable, toMinutes, toTimeString };
+/** Returns calendar dates on which a doctor has at least one bookable slot. */
+async function getAvailableDates(doctorId, fromDateStr, days = 90) {
+  const start = new Date(`${fromDateStr}T00:00:00`);
+  if (Number.isNaN(start.getTime())) return [];
+  const safeDays = Math.min(180, Math.max(1, Number.parseInt(days, 10) || 90));
+  const dates = [];
+  for (let i = 0; i < safeDays; i += 1) {
+    const date = new Date(start);
+    date.setDate(start.getDate() + i);
+    const dateStr = date.toISOString().slice(0, 10);
+    const slots = await getAvailableSlots(doctorId, dateStr);
+    if (slots.some((slot) => slot.available > 0)) dates.push(dateStr);
+  }
+  return dates;
+}
+
+module.exports = { getAvailableSlots, getAvailableDates, isSlotBookable, toMinutes, toTimeString };
