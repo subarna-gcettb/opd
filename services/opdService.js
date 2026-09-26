@@ -320,14 +320,21 @@ async function getAppointment(appointmentId) {
      WHERE h.appointment_id = :id ORDER BY h.changed_at DESC`,
     { id: appointmentId }
   );
-  const [prescriptionAttachments] = await pool.execute(
-    `SELECT pa.id, pa.original_name, pa.created_at, u.name AS uploaded_by_name
-     FROM prescription_attachments pa
-     JOIN users u ON u.id = pa.uploaded_by
-     WHERE pa.visit_id = :visitId
-     ORDER BY pa.created_at DESC`,
-    { visitId: appt.visit_id }
-  );
+  let prescriptionAttachments = [];
+  try {
+    [prescriptionAttachments] = await pool.execute(
+      `SELECT pa.id, pa.original_name, pa.created_at, u.name AS uploaded_by_name
+       FROM prescription_attachments pa
+       JOIN users u ON u.id = pa.uploaded_by
+       WHERE pa.visit_id = :visitId
+       ORDER BY pa.created_at DESC`,
+      { visitId: appt.visit_id }
+    );
+  } catch (err) {
+    // Older databases may not have received the hard-copy prescription migration yet.
+    // Keep appointment viewing functional; the migration enables attachment storage.
+    if (err.code !== 'ER_NO_SUCH_TABLE' && err.code !== 'ER_BAD_TABLE_ERROR') throw err;
+  }
   return { appointment: appt, history, prescriptionAttachments };
 }
 
