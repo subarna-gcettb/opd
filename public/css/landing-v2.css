@@ -166,3 +166,18 @@
  .clinic-site:not(.landing-premium) .portal-callout .btn{width:100%}
  .clinic-site:not(.landing-premium) .live-hero h1{font-size:2.5rem}
 }
+
+/* Desktop / laptop composition */
+@media(min-width:992px){
+ .landing-premium .container{max-width:1180px}
+ .landing-premium .landing-hero-premium__inner{padding-top:5.5rem;padding-bottom:6rem}
+ .landing-premium .landing-hero-premium{min-height:650px}
+ .landing-premium .landing-hero-visual{min-height:470px}
+ .landing-premium .landing-hero-premium h1{font-size:clamp(3.5rem,5.2vw,5.3rem)}
+}
+@media(min-width:1400px){
+ .landing-premium .container{max-width:1240px}
+ .landing-premium .landing-hero-premium__inner{padding-top:6.2rem;padding-bottom:6.5rem}
+ .landing-premium .landing-hero-premium{min-height:680px}
+ .landing-premium .landing-hero-visual{min-height:500px}
+}
