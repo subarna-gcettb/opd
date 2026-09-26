@@ -40,35 +40,10 @@ CREATE TABLE IF NOT EXISTS prescription_attachments (
   INDEX idx_rx_attach_patient (patient_id)
 ) ENGINE=InnoDB;
 
-SET @drop_old_token_index = (
-  SELECT IF(
-    COUNT(*) > 0,
-    'ALTER TABLE appointments DROP INDEX uk_appt_doctor_date_token',
-    'SELECT 1'
-  )
-  FROM information_schema.statistics
-  WHERE table_schema = DATABASE()
-    AND table_name = 'appointments'
-    AND index_name = 'uk_appt_doctor_date_token'
-);
-PREPARE stmt_drop_token FROM @drop_old_token_index;
-EXECUTE stmt_drop_token;
-DEALLOCATE PREPARE stmt_drop_token;
+-- Token uniqueness is enforced by the transaction-safe daily sequence in opdService.
+-- We intentionally do not add a new DB unique index here so existing historical
+-- per-doctor token records can migrate without renumbering past appointments.
 
-SET @add_daily_token_index = (
-  SELECT IF(
-    COUNT(*) = 0,
-    'ALTER TABLE appointments ADD UNIQUE KEY uk_appt_date_token (appointment_date, token_number)',
-    'SELECT 1'
-  )
-  FROM information_schema.statistics
-  WHERE table_schema = DATABASE()
-    AND table_name = 'appointments'
-    AND index_name = 'uk_appt_date_token'
-);
-PREPARE stmt_add_token FROM @add_daily_token_index;
-EXECUTE stmt_add_token;
-DEALLOCATE PREPARE stmt_add_token;
 
 INSERT INTO permissions (code, description)
 VALUES ('prescription.attachment.upload', 'Upload a scanned hard-copy prescription for a completed visit')
