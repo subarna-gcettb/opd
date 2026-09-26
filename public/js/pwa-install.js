@@ -69,6 +69,25 @@
     });
   }
 
+  window.addEventListener('DOMContentLoaded', function () {
+    if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !isStandalone()) {
+      window.setTimeout(showIosInstructions, 1800);
+    }
+  });
+
+  if (!isStandalone() && !deferredPrompt) {
+    window.setTimeout(function () {
+      if (isStandalone() || deferredPrompt) return;
+      var title = document.getElementById('pwaInstallTitle');
+      var text = document.getElementById('pwaInstallText');
+      var now = document.getElementById('pwaInstallNow');
+      if (title) title.textContent = 'Use Chhayabithi like an app';
+      if (text) text.textContent = 'Add Chhayabithi to your home screen for quick access to appointments, your patient portal and Live OPD.';
+      if (now) now.textContent = 'How to install';
+      if (prompt) prompt.hidden = false;
+    }, 1800);
+  }
+
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('/sw.js').catch(function () {});
