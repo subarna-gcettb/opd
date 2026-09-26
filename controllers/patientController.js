@@ -67,6 +67,9 @@ async function searchResults(req, res, next) {
     }
     res.render('patients/search', { title: 'Patient Search', results, q: req.query.q });
   } catch (err) {
+    if ((req.headers.accept || '').includes('application/json') || req.xhr) {
+      return res.status(err.statusCode || 500).json({ results: [], error: err.message || 'Patient search failed' });
+    }
     next(err);
   }
 }
