@@ -1,5 +1,5 @@
 /* Bootstrap-independent public-site fallback.
-   IMPORTANT: this file is loaded after Bootstrap. Keep fallback layout rules
+   IMPORTANT: this file is loaded before Bootstrap. Keep fallback layout rules
    scoped to the public landing components so they never override Bootstrap's
    global .container/.row/.col-* system when the CDN is available. */
 
