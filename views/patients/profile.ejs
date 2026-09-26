@@ -23,7 +23,7 @@
       </form>
     <% } %>
   </div>
-<% else if (can('patient.suspend')) { %>
+<% } else if (can('patient.suspend')) { %>
   <div class="text-end mb-3">
     <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#suspendModal"><i class="bi bi-person-slash"></i> Suspend Patient</button>
   </div>
