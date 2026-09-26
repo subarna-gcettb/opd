@@ -16,7 +16,29 @@ async function run() {
   });
 
   try {
-    // Ensure the tracker table exists even before any migration has run.
+    // IMPORTANT: this command intentionally performs a destructive full reset.
+    // It drops every table in the configured database and rebuilds the schema
+    // from the current migration files. Do not use it against live production
+    // data unless a complete reset is explicitly intended.
+    console.warn('[migrate] WARNING: resetting the entire database...');
+    console.warn('[migrate] All existing tables and data in DB_NAME will be deleted.');
+
+    await connection.query('SET FOREIGN_KEY_CHECKS = 0');
+
+    const [tables] = await connection.query(
+      `SELECT TABLE_NAME
+       FROM information_schema.TABLES
+       WHERE TABLE_SCHEMA = ?`,
+      [process.env.DB_NAME]
+    );
+
+    for (const table of tables) {
+      const tableName = String(table.TABLE_NAME).replace(/`/g, '``');
+      await connection.query(`DROP TABLE IF EXISTS \`${tableName}\``);
+    }
+
+    await connection.query('SET FOREIGN_KEY_CHECKS = 1');
+
     await connection.query(`
       CREATE TABLE IF NOT EXISTS schema_migrations (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -25,8 +47,7 @@ async function run() {
       ) ENGINE=InnoDB
     `);
 
-    const [appliedRows] = await connection.query('SELECT filename FROM schema_migrations');
-    const applied = new Set(appliedRows.map((r) => r.filename));
+    const applied = new Set();
 
     const files = fs
       .readdirSync(MIGRATIONS_DIR)
