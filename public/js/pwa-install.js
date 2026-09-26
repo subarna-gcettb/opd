@@ -34,7 +34,7 @@
     if (text) text.textContent = 'On iPhone or iPad, open this site in Safari, tap Share, then choose “Add to Home Screen”.';
     if (now) now.textContent = 'Got it';
     prompt.hidden = false;
-    if (now) now.onclick = function () { prompt.hidden = true; };
+    if (now) now.textContent = 'Close';
   }
 
   window.addEventListener('beforeinstallprompt', function (event) {
@@ -53,6 +53,14 @@
       if (!deferredPrompt) {
         if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !isStandalone()) {
           showIosInstructions();
+        } else {
+          var title = document.getElementById('pwaInstallTitle');
+          var text = document.getElementById('pwaInstallText');
+          var now = document.getElementById('pwaInstallNow');
+          if (title) title.textContent = 'Install from your browser menu';
+          if (text) text.textContent = 'Open your browser menu and choose “Install app” or “Add to Home screen”.';
+          if (now) now.textContent = 'Close';
+          if (now) now.dataset.closeOnly = 'true';
         }
         return;
       }
