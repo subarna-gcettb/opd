@@ -253,6 +253,9 @@ async function queue(req, res, next) {
 
 async function updateVisitStatus(req, res, next) {
   try {
+    if (req.body.status === 'COMPLETED' && !req.user.doctorId && !req.user.roles.includes('SUPER_ADMIN')) {
+      throw new AppError('Only the assigned doctor or Super Admin can complete the clinical checkup.', 403);
+    }
     await opdService.updateVisitStatus(req.params.visitId, req.body.status, req.user.id);
     req.flash('success', `Patient status updated to ${req.body.status.replace('_', ' ').toLowerCase()}.`);
     res.redirect(req.get('Referer') || '/opd/queue');
