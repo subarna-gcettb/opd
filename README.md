@@ -1150,3 +1150,23 @@ Always review third-party licenses before redistributing or replacing assets.
 
 This repository is an actively developed **OPD-focused HMS foundation**. Before real clinical production use, perform organization-specific validation for workflows, legal/privacy requirements, data retention, access controls, backups, clinical processes, and local regulatory requirements.
 
+
+## Demo data (development / staging)
+
+Run the normal seed command to create sample doctors, patients, schedules, and a live OPD queue:
+
+```bash
+npm run seed
+```
+
+The seed is idempotent and uses records prefixed with `DEMO-`. It creates three demo doctor accounts and six demo patients.
+
+**Demo doctor password:** `Demo@12345`
+
+Demo doctor emails:
+- `demo.doctor1@chhayabithi.com`
+- `demo.doctor2@chhayabithi.com`
+- `demo.doctor3@chhayabithi.com`
+
+These credentials are for development/staging only. Do not use them in production.
+
