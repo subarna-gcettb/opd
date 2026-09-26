@@ -202,10 +202,13 @@ async function run() {
       await connection.query(`DELETE FROM invoice_items WHERE invoice_id IN (SELECT id FROM invoices WHERE visit_id IN (${placeholders}))`, legacyVisitIds);
       await connection.query(`DELETE FROM discount_requests WHERE invoice_id IN (SELECT id FROM invoices WHERE visit_id IN (${placeholders}))`, legacyVisitIds);
       await connection.query(`DELETE FROM invoices WHERE visit_id IN (${placeholders})`, legacyVisitIds);
+      await connection.query(`DELETE FROM prescription_items WHERE prescription_id IN (SELECT id FROM prescriptions WHERE visit_id IN (${placeholders}))`, legacyVisitIds);
+      await connection.query(`DELETE FROM prescriptions WHERE visit_id IN (${placeholders})`, legacyVisitIds);
       await connection.query(`DELETE FROM appointment_vitals WHERE visit_id IN (${placeholders})`, legacyVisitIds);
       await connection.query(`DELETE FROM opd_consultations WHERE visit_id IN (${placeholders})`, legacyVisitIds);
       await connection.query(`DELETE FROM opd_visits WHERE id IN (${placeholders})`, legacyVisitIds);
     }
+    await connection.query(`DELETE FROM appointment_history WHERE appointment_id IN (SELECT id FROM appointments WHERE appointment_code LIKE 'DEMO-%')`);
     await connection.query(`DELETE a FROM appointments a WHERE a.appointment_code LIKE 'DEMO-%'`);
 
     console.log('[seed] Demo doctors and patients ready. No demo appointments or queue records are created. Demo doctor password: Demo@12345');
