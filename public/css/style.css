@@ -228,3 +228,131 @@ img, video, canvas { max-width: 100%; height: auto; }
   }
   .hero-visual-badge { right: .75rem; }
 }
+
+
+/* Landing page final visual polish */
+.landing-topbar{
+  background:rgba(5,48,48,.94)!important;
+  backdrop-filter:blur(14px);
+  box-shadow:0 1px 0 rgba(255,255,255,.08),0 8px 30px rgba(0,35,35,.12);
+}
+.landing-topbar .brand{font-size:.98rem;letter-spacing:.03em}
+.landing-topbar nav a{padding:.45rem .15rem;transition:color .2s ease}
+.landing-topbar nav a.active{font-weight:700;border-bottom:2px solid #72dfcf}
+.clinic-hero{
+  min-height:690px;
+  display:flex;
+  align-items:center;
+  position:relative;
+  isolation:isolate;
+}
+.clinic-hero::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-2;
+  background:
+    linear-gradient(90deg,rgba(3,36,40,.97) 0%,rgba(5,55,59,.9) 42%,rgba(5,55,59,.52) 72%,rgba(5,55,59,.35) 100%),
+    var(--hero-image) center/cover no-repeat;
+}
+.clinic-hero::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  background:
+    radial-gradient(circle at 76% 35%,rgba(91,230,204,.2),transparent 28%),
+    linear-gradient(180deg,transparent 60%,rgba(3,34,36,.28));
+  pointer-events:none;
+}
+.hero-eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:.45rem;
+  padding:.5rem .75rem;
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:999px;
+  background:rgba(255,255,255,.07);
+  backdrop-filter:blur(8px);
+}
+.hero-copy{font-size:clamp(1rem,1.6vw,1.18rem)}
+.hero-trust span{
+  display:inline-flex;
+  align-items:center;
+  gap:.3rem;
+  padding:.4rem .65rem;
+  border-radius:999px;
+  background:rgba(255,255,255,.06);
+}
+.hero-visual-wrap{position:relative;padding-top:1.5rem}
+.hero-visual-badge{
+  position:absolute;
+  right:1rem;
+  top:0;
+  z-index:4;
+  padding:.55rem .85rem;
+  border-radius:999px;
+  background:rgba(4,39,42,.82);
+  border:1px solid rgba(255,255,255,.24);
+  color:#e8fffb;
+  font-size:.7rem;
+  font-weight:800;
+  letter-spacing:.08em;
+  box-shadow:0 12px 35px rgba(0,0,0,.2);
+}
+.hero-live-card{
+  border-radius:1.5rem;
+  background:linear-gradient(145deg,rgba(6,58,62,.82),rgba(5,42,46,.68));
+  box-shadow:0 30px 90px rgba(0,0,0,.28);
+  padding:1.75rem;
+}
+.hero-token-count{
+  font-size:clamp(4rem,7vw,6rem);
+  text-shadow:0 10px 30px rgba(0,0,0,.2);
+}
+.clinic-stat-strip{box-shadow:0 8px 25px rgba(10,70,65,.05)}
+.clinic-stat{transition:background .2s ease}
+.clinic-stat:hover{background:#f8fcfb}
+.clinic-section{position:relative}
+.clinic-photo-section{background:#fff}
+.clinic-photo-card{
+  display:block;
+  position:relative;
+  overflow:hidden;
+  border-radius:1.35rem;
+  height:100%;
+  min-height:240px;
+  box-shadow:0 18px 45px rgba(11,70,66,.1);
+  border:1px solid #dfeceb;
+}
+.clinic-photo-card img{width:100%;height:100%;min-height:240px;object-fit:cover;display:block;transition:transform .5s ease}
+.clinic-photo-card:hover img{transform:scale(1.035)}
+.clinic-photo-card::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(3,35,37,.78))}
+.clinic-photo-card span{position:absolute;left:1.1rem;bottom:1rem;z-index:2;color:#fff;font-weight:700;font-size:.95rem}
+.clinic-photo-large{min-height:520px}
+.clinic-photo-large img{min-height:520px}
+.clinic-photo-small{min-height:248px}
+.clinic-photo-small img{min-height:248px}
+.feature-card,.doctor-profile-card{transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}
+.feature-card:hover,.doctor-profile-card:hover{transform:translateY(-5px);border-color:#c9e6e1}
+.doctor-profile-card{box-shadow:0 10px 32px rgba(11,70,66,.045)}
+.portal-callout{box-shadow:0 20px 55px rgba(11,70,66,.06)}
+.live-preview{box-shadow:0 25px 65px rgba(5,63,63,.18)}
+@media(max-width:991.98px){
+  .clinic-hero{min-height:auto}
+  .clinic-hero::after{background:linear-gradient(180deg,rgba(3,36,40,.96),rgba(5,55,59,.88)),var(--hero-image) center/cover no-repeat}
+  .hero-visual-wrap{margin-top:1rem}
+  .clinic-photo-large,.clinic-photo-large img{min-height:400px}
+}
+@media(max-width:767.98px){
+  .landing-topbar .container{gap:.7rem}
+  .landing-topbar .brand{max-width:60%}
+  .clinic-hero{padding:2.5rem 0}
+  .clinic-hero .display-3{font-size:clamp(2.25rem,11vw,3.25rem)}
+  .hero-live-card{padding:1.2rem}
+  .hero-visual-badge{right:.6rem}
+  .clinic-section{padding:3.5rem 0}
+  .clinic-photo-large,.clinic-photo-large img{min-height:300px}
+  .clinic-photo-small,.clinic-photo-small img{min-height:210px}
+  .section-heading{align-items:flex-start}
+}
