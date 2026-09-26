@@ -1,9 +1,14 @@
+<style>
+.opd-row-waiting{background:#fffdf2}.opd-row-called{background:#fff8e5}.opd-row-in_consultation{background:#eef9fb}.opd-row-completed{background:#effaf2}.opd-row-cancelled{background:#fff0f0}
+.opd-row td{border-color:#edf1f1}
+</style>
 <%
   const statusBadge = { WAITING: 'secondary', CALLED: 'warning', IN_CONSULTATION: 'info', COMPLETED: 'success', CANCELLED: 'danger' };
   const counts = rows.reduce(function(acc, r) { acc[r.visit_status] = (acc[r.visit_status] || 0) + 1; return acc; }, {});
 %>
 
 <h4 class="mb-3">Today's OPD Queue</h4>
+<div class="d-flex flex-wrap gap-2 mb-3 small"><span class="badge text-bg-secondary">Waiting</span><span class="badge text-bg-warning">Called</span><span class="badge text-bg-info">In consultation</span><span class="badge text-bg-success">Completed</span><span class="badge text-bg-danger">Bill / attention required</span></div>
 
 <div class="card mb-3">
   <div class="card-body">
@@ -41,7 +46,7 @@
       </thead>
       <tbody>
         <% rows.forEach(function(r) { %>
-          <tr>
+          <tr class="opd-row opd-row-<%= String(r.visit_status || '').toLowerCase() %>">
             <td><span class="token-badge"><%= String(r.token_number).padStart(3,'0') %></span></td>
             <td><a href="/patients/<%= r.health_id %>"><%= r.patient_name %></a><div class="text-muted small"><%= r.health_id %></div></td>
             <td><%= r.age_years || '—' %> / <%= r.gender %></td>
@@ -50,7 +55,11 @@
             <td><span class="badge text-bg-<%= statusBadge[r.visit_status] || 'secondary' %>"><%= r.visit_status.replace('_',' ') %></span></td>
             <td>
               <% if (!r.invoice_id) { %>
-                <span class="badge text-bg-light text-dark">No Bill</span>
+                <% if (r.visit_status === 'COMPLETED' && can('billing.create')) { %>
+                  <a href="/billing/invoices/new?visitId=<%= r.visit_id %>" class="badge text-bg-danger text-decoration-none">Create Bill</a>
+                <% } else { %>
+                  <span class="badge text-bg-light text-dark">No Bill</span>
+                <% } %>
               <% } else if (r.payment_status === 'PAID') { %>
                 <a href="/billing/invoices/<%= r.invoice_id %>" class="badge text-bg-success text-decoration-none">Paid</a>
               <% } else { %>
@@ -73,12 +82,15 @@
                     <button class="btn btn-sm btn-info">Start Consultation</button>
                   </form>
                 <% } %>
-                <% if (r.visit_status === 'IN_CONSULTATION') { %>
+                <% if (r.visit_status === 'IN_CONSULTATION' && (currentUser.doctorId || currentUser.roles.includes('SUPER_ADMIN'))) { %>
                   <form method="POST" action="/opd/visits/<%= r.visit_id %>/status">
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <input type="hidden" name="status" value="COMPLETED">
-                    <button class="btn btn-sm btn-success">Complete</button>
+                    <button class="btn btn-sm btn-success">Complete Checkup</button>
                   </form>
+                <% } %>
+                <% if (r.visit_status === 'COMPLETED' && r.invoice_id && r.payment_status !== 'PAID' && can('payment.record')) { %>
+                  <a href="/billing/invoices/<%= r.invoice_id %>" class="btn btn-sm btn-danger"><i class="bi bi-cash-coin"></i> Collect Bill</a>
                 <% } %>
                 <a href="/opd/visits/<%= r.visit_id %>/vitals" class="btn btn-sm btn-outline-info"><i class="bi bi-heart-pulse"></i> Vitals</a>
                 <% if (r.visit_status === 'WAITING') { %>
