@@ -1,4 +1,9 @@
 <%- include('../partials/public-nav') %>
+<div class="pwa-install-prompt" id="pwaInstallPrompt" hidden role="dialog" aria-labelledby="pwaInstallTitle" aria-describedby="pwaInstallText">
+  <div class="pwa-install-prompt__icon"><i class="bi bi-phone"></i></div>
+  <div class="pwa-install-prompt__body"><strong id="pwaInstallTitle">Install the Chhayabithi app</strong><span id="pwaInstallText">Get faster access to appointments, your patient portal and Live OPD from your home screen.</span></div>
+  <div class="pwa-install-prompt__actions"><button type="button" class="btn btn-light btn-sm" id="pwaInstallNow">Install App</button><button type="button" class="pwa-install-prompt__close" id="pwaInstallLater" aria-label="Close install prompt">&times;</button></div>
+</div>
 <div class="clinic-site landing-v2">
 <section class="landing-hero-v2"><div class="landing-hero-v2__backdrop"></div><div class="container landing-hero-v2__inner"><div class="row align-items-center g-5">
 <div class="col-lg-5 order-2 order-lg-1"><div class="landing-hero-panel">
@@ -11,7 +16,7 @@
 <div class="landing-kicker"><span class="landing-kicker__dot"></span> MODERN OPD • DIGITAL PATIENT CARE</div>
 <h1>Better healthcare.<br><span>Closer to you.</span></h1>
 <p class="landing-hero-copy"><%= siteSettings.seo_description || 'Compassionate clinical care, experienced doctors and a seamless digital patient experience.' %></p>
-<div class="landing-hero-actions"><a href="/patient-portal-info" class="btn btn-light btn-lg"><i class="bi bi-calendar2-check"></i> Book an Appointment</a><a href="/auth/signup" class="btn btn-outline-light btn-lg"><i class="bi bi-person-plus"></i> Create Patient Account</a></div>
+<div class="landing-hero-actions"><a href="/patient-portal-info" class="btn btn-light btn-lg"><i class="bi bi-calendar2-check"></i> Book an Appointment</a><a href="/auth/signup" class="btn btn-outline-light btn-lg"><i class="bi bi-person-plus"></i> Create Patient Account</a><button type="button" class="btn btn-outline-light btn-lg pwa-install-hero" id="pwaInstallHero" hidden><i class="bi bi-download"></i> Install App</button></div>
 <div class="landing-trust-row"><span><i class="bi bi-shield-check"></i> Secure digital records</span><span><i class="bi bi-people"></i> Experienced clinical team</span><span><i class="bi bi-clock-history"></i> Smarter OPD experience</span></div>
 </div></div></div></div><div class="landing-hero-v2__curve"></div></section>
 <section class="landing-trust-strip"><div class="container"><div class="row g-0"><div class="col-6 col-lg-3"><div class="landing-trust-stat"><i class="bi bi-heart-pulse"></i><div><strong><%= liveSummary.totalVisitsToday %></strong><span>Visits today</span></div></div></div><div class="col-6 col-lg-3"><div class="landing-trust-stat"><i class="bi bi-person-badge"></i><div><strong><%= liveSummary.doctorsActive %></strong><span>Active doctors</span></div></div></div><div class="col-6 col-lg-3"><div class="landing-trust-stat"><i class="bi bi-hourglass-split"></i><div><strong><%= liveSummary.waiting %></strong><span>Currently waiting</span></div></div></div><div class="col-6 col-lg-3"><div class="landing-trust-stat"><i class="bi bi-shield-lock"></i><div><strong>Secure</strong><span>Digital patient portal</span></div></div></div></div></div></section>
