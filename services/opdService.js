@@ -320,7 +320,15 @@ async function getAppointment(appointmentId) {
      WHERE h.appointment_id = :id ORDER BY h.changed_at DESC`,
     { id: appointmentId }
   );
-  return { appointment: appt, history };
+  const [prescriptionAttachments] = await pool.execute(
+    `SELECT pa.id, pa.original_name, pa.created_at, u.name AS uploaded_by_name
+     FROM prescription_attachments pa
+     JOIN users u ON u.id = pa.uploaded_by
+     WHERE pa.visit_id = :visitId
+     ORDER BY pa.created_at DESC`,
+    { visitId: appt.visit_id }
+  );
+  return { appointment: appt, history, prescriptionAttachments };
 }
 
 /** Today's queue, optionally scoped to one doctor (used by the doctor portal). */
