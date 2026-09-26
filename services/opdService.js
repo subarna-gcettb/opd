@@ -35,8 +35,9 @@ async function generateVisitCode(conn, dateStr) {
  * have "Token 001" on the same day. Uniqueness is additionally enforced
  * by uk_appt_doctor_date_token in the schema.
  */
-async function generateToken(conn, doctorId, dateStr) {
-  return sequenceService.nextValue(conn, `token:doctor:${doctorId}:${dateStr}`);
+async function generateToken(conn, dateStr) {
+  // One hospital-wide token sequence per calendar day.
+  return sequenceService.nextValue(conn, `token:date:${dateStr}`);
 }
 
 /**
@@ -67,16 +68,22 @@ async function bookAppointment(payload, actorUserId) {
     const check = await scheduleService.isSlotBookable(conn, doctorId, appointmentDate, slotTime);
     if (!check.ok) throw new AppError(check.reason, 409);
 
-    const token = await generateToken(conn, doctorId, appointmentDate);
+    const token = await generateToken(conn, appointmentDate);
     const appointmentCode = await generateAppointmentCode(conn, appointmentDate);
 
     const [apptResult] = await conn.execute(
       `INSERT INTO appointments
         (appointment_code, patient_id, doctor_id, branch_id, department_id,
-         appointment_date, slot_time, token_number, reason, status, created_by)
+         appointment_date, slot_time, token_number, reason,
+         lmp_date, gravida, para, abortions, pregnancy_status,
+         gestational_age_weeks, gestational_age_days, estimated_due_date, obstetric_notes,
+         status, created_by)
        VALUES
         (:code, :patientId, :doctorId, :branchId, :departmentId,
-         :date, :slotTime, :token, :reason, :lmpDate, :gravida, :para, :abortions, :pregnancyStatus, :gaWeeks, :gaDays, :edd, :obstetricNotes, 'BOOKED', :createdBy)`,
+         :date, :slotTime, :token, :reason,
+         :lmpDate, :gravida, :para, :abortions, :pregnancyStatus,
+         :gaWeeks, :gaDays, :edd, :obstetricNotes,
+         'BOOKED', :createdBy)`,
       {
         code: appointmentCode,
         patientId,
