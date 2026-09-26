@@ -2,106 +2,55 @@
   'use strict';
 
   var deferredPrompt = null;
-  var installButtons = [
-    document.getElementById('pwaInstallNow'),
+  var buttons = [
+    document.getElementById('pwaInstallNav'),
     document.getElementById('pwaInstallHero'),
-    document.getElementById('pwaInstallNav')
+    document.getElementById('pwaInstallMobile')
   ].filter(Boolean);
-  var prompt = document.getElementById('pwaInstallPrompt');
-  var later = document.getElementById('pwaInstallLater');
 
   function isStandalone() {
     return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   }
 
-  function showInstallUi() {
-    if (isStandalone()) return;
-    installButtons.forEach(function (button) { button.hidden = false; button.dataset.closeOnly = 'false'; });
-    var title = document.getElementById('pwaInstallTitle');
-    var text = document.getElementById('pwaInstallText');
-    var now = document.getElementById('pwaInstallNow');
-    if (title) title.textContent = 'Install the Chhayabithi app';
-    if (text) text.textContent = 'Get faster access to appointments, your patient portal and Live OPD from your home screen.';
-    if (now) now.textContent = 'Install App';
-    if (prompt) prompt.hidden = false;
+  function hideButtons() {
+    buttons.forEach(function (button) { button.hidden = true; });
   }
 
-  function hideInstallUi() {
-    installButtons.forEach(function (button) { button.hidden = true; });
-    if (prompt) prompt.hidden = true;
-  }
-
-  function showIosInstructions() {
-    if (!prompt) return;
-    var text = document.getElementById('pwaInstallText');
-    var title = document.getElementById('pwaInstallTitle');
-    var now = document.getElementById('pwaInstallNow');
-    if (title) title.textContent = 'Add Chhayabithi to your home screen';
-    if (text) text.textContent = 'On iPhone or iPad, open this site in Safari, tap Share, then choose “Add to Home Screen”.';
-    if (now) now.textContent = 'Got it';
-    prompt.hidden = false;
-    if (now) { now.textContent = 'Close'; now.dataset.closeOnly = 'true'; }
+  function showButtons() {
+    if (isStandalone()) {
+      hideButtons();
+      return;
+    }
+    buttons.forEach(function (button) { button.hidden = false; });
   }
 
   window.addEventListener('beforeinstallprompt', function (event) {
     event.preventDefault();
     deferredPrompt = event;
-    showInstallUi();
+    showButtons();
   });
 
   window.addEventListener('appinstalled', function () {
     deferredPrompt = null;
-    hideInstallUi();
+    hideButtons();
   });
 
-  installButtons.forEach(function (button) {
+  buttons.forEach(function (button) {
     button.addEventListener('click', async function () {
-      if (!deferredPrompt) {
-        if (this.dataset.closeOnly === 'true') { if (prompt) prompt.hidden = true; this.dataset.closeOnly = 'false'; return; }
-        if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !isStandalone()) {
-          showIosInstructions();
-        } else {
-          var title = document.getElementById('pwaInstallTitle');
-          var text = document.getElementById('pwaInstallText');
-          var now = document.getElementById('pwaInstallNow');
-          if (title) title.textContent = 'Install from your browser menu';
-          if (text) text.textContent = 'Open your browser menu and choose “Install app” or “Add to Home screen”.';
-          if (now) now.textContent = 'Close';
-          if (now) now.dataset.closeOnly = 'true';
-        }
-        return;
+      if (!deferredPrompt) return;
+
+      try {
+        var choice = await deferredPrompt.prompt();
+        if (choice && choice.outcome === 'accepted') hideButtons();
+      } catch (error) {
+        // The browser controls whether installation is available.
+      } finally {
+        deferredPrompt = null;
       }
-      deferredPrompt.prompt();
-      var choice = await deferredPrompt.userChoice;
-      if (choice && choice.outcome === 'accepted') hideInstallUi();
-      deferredPrompt = null;
     });
   });
 
-  if (later) {
-    later.addEventListener('click', function () {
-      if (prompt) prompt.hidden = true;
-    });
-  }
-
-  window.addEventListener('DOMContentLoaded', function () {
-    if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !isStandalone()) {
-      window.setTimeout(showIosInstructions, 1800);
-    }
-  });
-
-  if (!isStandalone() && !deferredPrompt) {
-    window.setTimeout(function () {
-      if (isStandalone() || deferredPrompt) return;
-      var title = document.getElementById('pwaInstallTitle');
-      var text = document.getElementById('pwaInstallText');
-      var now = document.getElementById('pwaInstallNow');
-      if (title) title.textContent = 'Use Chhayabithi like an app';
-      if (text) text.textContent = 'Add Chhayabithi to your home screen for quick access to appointments, your patient portal and Live OPD.';
-      if (now) now.textContent = 'How to install';
-      if (prompt) prompt.hidden = false;
-    }, 1800);
-  }
+  if (isStandalone()) hideButtons();
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
