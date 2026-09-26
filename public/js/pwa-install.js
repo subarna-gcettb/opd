@@ -51,6 +51,7 @@
   installButtons.forEach(function (button) {
     button.addEventListener('click', async function () {
       if (!deferredPrompt) {
+        if (this.dataset.closeOnly === 'true') { if (prompt) prompt.hidden = true; this.dataset.closeOnly = 'false'; return; }
         if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !isStandalone()) {
           showIosInstructions();
         } else {
