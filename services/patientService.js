@@ -254,7 +254,18 @@ async function getPatientProfile(healthIdOrId) {
     { id: patient.id }
   );
 
-  return { patient, opdHistory, prescriptions, billing };
+  const [prescriptionAttachments] = await pool.execute(
+    `SELECT pa.id, pa.visit_id, pa.original_name, pa.mime_type, pa.file_size, pa.created_at,
+            u.name AS uploaded_by_name, v.visit_code
+     FROM prescription_attachments pa
+     JOIN users u ON u.id = pa.uploaded_by
+     JOIN opd_visits v ON v.id = pa.visit_id
+     WHERE pa.patient_id = :id
+     ORDER BY pa.created_at DESC`,
+    { id: patient.id }
+  );
+
+  return { patient, opdHistory, prescriptions, billing, prescriptionAttachments };
 }
 
 /**
