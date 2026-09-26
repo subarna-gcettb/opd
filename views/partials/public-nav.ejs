@@ -17,35 +17,43 @@
 </style>
 
 <div class="landing-topbar">
-  <div class="container">
-    <a href="/" class="brand text-decoration-none text-white">
-      <% if (siteSettings.logo_path) { %><img src="<%= siteSettings.logo_path %>" alt="Logo" style="height:26px;"><% } else { %><i class="bi bi-hospital"></i><% } %>
-      <%= siteSettings.hospital_name.toUpperCase() %>
+  <div class="container landing-nav-container">
+    <a href="/" class="brand text-decoration-none text-white" aria-label="<%= siteSettings.hospital_name %> home">
+      <span class="brand-mark"><% if (siteSettings.logo_path) { %><img src="<%= siteSettings.logo_path %>" alt=""><% } else { %><i class="bi bi-hospital"></i><% } %></span>
+      <span class="brand-name"><%= siteSettings.hospital_name %></span>
     </a>
-    <nav class="public-desktop-nav">
+    <nav class="public-desktop-nav" aria-label="Primary navigation">
       <a href="/" class="<%= currentPage === 'home' ? 'active' : '' %>">Home</a>
       <a href="/patient-portal-info" class="<%= currentPage === 'patient-portal' ? 'active' : '' %>">Patient Portal</a>
       <a href="/services" class="<%= currentPage === 'services' ? 'active' : '' %>">Services</a>
       <a href="/our-doctors" class="<%= currentPage === 'doctors' ? 'active' : '' %>">Doctors</a>
-      <a href="/lab-diagnostics" class="<%= currentPage === 'lab' ? 'active' : '' %>">Lab &amp; Diagnostics</a>
+      <a href="/lab-diagnostics" class="<%= currentPage === 'lab' ? 'active' : '' %>">Diagnostics</a>
       <a href="/live-opd" class="<%= currentPage === 'live-opd' ? 'active' : '' %>">Live OPD</a>
       <a href="/contact" class="<%= currentPage === 'contact' ? 'active' : '' %>">Contact</a>
     </nav>
+    <div class="landing-nav-actions">
+      <button type="button" class="btn btn-install pwa-install-nav" id="pwaInstallNav" hidden><i class="bi bi-download"></i><span>Install App</span></button>
+      <a href="/auth/login" class="btn btn-signin">Sign In</a>
+      <a href="/auth/signup" class="btn btn-signup">Patient Sign Up</a>
+    </div>
     <div class="public-mobile-menu">
-      <button class="btn btn-outline-light btn-sm" type="button" id="publicMenuToggle" aria-expanded="false" aria-controls="publicMenu">
-        <i class="bi bi-list"></i> Menu
+      <button class="mobile-menu-toggle" type="button" id="publicMenuToggle" aria-expanded="false" aria-controls="publicMenu">
+        <i class="bi bi-list"></i><span>Menu</span>
       </button>
       <div class="public-mobile-dropdown" id="publicMenu">
-        <li><a class="dropdown-item" href="/">Home</a></li>
-        <li><a class="dropdown-item" href="/patient-portal-info">Patient Portal</a></li>
-        <li><a class="dropdown-item" href="/services">Services</a></li>
-        <li><a class="dropdown-item" href="/our-doctors">Doctors</a></li>
-        <li><a class="dropdown-item" href="/lab-diagnostics">Lab &amp; Diagnostics</a></li>
-        <li><a class="dropdown-item" href="/live-opd">Live OPD</a></li>
-        <li><a class="dropdown-item" href="/contact">Contact</a></li>
+        <a href="/" class="<%= currentPage === 'home' ? 'active' : '' %>"><i class="bi bi-house"></i>Home</a>
+        <a href="/patient-portal-info" class="<%= currentPage === 'patient-portal' ? 'active' : '' %>"><i class="bi bi-person-vcard"></i>Patient Portal</a>
+        <a href="/services" class="<%= currentPage === 'services' ? 'active' : '' %>"><i class="bi bi-heart-pulse"></i>Services</a>
+        <a href="/our-doctors" class="<%= currentPage === 'doctors' ? 'active' : '' %>"><i class="bi bi-person-badge"></i>Doctors</a>
+        <a href="/lab-diagnostics" class="<%= currentPage === 'lab' ? 'active' : '' %>"><i class="bi bi-eyedropper"></i>Diagnostics</a>
+        <a href="/live-opd" class="<%= currentPage === 'live-opd' ? 'active' : '' %>"><i class="bi bi-broadcast"></i>Live OPD</a>
+        <a href="/contact" class="<%= currentPage === 'contact' ? 'active' : '' %>"><i class="bi bi-telephone"></i>Contact</a>
+        <div class="mobile-menu-divider"></div>
+        <a href="/auth/login"><i class="bi bi-box-arrow-in-right"></i>Sign In</a>
+        <a href="/auth/signup"><i class="bi bi-person-plus"></i>Patient Sign Up</a>
+        <button type="button" class="mobile-install-action pwa-install-mobile" id="pwaInstallMobile" hidden><i class="bi bi-download"></i>Install App</button>
       </div>
     </div>
-    <div class="landing-nav-actions"><button type="button" class="btn btn-outline-light btn-sm pwa-install-nav" id="pwaInstallNav" hidden><i class="bi bi-download"></i> Install</button><a href="/auth/signup" class="btn btn-outline-light btn-sm">Patient Sign Up</a><a href="/auth/login" class="btn btn-light btn-sm">Sign In</a></div>
   </div>
 </div>
 
@@ -54,12 +62,25 @@
   var toggle = document.getElementById('publicMenuToggle');
   var menu = document.getElementById('publicMenu');
   if (!toggle || !menu) return;
-  toggle.addEventListener('click', function () {
+  toggle.addEventListener('click', function (event) {
+    event.stopPropagation();
     var open = menu.classList.toggle('show');
     toggle.setAttribute('aria-expanded', String(open));
   });
+  menu.addEventListener('click', function (event) {
+    if (event.target.closest('a')) {
+      menu.classList.remove('show');
+      toggle.setAttribute('aria-expanded', 'false');
+    }
+  });
   document.addEventListener('click', function (event) {
     if (!event.target.closest('.public-mobile-menu')) {
+      menu.classList.remove('show');
+      toggle.setAttribute('aria-expanded', 'false');
+    }
+  });
+  window.addEventListener('resize', function () {
+    if (window.innerWidth > 991) {
       menu.classList.remove('show');
       toggle.setAttribute('aria-expanded', 'false');
     }
