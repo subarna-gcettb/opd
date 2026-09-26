@@ -339,13 +339,17 @@ For a development database where the app needs broader privileges for migrations
 
 ---
 
-# 8. Run database migrations
+# 8. Rebuild the database from scratch
 
-The migration runner applies the versioned SQL files in:
+**Important:** `npm run migrate` is intentionally configured as a **destructive fresh rebuild**.
 
-```
-database/migrations/
-```
+Every time it runs, it:
+
+1. Drops all existing tables in the configured `DB_NAME`.
+2. Recreates the `schema_migrations` tracker.
+3. Applies every SQL migration in `database/migrations/` in order.
+4. Applies `database/indexes.sql` when present.
+5. Leaves the database with the complete current schema.
 
 Run:
 
@@ -359,7 +363,13 @@ Equivalent command:
 node database/migrate.js
 ```
 
-The migration system records applied migrations in `schema_migrations`, so already-applied migrations are skipped.
+**This deletes all existing application data.** Do not run `npm run migrate` on a production database unless a complete reset is explicitly intended.
+
+After rebuilding the schema, initialize starter/reference/demo data with:
+
+```bash
+npm run seed
+```
 
 ### Important migration areas
 
@@ -836,10 +846,16 @@ git pull origin main
 
 npm install --omit=dev
 
+# WARNING: this deletes and rebuilds the entire configured database
 node database/migrate.js
+
+# Recreate starter/demo data if required
+node database/seed.js
 
 pm2 reload hms-opd
 ```
+
+Because `node database/migrate.js` is destructive, take a verified backup first if the existing database must be preserved.
 
 Then verify:
 
