@@ -1,11 +1,139 @@
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2"><div><h4 class="mb-1">Patient Vitals</h4><div class="text-muted"><strong><%= visit.patient_name %></strong> · <code><%= visit.health_id %></code> · Token <span class="token-badge"><%= String(visit.token_number).padStart(3,'0') %></span></div></div><a href="/opd/queue" class="btn btn-outline-secondary btn-sm">Back to Queue</a></div>
-<form method="POST" action="/opd/visits/<%= visit.id %>/vitals" class="card"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><div class="card-body"><div class="row g-3">
-<div class="col-6 col-md-3"><label class="form-label">BP</label><input class="form-control" name="bp" placeholder="120/80" value="<%= vitals.bp || '' %>"></div>
-<div class="col-6 col-md-3"><label class="form-label">Pulse / min</label><input type="number" class="form-control" name="pulse" value="<%= vitals.pulse || '' %>"></div>
-<div class="col-6 col-md-3"><label class="form-label">SpO₂ %</label><input type="number" min="0" max="100" class="form-control" name="spo2" value="<%= vitals.spo2 || '' %>"></div>
-<div class="col-6 col-md-3"><label class="form-label">Temperature °F</label><input type="number" step="0.1" class="form-control" name="temperature" value="<%= vitals.temperature || '' %>"></div>
-<div class="col-6 col-md-3"><label class="form-label">Height cm</label><input type="number" step="0.1" class="form-control" name="heightCm" value="<%= vitals.height_cm || '' %>"></div>
-<div class="col-6 col-md-3"><label class="form-label">Weight kg</label><input type="number" step="0.1" class="form-control" name="weightKg" value="<%= vitals.weight_kg || '' %>"></div>
-<div class="col-6 col-md-3"><label class="form-label">Respiratory rate</label><input type="number" class="form-control" name="respiratoryRate" value="<%= vitals.respiratory_rate || '' %>"></div>
-<div class="col-6 col-md-3"><label class="form-label">Pain score (0–10)</label><input type="number" min="0" max="10" class="form-control" name="painScore" value="<%= vitals.pain_score || '' %>"></div>
-</div></div><div class="card-footer text-end"><button class="btn btn-primary">Save Vitals</button></div></form>
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <div>
+    <h4 class="mb-1">Patient Vitals</h4>
+    <div class="text-muted"><strong><%= visit.patient_name %></strong> · <code><%= visit.health_id %></code> · Token <span class="token-badge"><%= String(visit.token_number).padStart(3,'0') %></span></div>
+  </div>
+  <a href="/opd/queue" class="btn btn-outline-secondary btn-sm">Back to Queue</a>
+</div>
+
+<form method="POST" action="/opd/visits/<%= visit.id %>/vitals" class="vitals-workspace">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+  <div class="card mb-3">
+    <div class="card-header d-flex align-items-center justify-content-between">
+      <span><i class="bi bi-heart-pulse me-1"></i> General Vitals</span>
+      <span class="small text-muted">Reception / Nursing</span>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-6 col-lg-3"><label class="form-label">BP</label><input class="form-control" name="bp" placeholder="120/80" value="<%= vitals.bp || '' %>"></div>
+        <div class="col-6 col-lg-3"><label class="form-label">Pulse / min</label><input type="number" min="0" class="form-control" name="pulse" value="<%= vitals.pulse || '' %>"></div>
+        <div class="col-6 col-lg-3"><label class="form-label">SpO₂ %</label><input type="number" min="0" max="100" class="form-control" name="spo2" value="<%= vitals.spo2 || '' %>"></div>
+        <div class="col-6 col-lg-3"><label class="form-label">Temperature °F</label><input type="number" step="0.1" class="form-control" name="temperature" value="<%= vitals.temperature || '' %>"></div>
+        <div class="col-6 col-lg-3"><label class="form-label">Height cm</label><input type="number" step="0.1" min="0" class="form-control" name="heightCm" value="<%= vitals.height_cm || '' %>"></div>
+        <div class="col-6 col-lg-3"><label class="form-label">Weight kg</label><input type="number" step="0.1" min="0" class="form-control" name="weightKg" value="<%= vitals.weight_kg || '' %>"></div>
+        <div class="col-6 col-lg-3"><label class="form-label">Respiratory rate</label><input type="number" min="0" class="form-control" name="respiratoryRate" value="<%= vitals.respiratory_rate || '' %>"></div>
+        <div class="col-6 col-lg-3"><label class="form-label">Pain score (0–10)</label><input type="number" min="0" max="10" class="form-control" name="painScore" value="<%= vitals.pain_score || '' %>"></div>
+      </div>
+    </div>
+  </div>
+
+  <% if (String(visit.gender || '').toLowerCase() === 'female') { %>
+  <div class="card mb-3 border-info pregnancy-card">
+    <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <span><i class="bi bi-gender-female me-1"></i> Female / Obstetric Assessment</span>
+      <span class="badge text-bg-info">Automatically shown for female patients</span>
+    </div>
+    <div class="card-body">
+      <div class="alert alert-light border small mb-3">
+        Record the obstetric history here. If the patient is marked pregnant and an LMP is entered, gestational age and estimated due date are calculated automatically and shown to the doctor.
+      </div>
+      <div class="row g-3">
+        <div class="col-12 col-md-6 col-lg-3">
+          <label class="form-label">Pregnancy status</label>
+          <select class="form-select" name="pregnancyStatus" id="pregnancyStatus">
+            <option value="UNKNOWN" <%= pregnancy.pregnancy_status === 'UNKNOWN' || !pregnancy.pregnancy_status ? 'selected' : '' %>>Unknown / not assessed</option>
+            <option value="NOT_PREGNANT" <%= pregnancy.pregnancy_status === 'NOT_PREGNANT' ? 'selected' : '' %>>Not pregnant</option>
+            <option value="PREGNANT" <%= pregnancy.pregnancy_status === 'PREGNANT' ? 'selected' : '' %>>Pregnant</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-6 col-lg-3">
+          <label class="form-label">Last Menstrual Period (LMP)</label>
+          <input type="date" class="form-control" name="lmpDate" id="lmpDate" value="<%= pregnancy.lmp_date ? String(pregnancy.lmp_date).slice(0,10) : '' %>">
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+          <label class="form-label">Gravida (G)</label>
+          <input type="number" min="0" class="form-control" name="gravida" value="<%= pregnancy.gravida ?? '' %>">
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+          <label class="form-label">Para (P)</label>
+          <input type="number" min="0" class="form-control" name="para" value="<%= pregnancy.para ?? '' %>">
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+          <label class="form-label">Abortions (A)</label>
+          <input type="number" min="0" class="form-control" name="abortions" value="<%= pregnancy.abortions ?? '' %>">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Obstetric notes</label>
+          <textarea class="form-control" name="obstetricNotes" rows="2" placeholder="Relevant pregnancy / obstetric history"><%= pregnancy.obstetric_notes || '' %></textarea>
+        </div>
+      </div>
+
+      <div id="pregnancyResults" class="pregnancy-results mt-4 <%= pregnancyCalculation ? '' : 'd-none' %>">
+        <div class="small text-uppercase fw-bold text-info mb-2">Automatic Pregnancy Calculator</div>
+        <div class="row g-2">
+          <div class="col-6 col-md-3"><div class="pregnancy-stat"><small>Gestational age</small><strong id="gaResult"><%= pregnancyCalculation ? pregnancyCalculation.gestationalAgeLabel : '—' %></strong></div></div>
+          <div class="col-6 col-md-3"><div class="pregnancy-stat"><small>Estimated due date</small><strong id="eddResult"><%= pregnancyCalculation ? pregnancyCalculation.estimatedDueDate : '—' %></strong></div></div>
+          <div class="col-6 col-md-3"><div class="pregnancy-stat"><small>Trimester</small><strong id="trimesterResult"><%= pregnancyCalculation ? pregnancyCalculation.trimester : '—' %></strong></div></div>
+          <div class="col-6 col-md-3"><div class="pregnancy-stat"><small>Time remaining</small><strong id="remainingResult"><%= pregnancyCalculation ? pregnancyCalculation.remainingWeeks + 'w ' + pregnancyCalculation.remainingExtraDays + 'd' : '—' %></strong></div></div>
+        </div>
+        <div class="small text-muted mt-2" id="pregnancyStatusResult"><%= pregnancyCalculation ? pregnancyCalculation.termStatus : '' %></div>
+      </div>
+    </div>
+  </div>
+  <% } %>
+
+  <div class="card">
+    <div class="card-footer text-end">
+      <button class="btn btn-primary btn-lg"><i class="bi bi-check2-circle me-1"></i> Save Vitals &amp; Continue</button>
+    </div>
+  </div>
+</form>
+
+<% if (String(visit.gender || '').toLowerCase() === 'female') { %>
+<script>
+(function () {
+  const status = document.getElementById('pregnancyStatus');
+  const lmp = document.getElementById('lmpDate');
+  const results = document.getElementById('pregnancyResults');
+  const ga = document.getElementById('gaResult');
+  const edd = document.getElementById('eddResult');
+  const trimester = document.getElementById('trimesterResult');
+  const remaining = document.getElementById('remainingResult');
+  const statusResult = document.getElementById('pregnancyStatusResult');
+  if (!status || !lmp) return;
+
+  function parseDate(value) {
+    const m = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return null;
+    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    return d.getFullYear() === Number(m[1]) && d.getMonth() === Number(m[2]) - 1 && d.getDate() === Number(m[3]) ? d : null;
+  }
+  function fmt(d) {
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  function calculate() {
+    if (status.value !== 'PREGNANT') { results.classList.add('d-none'); return; }
+    const l = parseDate(lmp.value);
+    if (!l) { results.classList.add('d-none'); return; }
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const elapsed = Math.floor((today - l) / 86400000);
+    if (elapsed < 0) { results.classList.add('d-none'); return; }
+    const weeks = Math.floor(elapsed / 7), days = elapsed % 7;
+    const ed = new Date(l.getFullYear(), l.getMonth(), l.getDate());
+    ed.setDate(ed.getDate() + 280);
+    const remainingDays = Math.max(0, 280 - elapsed);
+    ga.textContent = weeks + ' weeks ' + days + ' days';
+    edd.textContent = fmt(ed);
+    trimester.textContent = weeks < 14 ? 'First trimester' : (weeks < 28 ? 'Second trimester' : 'Third trimester');
+    remaining.textContent = Math.floor(remainingDays/7) + 'w ' + (remainingDays%7) + 'd';
+    statusResult.textContent = elapsed > 280 ? 'Past estimated due date' : 'Within estimated pregnancy period';
+    results.classList.remove('d-none');
+  }
+  status.addEventListener('change', calculate);
+  lmp.addEventListener('change', calculate);
+  calculate();
+})();
+</script>
+<% } %>
