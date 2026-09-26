@@ -246,7 +246,7 @@ CREATE TABLE IF NOT EXISTS appointments (
   CONSTRAINT fk_appt_branch FOREIGN KEY (branch_id) REFERENCES branches(id),
   CONSTRAINT fk_appt_dept FOREIGN KEY (department_id) REFERENCES departments(id),
   CONSTRAINT fk_appt_created_by FOREIGN KEY (created_by) REFERENCES users(id),
-  UNIQUE KEY uk_appt_doctor_date_token (doctor_id, appointment_date, token_number),
+  UNIQUE KEY uk_appt_date_token (appointment_date, token_number),
   INDEX idx_appt_patient (patient_id),
   INDEX idx_appt_doctor_date (doctor_id, appointment_date),
   INDEX idx_appt_date_status (appointment_date, status)
@@ -320,6 +320,23 @@ CREATE TABLE IF NOT EXISTS vitals (
   CONSTRAINT fk_vitals_cons FOREIGN KEY (consultation_id) REFERENCES opd_consultations(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS appointment_vitals (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  visit_id INT UNSIGNED NOT NULL UNIQUE,
+  bp VARCHAR(15) NULL,
+  pulse SMALLINT UNSIGNED NULL,
+  spo2 SMALLINT UNSIGNED NULL,
+  temperature DECIMAL(4,1) NULL,
+  height_cm DECIMAL(5,2) NULL,
+  weight_kg DECIMAL(5,2) NULL,
+  respiratory_rate SMALLINT UNSIGNED NULL,
+  pain_score TINYINT UNSIGNED NULL,
+  recorded_by INT UNSIGNED NOT NULL,
+  recorded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_appt_vitals_visit FOREIGN KEY (visit_id) REFERENCES opd_visits(id) ON DELETE CASCADE,
+  CONSTRAINT fk_appt_vitals_user FOREIGN KEY (recorded_by) REFERENCES users(id)
+) ENGINE=InnoDB;
+
 -- ---------------------------------------------------------------------
 -- 7. PRESCRIPTIONS (versioned)
 -- ---------------------------------------------------------------------
@@ -372,6 +389,24 @@ CREATE TABLE IF NOT EXISTS prescription_items (
   CONSTRAINT fk_pi_presc FOREIGN KEY (prescription_id) REFERENCES prescriptions(id) ON DELETE CASCADE,
   CONSTRAINT fk_pi_medicine FOREIGN KEY (medicine_id) REFERENCES medicines(id),
   INDEX idx_pi_presc (prescription_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS prescription_attachments (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  visit_id INT UNSIGNED NOT NULL,
+  patient_id INT UNSIGNED NOT NULL,
+  uploaded_by INT UNSIGNED NOT NULL,
+  original_name VARCHAR(255) NOT NULL,
+  storage_name VARCHAR(255) NOT NULL UNIQUE,
+  storage_path VARCHAR(500) NOT NULL,
+  mime_type VARCHAR(100) NOT NULL,
+  file_size INT UNSIGNED NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_rx_attach_visit FOREIGN KEY (visit_id) REFERENCES opd_visits(id) ON DELETE CASCADE,
+  CONSTRAINT fk_rx_attach_patient FOREIGN KEY (patient_id) REFERENCES patients(id),
+  CONSTRAINT fk_rx_attach_user FOREIGN KEY (uploaded_by) REFERENCES users(id),
+  INDEX idx_rx_attach_visit (visit_id),
+  INDEX idx_rx_attach_patient (patient_id)
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------
