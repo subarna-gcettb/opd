@@ -6,7 +6,7 @@ const STATIC_ASSETS=[
   '/js/main.js',
   '/js/pwa-install.js',
   '/css/pwa-install.css',
-  '/manifest.json'
+  
 ];
 
 self.addEventListener('install', event => {
