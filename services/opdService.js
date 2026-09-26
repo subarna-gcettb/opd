@@ -32,8 +32,7 @@ async function generateVisitCode(conn, dateStr) {
 
 /**
  * Token numbers are scoped per doctor per date, so two doctors can both
- * have "Token 001" on the same day. Uniqueness is additionally enforced
- * by uk_appt_doctor_date_token in the schema.
+ * have "Token 001" on the same day. The transaction-safe daily sequence prevents duplicate tokens for new bookings.
  */
 async function generateToken(conn, dateStr) {
   // One hospital-wide token sequence per calendar day.
