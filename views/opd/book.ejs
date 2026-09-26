@@ -1,3 +1,5 @@
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
 <h4 class="mb-3">Book OPD Appointment</h4>
 
 <form method="POST" action="/opd/appointments/new" class="card" id="bookingForm">
@@ -59,7 +61,8 @@
     <div class="row g-3">
       <div class="col-md-3">
         <label class="form-label">Appointment Date *</label>
-        <input type="date" name="appointmentDate" id="appointmentDate" class="form-control" value="<%= today %>" min="<%= today %>" required>
+        <input type="text" name="appointmentDate" id="appointmentDate" class="form-control" value="" placeholder="Select an available date" autocomplete="off" required>
+<div id="dateAvailabilityHint" class="form-text">Select a doctor first. Only that doctor's available OPD dates will be enabled.</div>
       </div>
       <div class="col-md-9">
         <label class="form-label">Available Slots *</label>
@@ -166,10 +169,65 @@
   deptSel.addEventListener('change', loadDoctors);
   branchSel.addEventListener('change', loadDoctors);
 
-  // Doctor + date -> slots
+  // Doctor + date -> slots. The calendar is restricted to dates where
+  // the selected doctor actually has an available OPD slot.
   const dateInput = document.getElementById('appointmentDate');
   const slotContainer = document.getElementById('slotContainer');
   const slotTimeField = document.getElementById('slotTime');
+  const dateHint = document.getElementById('dateAvailabilityHint');
+  let availableDatePicker = null;
+  let availableDates = [];
+
+  function initDatePicker() {
+    if (!window.flatpickr) return;
+    if (availableDatePicker) availableDatePicker.destroy();
+    availableDatePicker = flatpickr(dateInput, {
+      dateFormat: 'Y-m-d',
+      minDate: '<%= today %>',
+      disable: [function(date) {
+        const value = date.toISOString().slice(0, 10);
+        return availableDates.length > 0 && !availableDates.includes(value);
+      }],
+      onChange: function(selectedDates, dateStr) {
+        if (dateStr) loadSlots();
+      }
+    });
+  }
+
+  function loadAvailableDates() {
+    const doctorId = docSel.value;
+    slotTimeField.value = '';
+    slotContainer.innerHTML = '<span class="text-muted small">Select a date to see available slots.</span>';
+    if (!doctorId) {
+      availableDates = [];
+      if (dateHint) dateHint.textContent = "Select a doctor first. Only that doctor's available OPD dates will be enabled.";
+      initDatePicker();
+      return;
+    }
+    if (dateHint) dateHint.textContent = 'Checking the doctor schedule and live slot capacity…';
+    fetch('/doctors/' + doctorId + '/available-dates?from=<%= today %>&days=90', { headers: { Accept: 'application/json' } })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        availableDates = Array.isArray(data.dates) ? data.dates : [];
+        initDatePicker();
+        if (!availableDates.length) {
+          dateHint.textContent = 'This doctor has no available OPD dates in the next 90 days.';
+          return;
+        }
+        dateHint.textContent = availableDates.length + ' available OPD date(s) found. Unavailable dates are disabled.';
+        const current = dateInput.value;
+        if (!availableDates.includes(current)) {
+          availableDatePicker.setDate(availableDates[0], true);
+        } else {
+          loadSlots();
+        }
+      })
+      .catch(function() {
+        availableDates = [];
+        initDatePicker();
+        if (dateHint) dateHint.textContent = 'Could not load doctor availability. Please try again.';
+      });
+  }
 
   function loadSlots() {
     const doctorId = docSel.value;
@@ -198,8 +256,8 @@
       });
   }
 
-  docSel.addEventListener('change', loadSlots);
-  dateInput.addEventListener('change', loadSlots);
+  docSel.addEventListener('change', function () { loadAvailableDates(); });
+  initDatePicker();
 
   slotContainer.addEventListener('click', function (e) {
     const btn = e.target.closest('.slot-btn');
