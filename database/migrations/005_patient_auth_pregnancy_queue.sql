@@ -73,7 +73,13 @@ ALTER TABLE appointments
 
 ALTER TABLE opd_visits
   ADD COLUMN IF NOT EXISTS queue_position INT UNSIGNED NULL AFTER status;
-UPDATE opd_visits SET queue_position = token_number WHERE queue_position IS NULL;
+
+-- token_number belongs to appointments, not opd_visits. Seed the new
+-- receptionist ordering field from the appointment's permanent token.
+UPDATE opd_visits v
+JOIN appointments a ON a.id = v.appointment_id
+SET v.queue_position = a.token_number
+WHERE v.queue_position IS NULL;
 
 CREATE INDEX IF NOT EXISTS idx_visit_queue_position ON opd_visits (doctor_id, queue_position, status);
 
