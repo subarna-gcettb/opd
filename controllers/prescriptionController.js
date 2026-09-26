@@ -132,4 +132,77 @@ async function scanLookup(req, res, next) {
   }
 }
 
-module.exports = { create, view, amend, print, scanLookup };
+async function uploadHardCopy(req, res, next) {
+  const fs = require('fs');
+  const path = require('path');
+  const { uploadDir } = require('../utils/prescriptionUpload');
+  try {
+    if (!req.file) throw new AppError('Choose a prescription image to upload.', 422);
+
+    const [[visit]] = await pool.execute(
+      `SELECT v.id, v.status, v.patient_id, p.health_id, p.name AS patient_name
+       FROM opd_visits v JOIN patients p ON p.id = v.patient_id
+       WHERE v.id = :id`,
+      { id: req.params.visitId }
+    );
+    if (!visit) throw new AppError('Visit not found', 404);
+    if (visit.status !== 'COMPLETED') {
+      throw new AppError('The hard-copy prescription can only be uploaded after the doctor completes the checkup.', 409);
+    }
+
+    await pool.execute(
+      `INSERT INTO prescription_attachments
+       (visit_id, patient_id, uploaded_by, original_name, storage_name, storage_path, mime_type, file_size)
+       VALUES (:visitId, :patientId, :uploadedBy, :originalName, :storageName, :storagePath, :mimeType, :fileSize)`,
+      {
+        visitId: visit.id,
+        patientId: visit.patient_id,
+        uploadedBy: req.user.id,
+        originalName: req.file.originalname,
+        storageName: req.file.filename,
+        storagePath: path.relative(process.cwd(), req.file.path),
+        mimeType: req.file.mimetype,
+        fileSize: req.file.size
+      }
+    );
+
+    req.flash('success', 'Hard-copy prescription uploaded to the patient record.');
+    res.redirect(`/patients/${visit.health_id}`);
+  } catch (err) {
+    if (req.file && err) {
+      try { fs.unlinkSync(req.file.path); } catch (_) {}
+    }
+    if (err instanceof AppError) {
+      req.flash('errors', [{ message: err.message }]);
+      return res.redirect(req.get('Referer') || '/opd/queue');
+    }
+    next(err);
+  }
+}
+
+async function downloadHardCopy(req, res, next) {
+  const fs = require('fs');
+  const path = require('path');
+  const { uploadDir } = require('../utils/prescriptionUpload');
+  try {
+    const [[attachment]] = await pool.execute(
+      `SELECT pa.*, p.health_id
+       FROM prescription_attachments pa
+       JOIN patients p ON p.id = pa.patient_id
+       WHERE pa.id = :id`,
+      { id: req.params.attachmentId }
+    );
+    if (!attachment) throw new AppError('Prescription attachment not found', 404);
+
+    const fullPath = path.join(uploadDir, path.basename(attachment.storage_name));
+    if (!fs.existsSync(fullPath)) throw new AppError('Stored prescription image is missing', 404);
+
+    res.setHeader('Content-Type', attachment.mime_type);
+    res.setHeader('Content-Disposition', `inline; filename="${attachment.original_name.replace(/["\\]/g, '_')}"`);
+    res.sendFile(fullPath);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { create, view, amend, print, scanLookup, uploadHardCopy, downloadHardCopy };
