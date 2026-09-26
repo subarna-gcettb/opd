@@ -16,7 +16,13 @@
 
   function showInstallUi() {
     if (isStandalone()) return;
-    installButtons.forEach(function (button) { button.hidden = false; });
+    installButtons.forEach(function (button) { button.hidden = false; button.dataset.closeOnly = 'false'; });
+    var title = document.getElementById('pwaInstallTitle');
+    var text = document.getElementById('pwaInstallText');
+    var now = document.getElementById('pwaInstallNow');
+    if (title) title.textContent = 'Install the Chhayabithi app';
+    if (text) text.textContent = 'Get faster access to appointments, your patient portal and Live OPD from your home screen.';
+    if (now) now.textContent = 'Install App';
     if (prompt) prompt.hidden = false;
   }
 
