@@ -81,7 +81,7 @@ JOIN appointments a ON a.id = v.appointment_id
 SET v.queue_position = a.token_number
 WHERE v.queue_position IS NULL;
 
-CREATE INDEX IF NOT EXISTS idx_visit_queue_position ON opd_visits (doctor_id, queue_position, status);
+CREATE INDEX idx_visit_queue_position ON opd_visits (doctor_id, queue_position, status);
 
 CREATE TABLE IF NOT EXISTS appointment_vitals (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
