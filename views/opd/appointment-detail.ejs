@@ -84,6 +84,33 @@
   </div>
 <% } %>
 
+<% if (appointment.visit_status === 'COMPLETED' && can('prescription.attachment.upload')) { %>
+  <div class="card mb-3 border-info">
+    <div class="card-header"><i class="bi bi-file-earmark-image"></i> Hard-copy Prescription</div>
+    <div class="card-body">
+      <form method="POST" action="/prescriptions/visits/<%= appointment.visit_id %>/hard-copy" enctype="multipart/form-data">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="input-group">
+          <input type="file" name="prescriptionPhoto" class="form-control" accept="image/jpeg,image/png,image/webp" required>
+          <button class="btn btn-primary"><i class="bi bi-upload"></i> Upload</button>
+        </div>
+        <div class="form-text">Upload the signed hard-copy prescription after the doctor completes the checkup. JPG, PNG or WEBP, maximum 5 MB.</div>
+      </form>
+      <% if ((prescriptionAttachments || []).length) { %>
+        <div class="mt-3 small fw-semibold">Uploaded copies</div>
+        <div class="list-group list-group-flush">
+          <% prescriptionAttachments.forEach(function(a) { %>
+            <a class="list-group-item list-group-item-action px-0" href="/prescriptions/attachments/<%= a.id %>" target="_blank">
+              <i class="bi bi-file-image me-1"></i><%= a.original_name %>
+              <span class="text-muted"> · <%= new Date(a.created_at).toLocaleString() %> · <%= a.uploaded_by_name %></span>
+            </a>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+<% } %>
+
 <div class="card">
   <div class="card-header">Appointment History</div>
   <div class="table-responsive">
