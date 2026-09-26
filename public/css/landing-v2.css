@@ -109,3 +109,39 @@
   .landing-hero-visual__card{left:8px;bottom:10px;min-width:205px}.landing-hero-visual__badge{right:8px;top:9px}
   .landing-quick-actions{margin-top:-20px}.landing-quick-card{padding:1.05rem}
 }
+/* Shared public navigation polish */
+.landing-topbar{position:sticky;top:0;z-index:1050;padding:.65rem 0!important;background:rgba(4,48,52,.97)!important;border-bottom:1px solid rgba(255,255,255,.1);box-shadow:0 8px 28px rgba(0,0,0,.12)}
+.landing-nav-container{display:flex!important;align-items:center!important;gap:1rem!important;flex-wrap:nowrap!important;min-height:58px}
+.landing-topbar .brand{display:flex;align-items:center;gap:.65rem;min-width:220px;flex:0 0 auto}
+.brand-mark{width:38px;height:38px;display:grid;place-items:center;border-radius:.7rem;background:rgba(255,255,255,.12);overflow:hidden;flex:0 0 38px}
+.brand-mark img{width:100%;height:100%;object-fit:contain;padding:4px}
+.brand-mark i{font-size:1.15rem;color:#8de6d5}
+.brand-name{font-size:.78rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.public-desktop-nav{display:flex;align-items:center;justify-content:center;gap:.15rem;flex:1;min-width:0}
+.public-desktop-nav a{margin:0!important;padding:.58rem .62rem!important;border-radius:.55rem;color:#cfe7e3!important;font-size:.77rem!important;font-weight:700;white-space:nowrap;transition:.2s;text-decoration:none}
+.public-desktop-nav a:hover,.public-desktop-nav a.active{color:#fff!important;background:rgba(255,255,255,.1)}
+.landing-nav-actions{display:flex;align-items:center;gap:.45rem;flex:0 0 auto}
+.landing-nav-actions .btn{min-height:36px;border-radius:.55rem;font-size:.7rem;font-weight:800;padding:.45rem .7rem;text-decoration:none}
+.landing-nav-actions .btn-install{display:inline-flex;align-items:center;gap:.35rem;background:#78ddc9;color:#063b3e;border:1px solid #78ddc9}
+.landing-nav-actions .btn-install:hover{background:#9be9da;color:#063b3e}
+.landing-nav-actions .btn-signin{color:#fff;border:1px solid rgba(255,255,255,.28);background:transparent}
+.landing-nav-actions .btn-signup{color:#073c3e;background:#fff;border:1px solid #fff}
+.public-mobile-menu{display:none;position:relative;margin-left:auto}
+.mobile-menu-toggle{display:inline-flex;align-items:center;gap:.35rem;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;border-radius:.6rem;padding:.55rem .7rem;font-weight:800;font-size:.75rem}
+.public-mobile-dropdown{display:none;position:absolute;right:0;top:calc(100% + .6rem);width:min(330px,calc(100vw - 1.5rem));padding:.55rem;border:1px solid #d9e8e5;border-radius:1rem;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,.22);z-index:1100}
+.public-mobile-dropdown.show{display:block}
+.public-mobile-dropdown a,.mobile-install-action{width:100%;display:flex;align-items:center;gap:.7rem;padding:.75rem .8rem;border:0;border-radius:.55rem;background:transparent;color:#173c3e;text-decoration:none;font-size:.85rem;font-weight:700;text-align:left}
+.public-mobile-dropdown a:hover,.public-mobile-dropdown a.active{background:#eaf7f4;color:#08736b}
+.public-mobile-dropdown i{width:18px;text-align:center;color:#08736b}
+.mobile-menu-divider{height:1px;background:#e4eeec;margin:.45rem .5rem}
+.mobile-install-action{color:#08736b;cursor:pointer}
+@media(max-width:1199.98px) and (min-width:992px){
+ .landing-topbar .brand{min-width:185px}.brand-name{font-size:.68rem}.public-desktop-nav a{padding:.5rem .42rem!important;font-size:.69rem!important}.landing-nav-actions .btn{padding:.42rem .52rem;font-size:.65rem}
+}
+@media(max-width:991.98px){
+ .landing-nav-container{min-height:54px}.landing-topbar .brand{min-width:0;flex:1}.brand-mark{width:34px;height:34px;flex-basis:34px}.brand-name{font-size:.72rem;max-width:190px;overflow:hidden;text-overflow:ellipsis}
+ .public-desktop-nav{display:none}.landing-nav-actions{display:none}.public-mobile-menu{display:block}
+}
+@media(max-width:575.98px){
+ .landing-topbar{padding:.5rem 0!important}.landing-nav-container{gap:.55rem!important}.brand-mark{width:32px;height:32px;flex-basis:32px}.brand-name{font-size:.65rem;max-width:155px}.mobile-menu-toggle{padding:.5rem .58rem}
+}
