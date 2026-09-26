@@ -356,3 +356,26 @@ img, video, canvas { max-width: 100%; height: auto; }
   .clinic-photo-small,.clinic-photo-small img{min-height:210px}
   .section-heading{align-items:flex-start}
 }
+
+/* OPD pregnancy assessment */
+.pregnancy-card{border-color:#b8dfe7!important;box-shadow:0 10px 30px rgba(13,110,110,.06)}
+.pregnancy-results{padding:1rem;border-radius:.9rem;background:#eef9fb;border:1px solid #cfe8ec}
+.pregnancy-stat{height:100%;padding:.75rem;border-radius:.7rem;background:#fff;border:1px solid #d9ebee}
+.pregnancy-stat small{display:block;color:#6d7d7b;font-size:.68rem;text-transform:uppercase;letter-spacing:.04em}.pregnancy-stat strong{display:block;color:#075f63;margin-top:.2rem;font-size:.9rem}
+.pregnancy-doctor-card{padding:1.15rem 1.25rem;border:1px solid #b8dfe7;border-radius:1rem;background:linear-gradient(135deg,#f1fbfb,#eaf7f4);box-shadow:0 10px 28px rgba(11,70,66,.06)}
+.pregnancy-doctor-card__head{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;padding-bottom:.8rem;border-bottom:1px solid #d6ebea}
+.pregnancy-doctor-card__head .small{color:#08756d;letter-spacing:.08em}
+.pregnancy-doctor-card .row strong{display:block;color:#5d706e;font-size:.68rem;text-transform:uppercase;letter-spacing:.04em}
+.pregnancy-doctor-card .row span{display:block;color:#173e3a;font-weight:700;margin-top:.12rem}
+@media(min-width:1200px){
+ .hms-content{padding:1.75rem 2rem}
+ .vitals-workspace{max-width:1180px;margin:0 auto}
+ .vitals-workspace .card{border-radius:.85rem}
+}
+@media(min-width:1400px){
+ .vitals-workspace{max-width:1280px}
+}
+@media(max-width:767.98px){
+ .pregnancy-doctor-card{padding:1rem}.pregnancy-doctor-card__head{flex-direction:column}
+ .vitals-workspace .btn-lg{width:100%}
+}
