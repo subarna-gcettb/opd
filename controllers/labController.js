@@ -36,7 +36,7 @@ async function createOrder(req,res,next){try{
 }catch(err){if(err instanceof AppError){req.flash('errors',[{message:err.message}]);return res.redirect('/lab/orders/new');}next(err);}}
 
 async function orderDetail(req,res,next){try{
-  const data=await labService.getOrder(req.params.id); if(!data)throw new AppError('Laboratory order not found',404);
+  const data=await labService.getOrder(req.params.id); if(!data)throw new AppError('Laboratory order not found',404); if(!req.user.roles.includes('SUPER_ADMIN')&&Number(data.order.branch_id)!==Number(req.user.branch_id))throw new AppError('You do not have access to this laboratory branch',403);
   res.render('lab/order-detail',{title:data.order.order_code+' · Laboratory Order',...data});
 }catch(err){next(err);}}
 
@@ -63,7 +63,7 @@ async function saveResult(req,res,next){try{
 }catch(err){if(err instanceof AppError){req.flash('errors',[{message:err.message}]);return res.redirect(req.get('Referer')||'/lab/orders');}next(err);}}
 
 async function viewResult(req,res,next){try{
-  const data=await labService.getResult(req.params.id);if(!data)throw new AppError('Result not found',404);
+  const data=await labService.getResult(req.params.id);if(!data)throw new AppError('Result not found',404);if(!req.user.roles.includes('SUPER_ADMIN')&&Number(data.result.branch_id)!==Number(req.user.branch_id))throw new AppError('You do not have access to this laboratory branch',403);
   res.render('lab/result',{title:data.result.test_name_snapshot+' · Report',...data});
 }catch(err){next(err);}}
 
@@ -75,7 +75,7 @@ async function attachFile(req,res,next){try{
 }catch(err){if(req.file){try{fs.unlinkSync(req.file.path);}catch(_){}}if(err instanceof AppError){req.flash('errors',[{message:err.message}]);return res.redirect('/lab/results/'+req.params.id);}next(err);}}
 
 async function printReport(req,res,next){try{
-  const data=await labService.getResult(req.params.id);if(!data)throw new AppError('Report not found',404);
+  const data=await labService.getResult(req.params.id);if(!data)throw new AppError('Report not found',404);if(!req.user.roles.includes('SUPER_ADMIN')&&Number(data.result.branch_id)!==Number(req.user.branch_id))throw new AppError('You do not have access to this laboratory branch',403);
   if(data.result.status!=='RELEASED'&&!req.user.permissions.includes('lab.result.release'))throw new AppError('Report has not been released',403);
   res.render('print/lab-report',{layout:'layouts/blank',title:'Laboratory Report',...data});
 }catch(err){next(err);}}
