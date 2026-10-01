@@ -1,81 +1,95 @@
-const CACHE='chhayabithi-hms-v11';
-const STATIC_ASSETS=[
+/* Chhayabithi HMS PWA service worker.
+ * Only static same-origin assets are cached. HTML, API responses,
+ * authenticated pages and live data always stay on the network.
+ */
+const CACHE_NAME = 'chhayabithi-hms-v12';
+
+const PRECACHE_ASSETS = [
   '/css/style.css',
   '/css/public-bootstrap-fallback.css',
   '/css/landing-v2.css',
   '/css/public-pages-desktop.css',
   '/css/public-pages-final.css',
+  '/css/pwa-install.css',
+  '/css/print.css',
   '/js/main.js',
   '/js/pwa-install.js',
-  '/css/pwa-install.css',
-  
+  '/images/chhayabithi-logo.webp',
+  '/images/pwa-icon-192.svg',
+  '/images/pwa-icon-512.svg'
 ];
 
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE)
-      .then(cache => cache.addAll(STATIC_ASSETS))
-      .then(() => self.skipWaiting())
-  );
+const STATIC_DESTINATIONS = new Set(['style', 'script', 'image', 'font']);
+
+self.addEventListener('install', (event) => {
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+
+    // Do not fail the whole install because one optional asset is unavailable.
+    await Promise.all(
+      PRECACHE_ASSETS.map(async (asset) => {
+        try {
+          const response = await fetch(asset, { cache: 'no-cache' });
+          if (response.ok) {
+            await cache.put(asset, response);
+          }
+        } catch (_) {
+          // The fetch can fail during a temporary deployment/network issue.
+        }
+      })
+    );
+
+    await self.skipWaiting();
+  })());
 });
 
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(
-        keys.filter(key => key !== CACHE).map(key => caches.delete(key))
-      ))
-      .then(() => self.clients.claim())
-  );
+self.addEventListener('activate', (event) => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(
+      keys
+        .filter((key) => key !== CACHE_NAME)
+        .map((key) => caches.delete(key))
+    );
+
+    await self.clients.claim();
+  })());
 });
 
-self.addEventListener('fetch', event => {
+self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
 
-  // Never cache server-rendered HTML or live data.
-  if (
-    url.origin !== self.location.origin ||
-    url.pathname === '/live-opd.json' ||
-    event.request.mode === 'navigate' ||
-    event.request.headers.get('accept')?.includes('text/html')
-  ) {
-    return;
-  }
+  // Never intercept cross-origin requests, HTML navigations, JSON/API/live data,
+  // or other dynamic server responses.
+  if (url.origin !== self.location.origin) return;
+  if (event.request.mode === 'navigate') return;
+  if (event.request.headers.get('accept')?.includes('text/html')) return;
+  if (url.pathname === '/live-opd.json') return;
 
-  // Stylesheets must be network-first so deployments are not trapped
-  // behind an older cached desktop/mobile layout.
-  const isStylesheet = event.request.destination === 'style' ||
-    url.pathname.endsWith('.css');
+  // Static assets use network-first. This prevents old CSS/JS/logo files from
+  // surviving a deployment indefinitely while still allowing offline fallback.
+  if (!STATIC_DESTINATIONS.has(event.request.destination)) return;
 
-  if (isStylesheet) {
-    event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE).then(cache => cache.put(event.request, copy));
-          }
-          return response;
-        })
-        .catch(() => caches.match(event.request))
-    );
-    return;
-  }
+  event.respondWith((async () => {
+    try {
+      const response = await fetch(event.request);
 
-  // Other static same-origin assets remain cache-first.
-  event.respondWith(
-    caches.match(event.request).then(cached => {
+      if (response.ok) {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(event.request, response.clone());
+      }
+
+      return response;
+    } catch (_) {
+      const cached = await caches.match(event.request);
       if (cached) return cached;
 
-      return fetch(event.request).then(response => {
-        if (response.ok) {
-          const copy = response.clone();
-          caches.open(CACHE).then(cache => cache.put(event.request, copy));
-        }
-        return response;
+      return new Response('', {
+        status: 504,
+        statusText: 'Offline and asset unavailable'
       });
-    })
-  );
+    }
+  })());
 });
