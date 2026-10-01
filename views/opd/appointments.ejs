@@ -40,7 +40,7 @@
   <div class="table-responsive">
     <table class="table table-hover mb-0">
       <thead>
-        <tr><th>Token</th><th>Appointment</th><th>Patient</th><th>Doctor</th><th>Department</th><th>Date / Time</th><th>Status</th><th></th></tr>
+        <tr><th>Token</th><th>Appointment</th><th>Patient</th><th>Doctor</th><th>Department</th><th>Date / Time</th><th>Status</th><th>Payment</th><th></th></tr>
       </thead>
       <tbody>
         <% rows.forEach(function(a) { %>
@@ -55,11 +55,22 @@
               <span class="badge text-bg-<%= a.status === 'COMPLETED' ? 'success' : (a.status === 'CANCELLED' || a.status === 'NO_SHOW' ? 'danger' : 'primary') %>"><%= a.status.replace('_',' ') %></span>
               <% if (a.visit_status) { %><div class="text-muted small mt-1"><%= a.visit_status.replace('_',' ') %></div><% } %>
             </td>
+            <td>
+              <% if (!a.invoice_id) { %>
+                <span class="badge text-bg-light text-dark">No Bill</span>
+              <% } else if (a.payment_status === 'PAID') { %>
+                <a href="/billing/invoices/<%= a.invoice_id %>" class="badge text-bg-success text-decoration-none">Paid</a>
+              <% } else if (a.payment_status === 'CANCELLED') { %>
+                <a href="/billing/invoices/<%= a.invoice_id %>" class="badge text-bg-danger text-decoration-none">Cancelled</a>
+              <% } else { %>
+                <a href="/billing/invoices/<%= a.invoice_id %>" class="badge text-bg-warning text-decoration-none"><%= a.payment_status.replace('_',' ') %> — ₹<%= Number(a.net_amount || 0).toFixed(2) %></a>
+              <% } %>
+            </td>
             <td><a href="/opd/appointments/<%= a.id %>" class="btn btn-sm btn-outline-primary">Open</a></td>
           </tr>
         <% }) %>
         <% if (rows.length === 0) { %>
-          <tr><td colspan="8" class="text-center text-muted py-4">No appointments match these filters.</td></tr>
+          <tr><td colspan="9" class="text-center text-muted py-4">No appointments match these filters.</td></tr>
         <% } %>
       </tbody>
     </table>
