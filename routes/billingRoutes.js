@@ -22,7 +22,7 @@ router.post(
 
 router.get('/invoices', requirePermission('billing.view'), asyncHandler(billingController.listInvoices));
 router.get('/invoices/:id', requirePermission('billing.view', 'discount.request'), asyncHandler(billingController.viewInvoice));
-router.get('/invoices/:id/print', requirePermission('billing.view'), asyncHandler(billingController.printInvoice));
+router.get('/invoices/:id/print', requirePermission('billing.view', 'discount.request'), asyncHandler(billingController.printInvoice));
 router.get('/invoices/:id/receipt/:paymentId', requirePermission('billing.view'), asyncHandler(billingController.printReceipt));
 
 router.post(
