@@ -1,88 +1,6 @@
-<script>
-(function () {
-  function fitPrescriptionToOnePage() {
-    document.body.classList.add('single-a4-print');
+<script src="/js/print.js"></script>
+<link rel="stylesheet" href="/css/print.css">
 
-    var sheet = document.querySelector('.print-sheet');
-    if (!sheet) return;
-
-    var pageHeight = 297 - 24; // A4 height minus 12mm top/bottom print margins.
-    var pageWidth = 210 - 24;  // A4 width minus 12mm left/right print margins.
-
-    // Temporarily remove the previous scale while measuring the natural content.
-    sheet.style.setProperty('--prescription-print-scale', '1');
-    sheet.style.transform = 'none';
-
-    var naturalHeight = sheet.scrollHeight;
-    var naturalWidth = sheet.scrollWidth;
-
-    if (!naturalHeight || !naturalWidth) return;
-
-    var scale = Math.min(
-      1,
-      (pageHeight / naturalHeight),
-      (pageWidth / naturalWidth)
-    );
-
-    // Never allow a zero/invalid scale. A very long prescription may become
-    // small, but all clinical content remains present on the single A4 sheet.
-    scale = Math.max(0.05, scale);
-
-    sheet.style.setProperty('--prescription-print-scale', String(scale));
-    sheet.style.transform = 'scale(' + scale + ')';
-  }
-
-  function printDocument() {
-    window.focus();
-    fitPrescriptionToOnePage();
-    window.print();
-  }
-
-  function closePrintWindow() {
-    if (window.opener && !window.opener.closed) {
-      window.close();
-      setTimeout(function () {
-        if (!window.closed) {
-          window.location.href = document.referrer || '/';
-        }
-      }, 150);
-      return;
-    }
-
-    if (window.history.length > 1) {
-      window.history.back();
-      return;
-    }
-
-    window.location.href = '/';
-  }
-
-  window.printDocument = printDocument;
-  window.closePrintWindow = closePrintWindow;
-
-  function markPrintDocument() {
-    if (document.body) {
-      document.body.classList.add('print-doc');
-      fitPrescriptionToOnePage();
-    }
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', markPrintDocument);
-  } else {
-    markPrintDocument();
-  }
-
-  window.addEventListener('beforeprint', fitPrescriptionToOnePage);
-  window.addEventListener('afterprint', function () {
-    var sheet = document.querySelector('.print-sheet');
-    if (sheet) {
-      sheet.style.removeProperty('--prescription-print-scale');
-      sheet.style.removeProperty('transform');
-    }
-  });
-})();
-</script>
 <link rel="stylesheet" href="/css/print.css">
 
 <div class="print-sheet">
@@ -251,7 +169,7 @@
   <div class="print-footer-note">Barcode encodes the patient's Health ID only. This prescription does not authorize dispensing without valid identification.</div>
 
   <div class="print-actions no-print">
-    <button onclick="printDocument()" class="btn btn-primary">Print Prescription</button>
-    <button onclick="closePrintWindow()" class="btn btn-outline-secondary">Close</button>
+    <button type="button" data-print-action="print" class="btn btn-primary">Print Prescription</button>
+    <button type="button" data-print-action="close" class="btn btn-outline-secondary">Close</button>
   </div>
 </div>
