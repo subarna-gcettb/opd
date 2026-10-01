@@ -42,20 +42,53 @@
     <div class="kv"><span class="k">Prescription No.</span><span class="v"><%= prescription.prescription_code %> (v<%= prescription.version %>)</span></div>
   </div>
 
-  <% if (prescription.bp || prescription.pulse || prescription.weight_kg || prescription.temperature || prescription.spo2) { %>
-    <div class="section-label">Vitals</div>
+  <div class="section-label">Female / Obstetric Assessment</div>
+  <% if (String(prescription.gender || '').toLowerCase() === 'female') { %>
+    <div class="subsection-label">Pregnancy information</div>
     <div class="kv-grid three">
-      <div class="kv"><span class="k">BP</span><span class="v"><%= prescription.bp || '—' %></span></div>
-      <div class="kv"><span class="k">Pulse</span><span class="v"><%= prescription.pulse || '—' %></span></div>
-      <div class="kv"><span class="k">Temp</span><span class="v"><%= prescription.temperature || '—' %> °F</span></div>
-      <div class="kv"><span class="k">SpO2</span><span class="v"><%= prescription.spo2 || '—' %>%</span></div>
-      <div class="kv"><span class="k">Weight</span><span class="v"><%= prescription.weight_kg || '—' %> kg</span></div>
-      <div class="kv"><span class="k">Height</span><span class="v"><%= prescription.height_cm || '—' %> cm</span></div>
+      <div class="kv"><span class="k">Pregnancy Status</span><span class="v"><%= prescription.pregnancy_status || '—' %></span></div>
+      <div class="kv"><span class="k">LMP</span><span class="v"><%= prescription.lmp_date ? new Date(prescription.lmp_date).toLocaleDateString() : '—' %></span></div>
+      <div class="kv"><span class="k">Gravida (G)</span><span class="v"><%= prescription.gravida ?? '—' %></span></div>
+      <div class="kv"><span class="k">Para (P)</span><span class="v"><%= prescription.para ?? '—' %></span></div>
+      <div class="kv"><span class="k">Abortions (A)</span><span class="v"><%= prescription.abortions ?? '—' %></span></div>
+      <div class="kv"><span class="k">Gestational Age</span><span class="v"><%= prescription.gestational_age_weeks != null ? prescription.gestational_age_weeks + 'w ' + (prescription.gestational_age_days || 0) + 'd' : '—' %></span></div>
+      <div class="kv"><span class="k">EDD</span><span class="v"><%= prescription.estimated_due_date ? new Date(prescription.estimated_due_date).toLocaleDateString() : '—' %></span></div>
+      <% if (prescription.obstetric_notes) { %><div class="kv"><span class="k">Obstetric Notes</span><span class="v"><%= prescription.obstetric_notes %></span></div><% } %>
     </div>
   <% } %>
 
+  <div class="section-label">Vitals</div>
+  <div class="kv-grid three">
+    <div class="kv"><span class="k">BP</span><span class="v"><%= prescription.bp || '—' %></span></div>
+    <div class="kv"><span class="k">Pulse</span><span class="v"><%= prescription.pulse ?? '—' %></span></div>
+    <div class="kv"><span class="k">Temp (°F)</span><span class="v"><%= prescription.temperature ?? '—' %></span></div>
+    <div class="kv"><span class="k">SpO2 (%)</span><span class="v"><%= prescription.spo2 ?? '—' %></span></div>
+    <div class="kv"><span class="k">Weight (kg)</span><span class="v"><%= prescription.weight_kg ?? '—' %></span></div>
+    <div class="kv"><span class="k">Height (cm)</span><span class="v"><%= prescription.height_cm ?? '—' %></span></div>
+    <div class="kv"><span class="k">Respiratory rate</span><span class="v"><%= prescription.respiratory_rate ?? '—' %></span></div>
+    <div class="kv"><span class="k">BMI</span><span class="v"><%= prescription.height_cm && prescription.weight_kg ? (Number(prescription.weight_kg) / Math.pow(Number(prescription.height_cm) / 100, 2)).toFixed(1) : '—' %></span></div>
+  </div>
+
+  <div class="section-label">Chief Complaint</div>
+  <div><%= prescription.complaints || '—' %></div>
+
+  <div class="section-label">Personal History</div>
+  <div><%= prescription.personal_history ? (typeof prescription.personal_history === 'string' ? prescription.personal_history : JSON.stringify(prescription.personal_history)) : '—' %></div>
+
+  <div class="section-label">Symptoms</div>
+  <div><%= prescription.symptoms || '—' %></div>
+
+  <div class="section-label">Allergies</div>
+  <div><%= prescription.allergies || 'None recorded' %></div>
+
   <div class="section-label">Diagnosis</div>
   <div><%= prescription.diagnosis || '—' %></div>
+
+  <div class="section-label">Clinical Notes</div>
+  <div><%= prescription.clinical_notes || '—' %></div>
+
+  <div class="section-label">Investigation Advice</div>
+  <div><%= prescription.investigation_advice || '—' %></div>
 
   <div class="section-label">Rx / Prescription Instructions</div>
   <% items.forEach(function(it, i) { %>
