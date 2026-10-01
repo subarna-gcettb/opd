@@ -99,7 +99,8 @@ app.use(flash());
 
 // ---- Request-scoped helpers -----------------------------------------
 app.use((req, res, next) => {
-  req.requestId = String(req.headers['x-request-id'] || crypto.randomUUID()).slice(0, 100);
+  const suppliedId = String(req.headers['x-request-id'] || '');
+  req.requestId = /^[A-Za-z0-9._-]{1,80}$/.test(suppliedId) ? suppliedId : crypto.randomUUID();
   res.setHeader('X-Request-ID', req.requestId);
   next();
 });
