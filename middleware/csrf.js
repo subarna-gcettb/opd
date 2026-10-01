@@ -24,7 +24,11 @@ const csrfUtils = doubleCsrf({
     secure: appConfig.isProd,
     path: '/'
   },
-  getTokenFromRequest: (req) => req.body._csrf || req.headers['x-csrf-token']
+  getTokenFromRequest: (req) => {
+    const bodyToken = typeof req.body?._csrf === 'string' ? req.body._csrf : null;
+    const headerToken = typeof req.headers['x-csrf-token'] === 'string' ? req.headers['x-csrf-token'] : null;
+    return bodyToken || headerToken;
+  }
 });
 
 const doubleCsrfProtection = csrfUtils.doubleCsrfProtection;
