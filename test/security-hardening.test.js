@@ -22,6 +22,8 @@ test('404 handler returns JSON for API clients', async () => {
 
 test('404 handler returns the HTML error page for browsers', async () => {
   const app = express();
+  app.set('view engine', 'ejs');
+  app.set('views', path.join(__dirname, '..', 'views'));
   app.use(notFoundHandler);
   const res = await request(app).get('/missing').set('Accept', 'text/html');
   assert.equal(res.status, 404);
