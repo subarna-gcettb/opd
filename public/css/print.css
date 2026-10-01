@@ -1,4 +1,4 @@
-/* Print documents are designed for A4 paper and may span multiple pages. */
+/* Print documents use an A4 layout. Prescription pages are compacted to one page by the prescription template. */
 body.print-doc {
   background:#fff;
   color:#000;
@@ -59,7 +59,7 @@ body.print-doc {
 .barcode-area img{max-width:260px}
 .print-actions{text-align:center;margin:18px 0}
 .print-footer-note{margin-top:14px;font-size:10px;color:#666;text-align:center;border-top:1px dashed #ccc;padding-top:6px;break-inside:avoid}
-.print-sheet > .section-label,.print-sheet > .history-grid,.print-sheet > .kv-grid,.print-sheet > .rx-print-table{page-break-inside:auto}
+
 @media print{
   .print-actions,.no-print{display:none!important}
   .print-sheet{width:auto;max-width:none;padding:0}
@@ -67,4 +67,24 @@ body.print-doc {
   .section-label{break-after:avoid;page-break-after:avoid}
   .signature,.barcode-area,.print-footer-note,.history-item,.rx-print-item{break-inside:avoid;page-break-inside:avoid}
   @page{size:A4;margin:12mm}
+
+  /* The prescription template adds .single-a4-print and scales its complete
+     content to the available A4 height. This deliberately keeps the complete
+     prescription on exactly one physical page, even when the clinical detail
+     is unusually long. */
+  body.print-doc.single-a4-print{
+    width:100%;
+    height:calc(297mm - 24mm);
+    min-height:calc(297mm - 24mm);
+    max-height:calc(297mm - 24mm);
+    overflow:hidden;
+  }
+  body.print-doc.single-a4-print .print-sheet{
+    height:calc(297mm - 24mm);
+    max-height:calc(297mm - 24mm);
+    overflow:hidden;
+    margin:0;
+    transform-origin:top center;
+    transform:scale(var(--prescription-print-scale,1));
+  }
 }
