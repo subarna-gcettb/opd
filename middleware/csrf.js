@@ -2,21 +2,10 @@ const { doubleCsrf } = require('csrf-csrf');
 const appConfig = require('../config/appConfig');
 const authConfig = require('../config/auth');
 
-/**
- * package.json pins "csrf-csrf": "^3.0.6", which npm resolves to 3.0.7 —
- * the last 3.x release before the 4.0.0 rename (confirmed: v4 renamed
- * generateToken -> generateCsrfToken, getTokenFromRequest ->
- * getCsrfTokenFromRequest, and made getSessionIdentifier a required
- * option). We deliberately do NOT pass getSessionIdentifier here: it is
- * not part of the confirmed v3.0.x API, and passing it previously caused
- * an "invalid csrf token" 403 immediately after login — the token/cookie
- * pair generated before login became session-bound, and
- * req.session.regenerate() on successful login (which intentionally
- * issues a new session id, to prevent session fixation) then invalidated
- * it a moment later.
- */
+/** CSRF protection uses session-bound tokens so a token cannot be replayed after session rotation. */
 const csrfUtils = doubleCsrf({
   getSecret: () => authConfig.csrfSecret,
+  getSessionIdentifier: (req) => req.session.id,
   cookieName: appConfig.isProd ? '__Host-hms.csrf' : 'hms.csrf',
   cookieOptions: {
     httpOnly: true,
@@ -24,7 +13,7 @@ const csrfUtils = doubleCsrf({
     secure: appConfig.isProd,
     path: '/'
   },
-  getTokenFromRequest: (req) => {
+  getCsrfTokenFromRequest: (req) => {
     const bodyToken = typeof req.body?._csrf === 'string' ? req.body._csrf : null;
     const headerToken = typeof req.headers['x-csrf-token'] === 'string' ? req.headers['x-csrf-token'] : null;
     return bodyToken || headerToken;
@@ -32,7 +21,7 @@ const csrfUtils = doubleCsrf({
 });
 
 const doubleCsrfProtection = csrfUtils.doubleCsrfProtection;
-const generate = csrfUtils.generateToken || csrfUtils.generateCsrfToken;
+const generate = csrfUtils.generateCsrfToken;
 
 if (typeof generate !== 'function') {
   throw new Error(
@@ -59,7 +48,7 @@ function exposeCsrfToken(req, res, next) {
  * braces on top of the getSessionIdentifier fix above.
  */
 function rotateCsrfToken(req, res) {
-  return generate(req, res, true);
+  return generate(req, res, { overwrite: true });
 }
 
 module.exports = { csrfProtection: doubleCsrfProtection, exposeCsrfToken, rotateCsrfToken };
