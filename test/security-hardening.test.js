@@ -10,6 +10,9 @@ const bcrypt = require('bcryptjs');
 
 test('404 handler returns JSON for API clients', async () => {
   const app = express();
+  app.set('view engine', 'ejs');
+  app.set('views', require('node:path').join(__dirname, '..', 'views'));
+  app.set('layout', 'layouts/blank');
   app.use(notFoundHandler);
   const res = await request(app).get('/missing').set('Accept', 'application/json');
   assert.equal(res.status, 404);
