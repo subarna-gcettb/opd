@@ -339,17 +339,16 @@ For a development database where the app needs broader privileges for migrations
 
 ---
 
-# 8. Rebuild the database from scratch
+# 8. Apply database migrations
 
-**Important:** `npm run migrate` is intentionally configured as a **destructive fresh rebuild**.
+**Important:** `npm run migrate` is **non-destructive**. It never drops application tables or deletes patient, billing, laboratory, or pharmacy data.
 
-Every time it runs, it:
+The migration runner:
 
-1. Drops all existing tables in the configured `DB_NAME`.
-2. Recreates the `schema_migrations` tracker.
-3. Applies every SQL migration in `database/migrations/` in order.
-4. Applies `database/indexes.sql` when present.
-5. Leaves the database with the complete current schema.
+1. Creates/uses the `schema_migrations` tracker.
+2. Applies only migrations that have not already been recorded.
+3. Applies migrations in filename order.
+4. Refuses to guess a legacy database's schema version when migration history is missing.
 
 Run:
 
@@ -357,15 +356,9 @@ Run:
 npm run migrate
 ```
 
-Equivalent command:
+For an existing database created outside this migration runner, first establish and verify its migration baseline before applying newer migrations. The runner intentionally stops instead of risking duplicate/incorrect schema changes.
 
-```bash
-node database/migrate.js
-```
-
-**This deletes all existing application data.** Do not run `npm run migrate` on a production database unless a complete reset is explicitly intended.
-
-After rebuilding the schema, initialize starter/reference/demo data with:
+After a verified fresh development database has been created, initialize starter/reference data with:
 
 ```bash
 npm run seed
