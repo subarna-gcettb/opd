@@ -6,6 +6,7 @@ const express = require('express');
 const request = require('supertest');
 const { notFoundHandler, statusFromError, safePublicMessage } = require('../middleware/errorHandler');
 const AppError = require('../utils/AppError');
+const bcrypt = require('bcryptjs');
 
 test('404 handler returns JSON for API clients', async () => {
   const app = express();
@@ -55,4 +56,12 @@ test('production dependency floor is hardened', () => {
   assert.match(pkg.dependencies.express, /4\.22/);
   assert.match(pkg.dependencies.multer, /2\.4/);
   assert.match(pkg.dependencies.helmet, /8\.3/);
+});
+
+
+test('bcryptjs can hash and verify passwords with the configured cost', async () => {
+  const password = 'Strong-Test-Password-2026!';
+  const hash = await bcrypt.hash(password, 12);
+  assert.equal(await bcrypt.compare(password, hash), true);
+  assert.equal(await bcrypt.compare('wrong-password', hash), false);
 });
