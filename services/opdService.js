@@ -269,13 +269,15 @@ async function listAppointments({ date = null, doctorId = null, status = null, p
     `SELECT a.id, a.appointment_code, a.appointment_date, a.slot_time, a.token_number, a.status,
             p.health_id, p.name AS patient_name, p.age_years, p.gender,
             u.name AS doctor_name, dept.name AS department_name,
-            v.id AS visit_id, v.status AS visit_status
+            v.id AS visit_id, v.status AS visit_status,
+            i.id AS invoice_id, i.invoice_number, i.status AS payment_status, i.net_amount
      FROM appointments a
      JOIN patients p ON p.id = a.patient_id
      JOIN doctors d ON d.id = a.doctor_id
      JOIN users u ON u.id = d.user_id
      JOIN departments dept ON dept.id = a.department_id
      LEFT JOIN opd_visits v ON v.appointment_id = a.id
+     LEFT JOIN invoices i ON i.visit_id = v.id
      WHERE (:date IS NULL OR a.appointment_date = :date)
        AND (:doctorId IS NULL OR a.doctor_id = :doctorId)
        AND (:status IS NULL OR a.status = :status)
