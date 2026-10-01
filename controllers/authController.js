@@ -98,9 +98,8 @@ async function requestLoginOtp(req, res, next) {
   try {
     const email = String(req.body.email || '').trim().toLowerCase();
     const patient = await patientAuthService.findPatientUser(email);
-    if (!patient) throw new AppError('No patient account was found for this email address', 404);
-    await patientAuthService.issueOtp('LOGIN', email);
-    req.flash('success', 'A one-time login code has been sent to your email.');
+    if (patient) await patientAuthService.issueOtp('LOGIN', email);
+    req.flash('success', 'If a patient account exists for that email, a one-time login code has been sent.');
     res.redirect('/auth/login?otp=1&email=' + encodeURIComponent(email));
   } catch (err) {
     req.flash('errors', [{ message: err.message }]);
@@ -118,7 +117,7 @@ async function signupRequestOtp(req, res, next) {
 
     const email = String(req.body.email || '').trim().toLowerCase();
     const [[exists]] = await pool.execute('SELECT id FROM users WHERE email = :email AND deleted_at IS NULL LIMIT 1', { email });
-    if (exists) throw new AppError('An account with this email already exists', 409);
+    if (exists) throw new AppError('An account with this email already exists. Please sign in or use password reset.', 409);
 
     const passwordHash = await bcrypt.hash(password, authConfig.bcryptRounds);
     const payload = { ...req.body, email, passwordHash, password: undefined, confirmPassword: undefined };
@@ -152,10 +151,9 @@ async function requestPasswordResetOtp(req, res) {
   try {
     const email = String(req.body.email || '').trim().toLowerCase();
     const patient = await patientAuthService.findPatientUser(email);
-    if (!patient) throw new AppError('No patient account was found for this email address', 404);
-    await patientAuthService.issueOtp('PASSWORD_RESET', email);
+    if (patient) await patientAuthService.issueOtp('PASSWORD_RESET', email);
     req.session.resetEmail = email;
-    req.flash('success', 'A password-reset code has been sent to your email.');
+    req.flash('success', 'If a patient account exists for that email, password-reset instructions have been sent.');
     res.redirect('/auth/forgot-password?step=verify');
   } catch (err) {
     req.flash('errors', [{ message: err.message }]);
@@ -305,7 +303,8 @@ function logout(req, res, next) {
 }
 
 async function genericFail(req, res, key) {
-  await auditService.log({ action: 'LOGIN_FAILED', entity: 'user', newValue: { identifier: key }, ipAddress: req.clientIp });
+  const identifierHash = crypto.createHash('sha256').update(String(key)).digest('hex').slice(0, 16);
+  await auditService.log({ action: 'LOGIN_FAILED', entity: 'user', newValue: { identifierHash }, ipAddress: req.clientIp });
   req.flash('errors', [{ message: 'Invalid login credentials' }]);
   return res.redirect('/auth/login');
 }
