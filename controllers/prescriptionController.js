@@ -186,13 +186,16 @@ async function downloadHardCopy(req, res, next) {
   const { uploadDir } = require('../utils/prescriptionUpload');
   try {
     const [[attachment]] = await pool.execute(
-      `SELECT pa.*, p.health_id
+      `SELECT pa.*, p.health_id, p.branch_id
        FROM prescription_attachments pa
        JOIN patients p ON p.id = pa.patient_id
        WHERE pa.id = :id`,
       { id: req.params.attachmentId }
     );
     if (!attachment) throw new AppError('Prescription attachment not found', 404);
+    if (!req.user.roles.includes('SUPER_ADMIN') && Number(attachment.branch_id) !== Number(req.user.branch_id)) {
+      throw new AppError('You do not have access to this patient record', 403);
+    }
 
     const fullPath = path.join(uploadDir, path.basename(attachment.storage_name));
     if (!fs.existsSync(fullPath)) throw new AppError('Stored prescription image is missing', 404);
