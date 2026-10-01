@@ -41,9 +41,13 @@ async function toggleUserActive(req, res, next) {
 
 async function resetPassword(req, res, next) {
   try {
-    await adminService.resetUserPassword(req.params.id, req.body.newPassword, req.user.id);
+    const newPassword = String(req.body.newPassword || '');
+    if (newPassword.length < 12 || !/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/\d/.test(newPassword)) {
+      throw new AppError('Password must be at least 12 characters and include uppercase, lowercase, and a number.', 422);
+    }
+    await adminService.resetUserPassword(req.params.id, newPassword, req.user.id);
     req.flash('success', 'Password reset. The user must set a new password on next login.');
-    notifyPasswordReset(req.params.id, req.body.newPassword).catch(() => {});
+    notifyPasswordReset(req.params.id, newPassword).catch(() => {});
     res.redirect('/admin/users');
   } catch (err) { next(err); }
 }
