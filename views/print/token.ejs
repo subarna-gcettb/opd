@@ -1,43 +1,6 @@
-<script>
-(function () {
-  function printDocument() {
-    window.focus();
-    window.print();
-  }
+<script src="/js/print.js"></script>
+<link rel="stylesheet" href="/css/print.css">
 
-  function closePrintWindow() {
-    if (window.opener && !window.opener.closed) {
-      window.close();
-      setTimeout(function () {
-        if (!window.closed) {
-          window.location.href = document.referrer || '/';
-        }
-      }, 150);
-      return;
-    }
-
-    if (window.history.length > 1) {
-      window.history.back();
-      return;
-    }
-
-    window.location.href = '/';
-  }
-
-  window.printDocument = printDocument;
-  window.closePrintWindow = closePrintWindow;
-
-  function markPrintDocument() {
-    if (document.body) document.body.classList.add('print-doc');
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', markPrintDocument);
-  } else {
-    markPrintDocument();
-  }
-})();
-</script>
 <link rel="stylesheet" href="/css/print.css">
 
 <div class="print-sheet" style="max-width: 420px;">
@@ -68,7 +31,7 @@
   </div>
 
   <div class="print-actions no-print">
-    <button onclick="printDocument()" class="btn btn-primary">Print Token</button>
-    <button onclick="closePrintWindow()" class="btn btn-outline-secondary">Close</button>
+    <button type="button" data-print-action="print" class="btn btn-primary">Print Token</button>
+    <button type="button" data-print-action="close" class="btn btn-outline-secondary">Close</button>
   </div>
 </div>
