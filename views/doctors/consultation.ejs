@@ -51,6 +51,30 @@
   </div>
 </div>
 <% } %>
+<% if (appointmentVitals) { %>
+<div class="card mb-3 border-primary-subtle">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-heart-pulse me-1"></i> Receptionist-collected Vitals</span>
+    <span class="badge text-bg-primary">Recorded</span>
+  </div>
+  <div class="card-body">
+    <div class="row g-2">
+      <div class="col-6 col-md-3"><div class="small text-muted">BP</div><strong><%= appointmentVitals.bp || '—' %></strong></div>
+      <div class="col-6 col-md-3"><div class="small text-muted">Pulse</div><strong><%= appointmentVitals.pulse ?? '—' %></strong></div>
+      <div class="col-6 col-md-3"><div class="small text-muted">Temp (°F)</div><strong><%= appointmentVitals.temperature ?? '—' %></strong></div>
+      <div class="col-6 col-md-3"><div class="small text-muted">SpO2 (%)</div><strong><%= appointmentVitals.spo2 ?? '—' %></strong></div>
+      <div class="col-6 col-md-3"><div class="small text-muted">Weight (kg)</div><strong><%= appointmentVitals.weight_kg ?? '—' %></strong></div>
+      <div class="col-6 col-md-3"><div class="small text-muted">Height (cm)</div><strong><%= appointmentVitals.height_cm ?? '—' %></strong></div>
+      <div class="col-6 col-md-3"><div class="small text-muted">Respiratory rate</div><strong><%= appointmentVitals.respiratory_rate ?? '—' %></strong></div>
+      <div class="col-6 col-md-3"><div class="small text-muted">BMI</div><strong id="receptionistBmi">—</strong></div>
+    </div>
+    <% if (appointmentVitals.recorded_at) { %>
+      <div class="small text-muted mt-2">Recorded at <%= appointmentVitals.recorded_at %></div>
+    <% } %>
+  </div>
+</div>
+<% } %>
+
 <% if (visit.allergies) { %>
   <div class="alert alert-danger"><strong><i class="bi bi-exclamation-triangle"></i> Allergies:</strong> <%= visit.allergies %></div>
 <% } %>
@@ -338,5 +362,17 @@
   height.addEventListener('input', updateBMI);
   weight.addEventListener('input', updateBMI);
   updateBMI();
+})();
+</script>
+
+<script>
+(function () {
+  const bmi = document.getElementById('receptionistBmi');
+  if (!bmi) return;
+  const height = Number.parseFloat('<%= appointmentVitals?.height_cm ?? "" %>');
+  const weight = Number.parseFloat('<%= appointmentVitals?.weight_kg ?? "" %>');
+  if (Number.isFinite(height) && Number.isFinite(weight) && height > 0 && weight > 0) {
+    bmi.textContent = (weight / Math.pow(height / 100, 2)).toFixed(1);
+  }
 })();
 </script>
