@@ -207,6 +207,14 @@ async function printInvoice(req, res, next) {
   try {
     const data = await billingService.getInvoice(req.params.id);
     if (!data) throw new AppError('Invoice not found', 404);
+
+    const hasFullBillingView = req.user.permissions.includes('billing.view');
+    if (!hasFullBillingView) {
+      if (!req.user.doctorId || data.invoice.doctor_id !== req.user.doctorId) {
+        throw new AppError('You can only print invoices for your own patients', 403);
+      }
+    }
+
     res.render('print/invoice', { layout: 'layouts/blank', title: 'Invoice', ...data });
   } catch (err) {
     next(err);
