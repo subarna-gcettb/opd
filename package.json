@@ -9,7 +9,7 @@
     "dev": "nodemon server.js",
     "migrate": "node database/migrate.js",
     "seed": "node database/seed.js",
-    "test": "node --test test"
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
