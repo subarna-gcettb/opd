@@ -3,6 +3,15 @@ const appConfig = require('./config/appConfig');
 const { pool } = require('./config/database');
 
 async function start() {
+  if (appConfig.isProd) {
+    const required = ['SESSION_SECRET', 'CSRF_SECRET', 'AADHAAR_ENCRYPTION_KEY', 'AADHAAR_HASH_SECRET'];
+    const missing = required.filter((name) => !process.env[name] || process.env[name].length < 32);
+    if (missing.length) {
+      console.error('[CONFIG] Missing/weak production secrets:', missing.join(', '));
+      process.exit(1);
+    }
+  }
+
   try {
     // Fail fast if the database isn't reachable.
     const conn = await pool.getConnection();
