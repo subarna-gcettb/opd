@@ -220,7 +220,12 @@ async function getPrescription(prescriptionId) {
             c.complementary_requested,
             a.lmp_date, a.gravida, a.para, a.abortions, a.pregnancy_status,
             a.gestational_age_weeks, a.gestational_age_days, a.estimated_due_date, a.obstetric_notes,
-            vt.bp, vt.pulse, vt.temperature, vt.spo2, vt.weight_kg, vt.height_cm,
+            COALESCE(av.bp, vt.bp) AS bp,
+            COALESCE(av.pulse, vt.pulse) AS pulse,
+            COALESCE(av.temperature, vt.temperature) AS temperature,
+            COALESCE(av.spo2, vt.spo2) AS spo2,
+            COALESCE(av.weight_kg, vt.weight_kg) AS weight_kg,
+            COALESCE(av.height_cm, vt.height_cm) AS height_cm,
             av.respiratory_rate,
             v.visit_code, b.name AS branch_name
      FROM prescriptions pr
