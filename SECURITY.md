@@ -56,3 +56,8 @@ Every mutating service call writes an `audit_logs` row (`services/auditService.j
 
 ## Reporting a problem
 There's no live bug bounty program for this internal system; report issues directly to whoever owns deployment/ops for the hospital's instance.
+
+
+## Automated hardening status
+
+The repository security workflow performs JavaScript syntax checks, application security tests, and `npm audit --audit-level=high` on the main branch and security pull requests. Production deployment should only proceed when that workflow is green.
