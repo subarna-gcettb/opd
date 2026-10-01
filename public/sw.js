@@ -2,7 +2,7 @@
  * Only static same-origin assets are cached. HTML, API responses,
  * authenticated pages and live data always stay on the network.
  */
-const CACHE_NAME = 'chhayabithi-hms-v12';
+const CACHE_NAME = 'chhayabithi-hms-v13';
 
 const PRECACHE_ASSETS = [
   '/css/style.css',
@@ -19,7 +19,29 @@ const PRECACHE_ASSETS = [
   '/images/pwa-icon-512.svg'
 ];
 
-const STATIC_DESTINATIONS = new Set(['style', 'script', 'image', 'font']);
+const STATIC_PREFIXES = ['/css/', '/js/', '/images/'];
+
+function isCacheableStaticRequest(request, url) {
+  if (!['GET', 'HEAD'].includes(request.method)) return false;
+  if (url.origin !== self.location.origin) return false;
+  if (!STATIC_PREFIXES.some((prefix) => url.pathname.startsWith(prefix))) return false;
+  // Never cache requests carrying credentials. This prevents a future
+  // authenticated asset endpoint from accidentally becoming a shared cache.
+  if (request.headers.has('authorization') || request.credentials === 'include') return false;
+  return true;
+}
+
+async function cacheResponse(request, response) {
+  // Cache API entries must be complete successful responses. In particular,
+  // never cache 206 Partial Content or error responses.
+  if (!response || response.status !== 200 || response.type !== 'basic') return;
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.put(request, response.clone());
+  } catch (_) {
+    // Caching is optional; a cache failure must never break the real request.
+  }
+}
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
@@ -70,20 +92,21 @@ self.addEventListener('fetch', (event) => {
 
   // Static assets use network-first. This prevents old CSS/JS/logo files from
   // surviving a deployment indefinitely while still allowing offline fallback.
-  if (!STATIC_DESTINATIONS.has(event.request.destination)) return;
+  if (!isCacheableStaticRequest(event.request, url)) return;
 
   event.respondWith((async () => {
     try {
       const response = await fetch(event.request);
 
-      if (response.ok) {
-        const cache = await caches.open(CACHE_NAME);
-        await cache.put(event.request, response.clone());
-      }
-
+      await cacheResponse(event.request, response);
       return response;
     } catch (_) {
-      const cached = await caches.match(event.request);
+      let cached = null;
+      try {
+        cached = await caches.match(event.request);
+      } catch (_) {
+        cached = null;
+      }
       if (cached) return cached;
 
       return new Response('', {
