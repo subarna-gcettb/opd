@@ -192,7 +192,8 @@ async function getOrder(orderId) {
 
 async function collectSample(itemId,actorUserId,payload={}) {
   return withTransaction(async conn=>{
-    const branchId = await actorBranch(conn, actorUserId);\n    const [[item]]=await conn.execute('SELECT oi.*,o.order_code,o.patient_id,o.branch_id FROM lab_order_items oi JOIN lab_orders o ON o.id=oi.lab_order_id WHERE oi.id=:id AND o.branch_id=:branchId FOR UPDATE',{id:itemId,branchId});
+    const branchId = await actorBranch(conn, actorUserId);
+    const [[item]]=await conn.execute('SELECT oi.*,o.order_code,o.patient_id,o.branch_id FROM lab_order_items oi JOIN lab_orders o ON o.id=oi.lab_order_id WHERE oi.id=:id AND o.branch_id=:branchId FOR UPDATE',{id:itemId,branchId});
     if(!item)throw new AppError('Laboratory order item not found',404);
     if(['CANCELLED','REJECTED','REPORTED'].includes(item.status))throw new AppError('This test cannot accept a sample now',409);
     const [[existing]]=await conn.execute('SELECT id,sample_code,barcode_value FROM lab_samples WHERE lab_order_item_id=:id AND status NOT IN ("REJECTED","DISPOSED") ORDER BY id DESC LIMIT 1 FOR UPDATE',{id:itemId});
@@ -208,7 +209,8 @@ async function collectSample(itemId,actorUserId,payload={}) {
 
 async function receiveSample(itemId,actorUserId) {
   return withTransaction(async conn=>{
-    const [[s]]=await conn.execute('SELECT s.*,oi.lab_order_id FROM lab_samples s JOIN lab_order_items oi ON oi.id=s.lab_order_item_id WHERE oi.id=:itemId ORDER BY s.id DESC LIMIT 1 FOR UPDATE',{itemId});
+    const branchId = await actorBranch(conn, actorUserId);
+    const [[s]]=await conn.execute('SELECT s.*,oi.lab_order_id FROM lab_samples s JOIN lab_order_items oi ON oi.id=s.lab_order_item_id JOIN lab_orders o ON o.id=oi.lab_order_id WHERE oi.id=:itemId AND o.branch_id=:branchId ORDER BY s.id DESC LIMIT 1 FOR UPDATE',{itemId,branchId});
     if(!s)throw new AppError('No sample found',404);
     if(s.status==='REJECTED')throw new AppError('Sample already rejected',409);
     await conn.execute('UPDATE lab_samples SET status="RECEIVED",received_at=NOW(),received_by=:userId WHERE id=:id',{id:s.id,userId:actorUserId});
@@ -220,7 +222,8 @@ async function receiveSample(itemId,actorUserId) {
 async function rejectSample(itemId,actorUserId,reason) {
   return withTransaction(async conn=>{
     if(!String(reason||'').trim())throw new AppError('Sample rejection reason is required',422);
-    const [[s]]=await conn.execute('SELECT s.*,oi.lab_order_id FROM lab_samples s JOIN lab_order_items oi ON oi.id=s.lab_order_item_id WHERE oi.id=:itemId ORDER BY s.id DESC LIMIT 1 FOR UPDATE',{itemId});
+    const branchId = await actorBranch(conn, actorUserId);
+    const [[s]]=await conn.execute('SELECT s.*,oi.lab_order_id FROM lab_samples s JOIN lab_order_items oi ON oi.id=s.lab_order_item_id JOIN lab_orders o ON o.id=oi.lab_order_id WHERE oi.id=:itemId AND o.branch_id=:branchId ORDER BY s.id DESC LIMIT 1 FOR UPDATE',{itemId,branchId});
     if(!s)throw new AppError('No sample found',404);
     await conn.execute('UPDATE lab_samples SET status="REJECTED",rejection_reason=:reason WHERE id=:id',{id:s.id,reason:String(reason).trim()});
     await conn.execute('UPDATE lab_order_items SET status="REJECTED",rejected_reason=:reason WHERE id=:itemId',{itemId,reason:String(reason).trim()});
@@ -238,7 +241,8 @@ async function getResult(resultId) {
 
 async function saveResult(itemId,actorUserId,payload,mode='enter') {
   return withTransaction(async conn=>{
-    const branchId = await actorBranch(conn, actorUserId);\n    const [[item]]=await conn.execute('SELECT oi.*,o.order_code,o.patient_id,o.branch_id,t.name test_name,t.methodology FROM lab_order_items oi JOIN lab_orders o ON o.id=oi.lab_order_id JOIN lab_tests t ON t.id=oi.test_id WHERE oi.id=:id AND o.branch_id=:branchId FOR UPDATE',{id:itemId,branchId});
+    const branchId = await actorBranch(conn, actorUserId);
+    const [[item]]=await conn.execute('SELECT oi.*,o.order_code,o.patient_id,o.branch_id,t.name test_name,t.methodology FROM lab_order_items oi JOIN lab_orders o ON o.id=oi.lab_order_id JOIN lab_tests t ON t.id=oi.test_id WHERE oi.id=:id AND o.branch_id=:branchId FOR UPDATE',{id:itemId,branchId});
     if(!item)throw new AppError('Laboratory order item not found',404);
     if(['CANCELLED','REJECTED'].includes(item.status))throw new AppError('This test is not editable',409);
     const [[current]]=await conn.execute('SELECT * FROM lab_results WHERE lab_order_item_id=:itemId AND is_current=1 ORDER BY version DESC LIMIT 1 FOR UPDATE',{itemId});
@@ -276,7 +280,8 @@ async function releaseResult(resultId,actorUserId) {
 async function attachReportFile(resultId,actorUserId,file) {
   if(!file)throw new AppError('Select a report file',422);
   return withTransaction(async conn=>{
-    const branchId = await actorBranch(conn, actorUserId);\n    const [[r]]=await conn.execute('SELECT r.id,r.status FROM lab_results r JOIN lab_order_items oi ON oi.id=r.lab_order_item_id JOIN lab_orders o ON o.id=oi.lab_order_id WHERE r.id=:id AND r.is_current=1 AND o.branch_id=:branchId FOR UPDATE',{id:resultId,branchId});
+    const branchId = await actorBranch(conn, actorUserId);
+    const [[r]]=await conn.execute('SELECT r.id,r.status FROM lab_results r JOIN lab_order_items oi ON oi.id=r.lab_order_item_id JOIN lab_orders o ON o.id=oi.lab_order_id WHERE r.id=:id AND r.is_current=1 AND o.branch_id=:branchId FOR UPDATE',{id:resultId,branchId});
     if(!r)throw new AppError('Current result not found',404);if(r.status==='RELEASED')throw new AppError('Released report file cannot be replaced directly',409);
     await conn.execute('UPDATE lab_results SET report_file_name=:name,report_storage_path=:path,report_mime_type=:mime,report_file_size=:size WHERE id=:id',{id:resultId,name:file.originalname,path:file.path,mime:file.mimetype,size:file.size});
     await auditService.log({userId:actorUserId,action:'LAB_REPORT_FILE_ATTACHED',entity:'lab_result',entityId:resultId,newValue:{name:file.originalname,mime:file.mimetype,size:file.size}},conn);
@@ -285,7 +290,8 @@ async function attachReportFile(resultId,actorUserId,file) {
 
 async function cancelOrder(orderId,actorUserId,reason,patientInitiated=false) {
   return withTransaction(async conn=>{
-    const branchId = await actorBranch(conn, actorUserId);\n    const [[o]]=await conn.execute('SELECT * FROM lab_orders WHERE id=:id AND branch_id=:branchId FOR UPDATE',{id:orderId,branchId});
+    const branchId = await actorBranch(conn, actorUserId);
+    const [[o]]=await conn.execute('SELECT * FROM lab_orders WHERE id=:id AND branch_id=:branchId FOR UPDATE',{id:orderId,branchId});
     if(!o)throw new AppError('Laboratory order not found',404);if(['PROCESSING','PARTIALLY_REPORTED','REPORTED'].includes(o.status))throw new AppError('This order can no longer be cancelled',409);if(o.status==='CANCELLED')throw new AppError('Order already cancelled',409);
     const why=String(reason||(patientInitiated?'Cancelled by patient':'Cancelled by laboratory')).trim();
     await conn.execute('UPDATE lab_order_items SET status="CANCELLED",cancellation_reason=:reason WHERE lab_order_id=:id AND status<>"REPORTED"',{id:orderId,reason:why});
