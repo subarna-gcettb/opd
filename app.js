@@ -72,7 +72,6 @@ app.use(compression());
 // ---- Body / cookies ----------------------------------------------------
 app.use(express.urlencoded({ extended: true, limit: '2mb', parameterLimit: 200 }));
 app.use(express.json({ limit: '2mb' }));
-app.use(cookieParser());
 app.use(methodOverride('_method'));
 
 // ---- Static assets -------------------------------------------------
@@ -93,7 +92,8 @@ app.use(
       maxAge: appConfig.session.maxAgeMs
     }
   })
-);
+);app.use(cookieParser());
+
 app.use(flash());
 
 // ---- Request-scoped helpers -----------------------------------------
