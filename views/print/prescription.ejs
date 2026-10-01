@@ -1,7 +1,40 @@
 <script>
 (function () {
+  function fitPrescriptionToOnePage() {
+    document.body.classList.add('single-a4-print');
+
+    var sheet = document.querySelector('.print-sheet');
+    if (!sheet) return;
+
+    var pageHeight = 297 - 24; // A4 height minus 12mm top/bottom print margins.
+    var pageWidth = 210 - 24;  // A4 width minus 12mm left/right print margins.
+
+    // Temporarily remove the previous scale while measuring the natural content.
+    sheet.style.setProperty('--prescription-print-scale', '1');
+    sheet.style.transform = 'none';
+
+    var naturalHeight = sheet.scrollHeight;
+    var naturalWidth = sheet.scrollWidth;
+
+    if (!naturalHeight || !naturalWidth) return;
+
+    var scale = Math.min(
+      1,
+      (pageHeight / naturalHeight),
+      (pageWidth / naturalWidth)
+    );
+
+    // Never allow a zero/invalid scale. A very long prescription may become
+    // small, but all clinical content remains present on the single A4 sheet.
+    scale = Math.max(0.05, scale);
+
+    sheet.style.setProperty('--prescription-print-scale', String(scale));
+    sheet.style.transform = 'scale(' + scale + ')';
+  }
+
   function printDocument() {
     window.focus();
+    fitPrescriptionToOnePage();
     window.print();
   }
 
@@ -28,7 +61,10 @@
   window.closePrintWindow = closePrintWindow;
 
   function markPrintDocument() {
-    if (document.body) document.body.classList.add('print-doc');
+    if (document.body) {
+      document.body.classList.add('print-doc');
+      fitPrescriptionToOnePage();
+    }
   }
 
   if (document.readyState === 'loading') {
@@ -36,6 +72,15 @@
   } else {
     markPrintDocument();
   }
+
+  window.addEventListener('beforeprint', fitPrescriptionToOnePage);
+  window.addEventListener('afterprint', function () {
+    var sheet = document.querySelector('.print-sheet');
+    if (sheet) {
+      sheet.style.removeProperty('--prescription-print-scale');
+      sheet.style.removeProperty('transform');
+    }
+  });
 })();
 </script>
 <link rel="stylesheet" href="/css/print.css">
@@ -114,6 +159,7 @@
       }));
     const customHistory = Array.isArray(personalHistory.customItems) ? personalHistory.customItems : [];
   %>
+  <div class="section-label">Personal History</div>
   <div class="history-grid">
     <% historyEntries.forEach(function(item) { %>
       <div class="history-item">
