@@ -129,7 +129,7 @@ Current notification areas include:
 
 | Layer | Technology |
 |---|---|
-| Runtime | Node.js 18+ |
+| Runtime | Node.js 20+ |
 | Backend | Express.js 4 |
 | Frontend | EJS, HTML5, CSS3, JavaScript |
 | UI | Bootstrap 5 / custom CSS |
@@ -155,7 +155,7 @@ Current notification areas include:
 
 Install the following before starting:
 
-- Node.js **18 or newer**
+- Node.js **20 or newer**
 - npm
 - MySQL **8 or newer**
 - Git
