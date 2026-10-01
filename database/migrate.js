@@ -4,8 +4,32 @@ const path = require('path');
 const mysql = require('mysql2/promise');
 
 const MIGRATIONS_DIR = path.join(__dirname, 'migrations');
+const INDEXES_FILE = path.join(__dirname, 'indexes.sql');
+const BASELINE_REQUIRED_TABLE = 'users';
+
+async function tableExists(connection, tableName) {
+  const [rows] = await connection.query(
+    'SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? LIMIT 1',
+    [process.env.DB_NAME, tableName]
+  );
+  return rows.length > 0;
+}
+
+async function ensureMigrationTable(connection) {
+  await connection.query(`
+    CREATE TABLE IF NOT EXISTS schema_migrations (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      filename VARCHAR(150) NOT NULL UNIQUE,
+      applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB
+  `);
+}
 
 async function run() {
+  if (!process.env.DB_NAME || !process.env.DB_USER) {
+    throw new Error('DB_NAME and DB_USER are required before running migrations.');
+  }
+
   const connection = await mysql.createConnection({
     host: process.env.DB_HOST || 'localhost',
     port: Number(process.env.DB_PORT) || 3306,
@@ -16,75 +40,80 @@ async function run() {
   });
 
   try {
-    // IMPORTANT: this command intentionally performs a destructive full reset.
-    // It drops every table in the configured database and rebuilds the schema
-    // from the current migration files. Do not use it against live production
-    // data unless a complete reset is explicitly intended.
-    console.warn('[migrate] WARNING: resetting the entire database...');
-    console.warn('[migrate] All existing tables and data in DB_NAME will be deleted.');
+    // Migrations are deliberately NON-DESTRUCTIVE. Never drop application
+    // tables here: this command is also used during production deployments.
+    await ensureMigrationTable(connection);
 
-    await connection.query('SET FOREIGN_KEY_CHECKS = 0');
-
-    const [tables] = await connection.query(
-      `SELECT TABLE_NAME
-       FROM information_schema.TABLES
-       WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'`,
-      [process.env.DB_NAME]
+    const [appliedRows] = await connection.query(
+      'SELECT filename FROM schema_migrations ORDER BY id'
     );
+    const applied = new Set(appliedRows.map((row) => row.filename));
 
-    for (const table of tables) {
-      const tableName = String(table.TABLE_NAME).replace(/`/g, '``');
-      await connection.query(`DROP TABLE IF EXISTS \`${tableName}\``);
-    }
-
-    await connection.query('SET FOREIGN_KEY_CHECKS = 1');
-
-    await connection.query(`
-      CREATE TABLE IF NOT EXISTS schema_migrations (
-        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        filename VARCHAR(150) NOT NULL UNIQUE,
-        applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-      ) ENGINE=InnoDB
-    `);
-
-    const applied = new Set();
-
-    const files = fs
-      .readdirSync(MIGRATIONS_DIR)
-      .filter((f) => f.endsWith('.sql'))
+    const existingCoreSchema = await tableExists(connection, BASELINE_REQUIRED_TABLE);
+    const files = fs.readdirSync(MIGRATIONS_DIR)
+      .filter((file) => file.endsWith('.sql'))
       .sort();
 
-    let ranAny = false;
+    if (existingCoreSchema && applied.size === 0 && files.length > 1) {
+      throw new Error(
+        'Existing database detected without migration history. Refusing to guess the schema version. ' +
+        'Create a verified schema baseline in schema_migrations first, then rerun npm run migrate. ' +
+        'No tables or data were changed.'
+      );
+    }
+
     for (const file of files) {
       if (applied.has(file)) {
         console.log(`[migrate] Skipping ${file} (already applied)`);
         continue;
       }
+
       console.log(`[migrate] Applying ${file} ...`);
       const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, file), 'utf8');
-      await connection.query(sql);
-      await connection.query('INSERT INTO schema_migrations (filename) VALUES (?)', [file]);
-      console.log(`[migrate] Applied ${file}`);
-      ranAny = true;
-    }
-
-    // indexes.sql is applied once, tracked the same way as a migration.
-    const indexesFile = 'indexes.sql';
-    if (!applied.has(indexesFile) && fs.existsSync(path.join(__dirname, indexesFile))) {
-      console.log('[migrate] Applying indexes.sql ...');
-      const sql = fs.readFileSync(path.join(__dirname, indexesFile), 'utf8');
+      await connection.beginTransaction();
       try {
         await connection.query(sql);
+        await connection.query(
+          'INSERT INTO schema_migrations (filename) VALUES (?)',
+          [file]
+        );
+        await connection.commit();
       } catch (err) {
-        // Composite indexes may already exist on a re-run; don't fail the whole migration for that.
-        if (err.code !== 'ER_DUP_KEYNAME' && err.code !== 'ER_TABLE_EXISTS_ERROR') throw err;
-        console.warn('[migrate] Some indexes/tables in indexes.sql already existed — continuing.');
+        try { await connection.rollback(); } catch (_) {}
+        throw new Error(`Migration ${file} failed: ${err.message}`, { cause: err });
       }
-      await connection.query('INSERT INTO schema_migrations (filename) VALUES (?)', [indexesFile]);
-      ranAny = true;
+      console.log(`[migrate] Applied ${file}`);
     }
 
-    console.log(ranAny ? '[migrate] Done.' : '[migrate] Nothing to do — database is up to date.');
+    if (fs.existsSync(INDEXES_FILE) && !applied.has('indexes.sql')) {
+      console.log('[migrate] Applying indexes.sql ...');
+      const sql = fs.readFileSync(INDEXES_FILE, 'utf8');
+      await connection.beginTransaction();
+      try {
+        await connection.query(sql);
+        await connection.query(
+          'INSERT INTO schema_migrations (filename) VALUES (?)',
+          ['indexes.sql']
+        );
+        await connection.commit();
+      } catch (err) {
+        try { await connection.rollback(); } catch (_) {}
+        // Existing indexes are expected on some manually provisioned databases.
+        if (err.code === 'ER_DUP_KEYNAME' || err.code === 'ER_TABLE_EXISTS_ERROR') {
+          await connection.rollback().catch(() => {});
+          await connection.query(
+            'INSERT IGNORE INTO schema_migrations (filename) VALUES (?)',
+            ['indexes.sql']
+          );
+          console.warn('[migrate] Existing index/table detected; indexes.sql marked applied.');
+        } else {
+          throw new Error(`Migration indexes.sql failed: ${err.message}`, { cause: err });
+        }
+      }
+      console.log('[migrate] Applied indexes.sql');
+    }
+
+    console.log('[migrate] Done. No destructive database reset is performed by this command.');
   } finally {
     await connection.end();
   }
