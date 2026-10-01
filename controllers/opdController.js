@@ -337,7 +337,7 @@ async function saveVitals(req, res, next) {
        ON DUPLICATE KEY UPDATE
          bp=VALUES(bp), pulse=VALUES(pulse), spo2=VALUES(spo2), temperature=VALUES(temperature),
          height_cm=VALUES(height_cm), weight_kg=VALUES(weight_kg),
-         respiratory_rate=VALUES(respiratory), pain_score=VALUES(pain_score),
+         respiratory_rate=VALUES(respiratory_rate), pain_score=VALUES(pain_score),
          recorded_by=VALUES(recorded_by)`,
       {
         visitId: req.params.visitId,
