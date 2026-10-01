@@ -49,6 +49,7 @@ app.set('layout', 'layouts/main');
 // ---- Security headers -------------------------------------------------
 app.use(
   helmet({
+    hsts: appConfig.isProd ? { maxAge: 15552000, includeSubDomains: true, preload: true } : false,
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
@@ -60,7 +61,8 @@ app.use(
         // console-visible server error.
         scriptSrc: ["'self'", "'unsafe-inline'", 'cdn.jsdelivr.net'],
         imgSrc: ["'self'", 'data:', 'https://images.pexels.com'],
-        fontSrc: ["'self'", 'cdn.jsdelivr.net']
+        fontSrc: ["'self'", 'cdn.jsdelivr.net'],
+        upgradeInsecureRequests: appConfig.isProd ? [] : null
       }
     }
   })
