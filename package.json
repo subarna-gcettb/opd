@@ -12,7 +12,6 @@
     "test": "node --test test/*.test.js"
   },
   "dependencies": {
-    "bcrypt": "^5.1.1",
     "bwip-js": "^4.3.2",
     "compression": "^1.7.4",
     "connect-flash": "^0.1.1",
@@ -31,7 +30,8 @@
     "multer": "^2.4.0",
     "mysql2": "^3.10.0",
     "nodemailer": "^6.9.14",
-    "pdfkit": "^0.15.0"
+    "pdfkit": "^0.15.0",
+    "bcryptjs": "^3.0.3"
   },
   "devDependencies": {
     "jest": "^29.7.0",
