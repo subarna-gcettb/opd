@@ -50,27 +50,31 @@ async function getConsultationContext(visitId) {
     { id: visitId }
   );
 
-  if (consultation) {
-    try {
-      const [[appointmentVitals]] = await pool.execute(
-        `SELECT bp, pulse, temperature, spo2, weight_kg, height_cm, respiratory_rate
-         FROM appointment_vitals
-         WHERE visit_id = :id
-         LIMIT 1`,
-        { id: visitId }
-      );
-      if (appointmentVitals) {
-        for (const field of ['bp', 'pulse', 'temperature', 'spo2', 'weight_kg', 'height_cm', 'respiratory_rate']) {
-          if (appointmentVitals[field] !== null && appointmentVitals[field] !== undefined) {
-            consultation[field] = appointmentVitals[field];
-          }
+  // Receptionist-recorded vitals are visit-level data and must be available
+  // to the doctor even before an opd_consultations row exists.
+  let appointmentVitals = null;
+  try {
+    const [[savedVitals]] = await pool.execute(
+      `SELECT bp, pulse, temperature, spo2, weight_kg, height_cm, respiratory_rate, recorded_at
+       FROM appointment_vitals
+       WHERE visit_id = :id
+       LIMIT 1`,
+      { id: visitId }
+    );
+    appointmentVitals = savedVitals || null;
+
+    // Preserve the existing consultation form behavior by using receptionist
+    // values as the current clinical values when they were actually recorded.
+    if (consultation && appointmentVitals) {
+      for (const field of ['bp', 'pulse', 'temperature', 'spo2', 'weight_kg', 'height_cm', 'respiratory_rate']) {
+        if (appointmentVitals[field] !== null && appointmentVitals[field] !== undefined) {
+          consultation[field] = appointmentVitals[field];
         }
       }
-    } catch (err) {
-      // Older installations do not have appointment_vitals yet. The doctor
-      // can still use the consultation using the legacy vitals table.
-      if (err.code !== 'ER_NO_SUCH_TABLE' && err.code !== 'ER_BAD_TABLE_ERROR') throw err;
     }
+  } catch (err) {
+    // Older installations do not have appointment_vitals yet.
+    if (err.code !== 'ER_NO_SUCH_TABLE' && err.code !== 'ER_BAD_TABLE_ERROR') throw err;
   }
 
   // Previous visits (excluding this one), with diagnosis and vitals trend.
@@ -138,6 +142,7 @@ async function getConsultationContext(visitId) {
   return {
     visit,
     consultation: consultation || null,
+    appointmentVitals,
     previousVisits,
     previousPrescriptions,
     currentPrescriptions,
