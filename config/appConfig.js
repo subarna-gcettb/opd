@@ -23,6 +23,10 @@ module.exports = {
   // Roles known to the system (also seeded in DB). Kept here only for
   // readable references in code — the DB is always the source of truth
   // for actual permission checks.
+  security: {
+    trustProxy: Number(process.env.TRUST_PROXY || 1)
+  },
+
   roles: {
     SUPER_ADMIN: 'SUPER_ADMIN',
     ADMIN: 'ADMIN',
