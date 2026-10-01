@@ -14,7 +14,7 @@ const storage = multer.diskStorage({
   }
 });
 
-const ALLOWED = new Set(['.png', '.jpg', '.jpeg', '.svg', '.webp', '.ico']);
+const ALLOWED = new Set(['.png', '.jpg', '.jpeg', '.webp', '.ico']);
 
 function fileFilter(req, file, cb) {
   const ext = path.extname(file.originalname).toLowerCase();
