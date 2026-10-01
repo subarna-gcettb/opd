@@ -22,7 +22,7 @@ const PRECACHE_ASSETS = [
 const STATIC_PREFIXES = ['/css/', '/js/', '/images/'];
 
 function isCacheableStaticRequest(request, url) {
-  if (!['GET', 'HEAD'].includes(request.method)) return false;
+  if (request.method !== 'GET') return false;
   if (url.origin !== self.location.origin) return false;
   if (!STATIC_PREFIXES.some((prefix) => url.pathname.startsWith(prefix))) return false;
   // Never cache requests carrying credentials. This prevents a future
