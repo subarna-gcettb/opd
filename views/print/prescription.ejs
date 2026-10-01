@@ -101,11 +101,6 @@
     </div>
   <% }) %>
 
-  <% if (prescription.investigation_advice) { %>
-    <div class="section-label">Investigation Advice</div>
-    <div><%= prescription.investigation_advice %></div>
-  <% } %>
-
   <div class="section-label">Follow-up</div>
   <div><%= prescription.follow_up_date ? new Date(prescription.follow_up_date).toLocaleDateString() : 'As needed' %></div>
 
