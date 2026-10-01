@@ -92,7 +92,8 @@ app.use(
       maxAge: appConfig.session.maxAgeMs
     }
   })
-);app.use(cookieParser());
+);
+app.use(cookieParser());
 
 app.use(flash());
 
