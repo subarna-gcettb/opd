@@ -223,7 +223,8 @@ async function getPatientProfile(healthIdOrId) {
     `SELECT v.id AS visit_id, v.visit_code, v.checked_in_at, v.status,
             d.doctor_code, du.name AS doctor_name, dept.name AS department_name,
             c.diagnosis, c.follow_up_date,
-            i.id AS invoice_id, i.invoice_number, i.status AS invoice_status, i.net_amount
+            i.id AS invoice_id, i.invoice_number, i.status AS invoice_status, i.net_amount,
+            (SELECT pr.id FROM prescriptions pr WHERE pr.visit_id = v.id AND pr.is_current = 1 ORDER BY pr.version DESC LIMIT 1) AS prescription_id
      FROM opd_visits v
      JOIN doctors d ON d.id = v.doctor_id
      JOIN users du ON du.id = d.user_id
