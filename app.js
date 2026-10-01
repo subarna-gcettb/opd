@@ -11,6 +11,7 @@ const methodOverride = require('method-override');
 const flash = require('connect-flash');
 const expressLayouts = require('express-ejs-layouts');
 const rateLimit = require('express-rate-limit');
+const crypto = require('crypto');
 
 const appConfig = require('./config/appConfig');
 const { attachUser } = require('./middleware/auth');
@@ -37,7 +38,7 @@ const sessionStore = new MySQLStore({
 });
 
 app.disable('x-powered-by');
-app.set('trust proxy', 1);
+app.set('trust proxy', appConfig.isProd ? Number(process.env.TRUST_PROXY || 1) : false);
 
 // ---- View engine ----------------------------------------------------
 app.set('view engine', 'ejs');
@@ -67,7 +68,7 @@ app.use(
 app.use(compression());
 
 // ---- Body / cookies ----------------------------------------------------
-app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2mb', parameterLimit: 200 }));
 app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
 app.use(methodOverride('_method'));
@@ -94,6 +95,11 @@ app.use(
 app.use(flash());
 
 // ---- Request-scoped helpers -----------------------------------------
+app.use((req, res, next) => {
+  req.requestId = String(req.headers['x-request-id'] || crypto.randomUUID()).slice(0, 100);
+  res.setHeader('X-Request-ID', req.requestId);
+  next();
+});
 app.use(attachClientIp);
 app.use(attachUser);
 app.use(exposeCsrfToken);
@@ -130,6 +136,15 @@ const loginLimiter = rateLimit({
   message: 'Too many login attempts. Please try again later.'
 });
 app.use('/auth/login', loginLimiter);
+
+const generalLimiter = rateLimit({
+  windowMs: Number(process.env.GENERAL_RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+  max: Number(process.env.GENERAL_RATE_LIMIT_MAX) || 600,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.path.startsWith('/css/') || req.path.startsWith('/js/') || req.path.startsWith('/images/') || req.path === '/manifest.json'
+});
+app.use(generalLimiter);
 
 // ---- Routes ----------------------------------------------------------
 app.use('/auth', require('./routes/authRoutes'));
