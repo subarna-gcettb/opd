@@ -1,4 +1,4 @@
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const { pool, withTransaction } = require('../config/database');
 const authConfig = require('../config/auth');
 const auditService = require('./auditService');
