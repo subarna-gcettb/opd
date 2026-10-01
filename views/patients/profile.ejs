@@ -53,10 +53,21 @@
 
   <div class="col-lg-7">
     <div class="card mb-3">
-      <div class="card-header">OPD History</div>
-      <div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>Date</th><th>Doctor</th><th>Diagnosis</th><th>Status</th></tr></thead><tbody>
-        <% opdHistory.forEach(v => { %><tr><td><%= new Date(v.checked_in_at).toLocaleDateString() %></td><td><%= v.doctor_name %></td><td><%= v.diagnosis || '—' %></td><td><%= v.status %></td></tr><% }) %>
-        <% if (!opdHistory.length) { %><tr><td colspan="4" class="text-center text-muted py-3">No OPD history.</td></tr><% } %>
+      <div class="card-header">OPD History &amp; Digital Records</div>
+      <div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>Date</th><th>Doctor</th><th>Diagnosis</th><th>Status</th><th>Digital Copies</th></tr></thead><tbody>
+        <% opdHistory.forEach(v => { %>
+<tr>
+  <td><%= new Date(v.checked_in_at).toLocaleDateString() %></td>
+  <td><%= v.doctor_name %></td>
+  <td><%= v.diagnosis || '—' %></td>
+  <td><%= v.status %></td>
+  <td class="text-nowrap">
+    <% if (v.visit_id) { %><a href="/doctor/consultation/<%= v.visit_id %>" class="btn btn-sm btn-outline-primary">OPD Record</a><% } %>
+    <% if (v.invoice_id) { %><a href="/billing/invoices/<%= v.invoice_id %>" class="btn btn-sm btn-outline-secondary">Invoice</a><a href="/billing/invoices/<%= v.invoice_id %>/print" target="_blank" class="btn btn-sm btn-outline-secondary">Digital Copy</a><% } %>
+  </td>
+</tr>
+<% }) %>
+        <% if (!opdHistory.length) { %><tr><td colspan="5" class="text-center text-muted py-3">No OPD history.</td></tr><% } %>
       </tbody></table></div>
     </div>
     <div class="card mb-3">
@@ -100,8 +111,9 @@
     </div>
 
     <div class="card">
-      <div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>Invoice</th><th>Date</th><th>Net</th><th>Status</th></tr></thead><tbody>
-        <% billing.forEach(b => { %><tr><td><%= b.invoice_number %></td><td><%= new Date(b.created_at).toLocaleDateString() %></td><td>₹<%= Number(b.net_amount).toFixed(2) %></td><td><%= b.status %></td></tr><% }) %>
+      <div class="card-header d-flex justify-content-between align-items-center"><span>Invoices &amp; Digital Copies</span><span class="badge text-bg-secondary"><%= billing.length %></span></div>
+      <div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>Invoice</th><th>Date</th><th>Net</th><th>Status</th><th>Digital Copy</th></tr></thead><tbody>
+        <% billing.forEach(b => { %><tr><td><%= b.invoice_number %></td><td><%= new Date(b.created_at).toLocaleDateString() %></td><td>₹<%= Number(b.net_amount).toFixed(2) %></td><td><%= b.status %></td><td><a href="/billing/invoices/<%= b.id %>" class="btn btn-sm btn-outline-secondary">View</a><a href="/billing/invoices/<%= b.id %>/print" target="_blank" class="btn btn-sm btn-outline-primary ms-1">Digital Copy</a></td></tr><% }) %>
         <% if (!billing.length) { %><tr><td colspan="4" class="text-center text-muted py-3">No billing records.</td></tr><% } %>
       </tbody></table></div>
     </div>
