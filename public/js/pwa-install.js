@@ -52,9 +52,14 @@
 
   if (isStandalone()) hideButtons();
 
+  // Landing pages do not load main.js, so they register the same canonical
+  // service worker here. updateViaCache:none prevents stale sw.js responses
+  // from delaying a deployment update.
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js').catch(function () {});
+      navigator.serviceWorker.register('/sw.js', {
+        updateViaCache: 'none'
+      }).catch(function () {});
     });
   }
 })();
