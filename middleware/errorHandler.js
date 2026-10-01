@@ -26,7 +26,9 @@ function statusFromError(err) {
   ]);
   if (mysqlCodes.has(err.code)) return err.code === 'ER_DUP_ENTRY' ? 409 : 400;
   if (err.code === 'ECONNREFUSED' || err.code === 'PROTOCOL_CONNECTION_LOST') return 503;
+  if (err.code === 'EBADCSRFTOKEN') return 403;
   if (err.type === 'entity.too.large') return 413;
+  if (err.type === 'entity.parse.failed' || err instanceof URIError) return 400;
   return 500;
 }
 
