@@ -216,7 +216,12 @@ async function getPrescription(prescriptionId) {
             u.name AS doctor_name, d.qualification, d.professional_reg_number, d.specialisation,
             dept.name AS department_name,
             c.diagnosis, c.investigation_advice, c.follow_up_date, c.complaints,
+            c.symptoms, c.personal_history, c.clinical_notes,
+            c.complementary_requested,
+            a.lmp_date, a.gravida, a.para, a.abortions, a.pregnancy_status,
+            a.gestational_age_weeks, a.gestational_age_days, a.estimated_due_date, a.obstetric_notes,
             vt.bp, vt.pulse, vt.temperature, vt.spo2, vt.weight_kg, vt.height_cm,
+            av.respiratory_rate,
             v.visit_code, b.name AS branch_name
      FROM prescriptions pr
      JOIN patients p ON p.id = pr.patient_id
@@ -229,6 +234,7 @@ async function getPrescription(prescriptionId) {
      JOIN branches b ON b.id = v.branch_id
      LEFT JOIN opd_consultations c ON c.visit_id = pr.visit_id
      LEFT JOIN vitals vt ON vt.consultation_id = c.id
+     LEFT JOIN appointment_vitals av ON av.visit_id = pr.visit_id
      WHERE pr.id = :id`,
     { id: prescriptionId }
   );
