@@ -87,8 +87,56 @@
   <div class="section-label">Chief Complaint</div>
   <div><%= prescription.complaints || '—' %></div>
 
-  <div class="section-label">Personal History</div>
-  <div><%= prescription.personal_history ? (typeof prescription.personal_history === 'string' ? prescription.personal_history : JSON.stringify(prescription.personal_history)) : '—' %></div>
+  <%
+    let personalHistory = prescription.personal_history;
+    if (typeof personalHistory === 'string') {
+      try { personalHistory = JSON.parse(personalHistory); } catch (_) { personalHistory = { notes: personalHistory }; }
+    }
+    personalHistory = personalHistory && typeof personalHistory === 'object' ? personalHistory : {};
+    const historyLabels = {
+      surgery: 'Surgery',
+      sleep: 'Sleep',
+      drinking: 'Alcohol / Drinking',
+      bowel: 'Bowel',
+      smoking: 'Smoking',
+      appetite: 'Appetite',
+      diet: 'Diet',
+      occupation: 'Occupation',
+      exercise: 'Exercise',
+      other: 'Other'
+    };
+    const historyEntries = Object.keys(historyLabels)
+      .filter(key => personalHistory[key] && (personalHistory[key].value || personalHistory[key].other))
+      .map(key => ({
+        label: historyLabels[key],
+        value: personalHistory[key].value || '—',
+        other: personalHistory[key].other || ''
+      }));
+    const customHistory = Array.isArray(personalHistory.customItems) ? personalHistory.customItems : [];
+  %>
+  <div class="history-grid">
+    <% historyEntries.forEach(function(item) { %>
+      <div class="history-item">
+        <span class="history-label"><%= item.label %></span>
+        <span class="history-value"><%= item.value %><% if (item.other) { %> — <%= item.other %><% } %></span>
+      </div>
+    <% }) %>
+    <% customHistory.forEach(function(item) {
+      const label = item && (item.label || item.name || item.title);
+      const value = item && (item.value || item.answer || item.other);
+      if (label && value) { %>
+      <div class="history-item">
+        <span class="history-label"><%= label %></span>
+        <span class="history-value"><%= value %></span>
+      </div>
+    <% } }) %>
+    <% if (!historyEntries.length && !customHistory.length && personalHistory.notes) { %>
+      <div class="history-free-text"><%= personalHistory.notes %></div>
+    <% } %>
+    <% if (!historyEntries.length && !customHistory.length && !personalHistory.notes) { %>
+      <div class="text-muted">No personal history recorded.</div>
+    <% } %>
+  </div>
 
   <div class="section-label">Symptoms</div>
   <div><%= prescription.symptoms || '—' %></div>
@@ -105,16 +153,43 @@
   <div class="section-label">Investigation Advice</div>
   <div><%= prescription.investigation_advice || '—' %></div>
 
-  <div class="section-label">Rx / Prescription Instructions</div>
-  <% items.forEach(function(it, i) { %>
-    <div class="rx-print-item">
-      <div><strong><%= i + 1 %>. <%= it.medicine_name_freetext %></strong><% if (it.composition) { %> <span>[<%= it.composition %>]</span><% } %></div>
-      <div class="small"><%= it.medicine_form || 'Medicine' %> · <%= it.dosage || '—' %> · <%= it.frequency || '—' %> · <%= it.duration ? it.duration + (String(it.duration).match(/days?$/i) ? '' : ' days') : '—' %> · <%= it.route || '—' %><% if (it.quantity) { %> · Qty <%= it.quantity %><% } %></div>
-      <div class="rx-instruction-en"><strong>English:</strong> <%= it.prescriptionText ? it.prescriptionText.english : '—' %></div>
-      <div class="rx-instruction-bn"><strong>বাংলা:</strong> <%= it.prescriptionText ? it.prescriptionText.bengali : '—' %></div>
-      <% if (it.instructions) { %><div class="small text-muted">Additional: <%= it.instructions %></div><% } %>
-    </div>
-  <% }) %>
+  <div class="section-label rx-heading"><span>Rx</span> Prescription / Medication</div>
+  <table class="rx-print-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Medicine / Composition</th>
+        <th>Form</th>
+        <th>Dose</th>
+        <th>Frequency</th>
+        <th>Duration</th>
+        <th>Route</th>
+        <th>Qty</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% items.forEach(function(it, i) { %>
+        <tr>
+          <td class="rx-no"><%= i + 1 %></td>
+          <td>
+            <strong><%= it.medicine_name_freetext %></strong>
+            <% if (it.composition) { %><div class="rx-composition"><%= it.composition %></div><% } %>
+            <% if (it.prescriptionText) { %>
+              <div class="rx-instruction-en"><strong>English:</strong> <%= it.prescriptionText.english %></div>
+              <div class="rx-instruction-bn"><strong>বাংলা:</strong> <%= it.prescriptionText.bengali %></div>
+            <% } %>
+            <% if (it.instructions) { %><div class="rx-additional"><%= it.instructions %></div><% } %>
+          </td>
+          <td><%= it.medicine_form || '—' %></td>
+          <td><%= it.dosage || '—' %></td>
+          <td><%= it.frequency || '—' %></td>
+          <td><%= it.duration ? it.duration + (String(it.duration).match(/days?$/i) ? '' : ' days') : '—' %></td>
+          <td><%= it.route || '—' %></td>
+          <td><%= it.quantity || '—' %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
 
   <div class="section-label">Follow-up</div>
   <div><%= prescription.follow_up_date ? new Date(prescription.follow_up_date).toLocaleDateString() : 'As needed' %></div>
