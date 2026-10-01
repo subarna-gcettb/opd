@@ -62,7 +62,7 @@
   <td><%= v.diagnosis || '—' %></td>
   <td><%= v.status %></td>
   <td class="text-nowrap">
-    <% if (v.visit_id) { %><a href="/doctor/consultation/<%= v.visit_id %>" class="btn btn-sm btn-outline-primary">OPD Record</a><% } %>
+    <% if (v.prescription_id) { %><a href="/prescriptions/<%= v.prescription_id %>" class="btn btn-sm btn-outline-primary">Prescription</a><a href="/prescriptions/<%= v.prescription_id %>/print" target="_blank" class="btn btn-sm btn-outline-primary ms-1">Digital Copy</a><% } %>
     <% if (v.invoice_id) { %><a href="/billing/invoices/<%= v.invoice_id %>" class="btn btn-sm btn-outline-secondary">Invoice</a><a href="/billing/invoices/<%= v.invoice_id %>/print" target="_blank" class="btn btn-sm btn-outline-secondary">Digital Copy</a><% } %>
   </td>
 </tr>
