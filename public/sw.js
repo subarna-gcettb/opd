@@ -15,11 +15,7 @@ const PRECACHE_ASSETS = [
   '/js/main.js',
   '/js/pwa-install.js',
   '/images/chhayabithi-logo.webp',
-  '/images/favicon-32.png',
-  '/images/favicon-48.png',
-  '/images/apple-touch-icon.png',
-  '/images/pwa-icon-192.png',
-  '/images/pwa-icon-512.png'
+  '/images/chhayabithi-icon.svg'
 ];
 
 const STATIC_PREFIXES = ['/css/', '/js/', '/images/'];
