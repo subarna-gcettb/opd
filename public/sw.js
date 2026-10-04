@@ -4,6 +4,7 @@
  */
 const CACHE_NAME = 'chhayabithi-hms-v15';
 
+// The canonical uploaded Chhayabithi icon is precached so installed PWAs refresh it.
 const PRECACHE_ASSETS = [
   '/css/style.css',
   '/css/public-bootstrap-fallback.css',
