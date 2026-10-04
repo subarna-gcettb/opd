@@ -2,7 +2,7 @@
  * Only static same-origin assets are cached. HTML, API responses,
  * authenticated pages and live data always stay on the network.
  */
-const CACHE_NAME = 'chhayabithi-hms-v14';
+const CACHE_NAME = 'chhayabithi-hms-v15';
 
 const PRECACHE_ASSETS = [
   '/css/style.css',
