@@ -169,7 +169,8 @@ app.use('/pharmacy', require('./routes/pharmacyRoutes'));
 app.get('/manifest.json', async (req, res, next) => {
   try {
     const settings = await settingsService.getSettings();
-    const icon = settings.logo_path || '/images/pwa-icon-512.svg';
+    const icon192 = '/images/pwa-icon-192.png';
+    const icon512 = '/images/pwa-icon-512.png';
     res.json({
       name: settings.hospital_name + ' HMS',
       short_name: settings.hospital_name,
