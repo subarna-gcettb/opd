@@ -92,3 +92,54 @@ body.print-doc {
     transform:scale(var(--prescription-print-scale,1));
   }
 }
+
+/* Compact prescription print layout */
+.prescription-one-page{font-family:'Segoe UI',Arial,sans-serif;font-size:10.5px;line-height:1.25;position:relative}
+.rx-letterhead{display:flex;justify-content:space-between;gap:12px;align-items:center;border-bottom:2px solid #0d6e6e;padding-bottom:5px;margin-bottom:6px}
+.rx-brand{min-width:0;flex:1}
+.rx-brand .print-header{text-align:left}
+.rx-brand .letterhead-brand{width:150px;height:42px;margin:0}
+.rx-brand .letterhead-logo{width:150px;height:42px}
+.rx-brand .hospital-name{font-size:16px}
+.rx-brand .hospital-sub,.rx-brand .hospital-addr{font-size:8px}
+.rx-rmp{min-width:230px;text-align:right;font-size:8.5px;line-height:1.35}
+.rx-rmp strong{display:block;font-size:12px}
+.rx-rmp span{display:block}
+.rx-patient-bar{display:grid;grid-template-columns:1.35fr 1fr 1.15fr;gap:6px;padding:5px 7px;background:#f3f7f7;border:1px solid #d7e3e3;border-radius:4px;margin-bottom:6px}
+.rx-patient-bar>div{display:flex;gap:8px;flex-wrap:wrap}
+.rx-patient-bar span{white-space:nowrap}
+.rx-complementary-mark{position:absolute;right:4px;top:55px;width:25px;height:25px;border:3px solid #b91c1c;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;color:#b91c1c;font-size:16px;background:#fff}
+.rx-clinical-grid{display:grid;grid-template-columns:42% 58%;gap:8px;align-items:start}
+.rx-left,.rx-right{min-width:0}
+.prescription-one-page section{margin:0 0 6px;break-inside:avoid}
+.prescription-one-page section h3{font-size:9px;text-transform:uppercase;letter-spacing:.04em;color:#0d6e6e;margin:0 0 3px;padding-bottom:2px;border-bottom:1px solid #cbdada}
+.prescription-one-page p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.rx-history-inline{display:flex;flex-wrap:wrap;gap:3px 8px}
+.rx-history-inline span{display:inline-block}
+.rx-mini-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px 8px}
+.rx-mini-grid .span-all{grid-column:1/-1}
+.rx-medicines{border:1px solid #9db9b8;border-radius:4px;padding:5px}
+.rx-title{font-size:13px;font-weight:800;color:#0d6e6e;margin-bottom:4px}
+.rx-symbol{font-family:Georgia,serif;font-size:19px;font-style:italic;margin-right:4px}
+.rx-compact-table{width:100%;border-collapse:collapse;table-layout:fixed}
+.rx-compact-table th,.rx-compact-table td{border:1px solid #aebbbb;padding:3px 4px;font-size:8.5px;vertical-align:top;overflow-wrap:anywhere}
+.rx-compact-table th{background:#eef5f4;text-transform:uppercase;font-size:7.5px}
+.rx-compact-table th:nth-child(1){width:5%}.rx-compact-table th:nth-child(2){width:34%}.rx-compact-table th:nth-child(3){width:12%}.rx-compact-table th:nth-child(4){width:17%}.rx-compact-table th:nth-child(5){width:13%}.rx-compact-table th:nth-child(6){width:19%}
+.rx-med-name{display:block;font-size:9.2px;line-height:1.1}
+.rx-generic{display:block;color:#555;font-size:7.8px;margin-top:1px}
+.rx-compact-table td:nth-child(2){font-weight:600}
+.rx-med-0{color:#1d4ed8}.rx-med-1{color:#047857}.rx-med-2{color:#6d28d9}.rx-med-3{color:#b45309}.rx-med-4{color:#be185d}
+.rx-bottom-line{margin-top:5px;padding:4px 6px;border-top:1px solid #bbb;border-bottom:1px solid #bbb}
+.rx-signature-row{display:flex;justify-content:space-between;gap:15px;margin-top:8px;break-inside:avoid}
+.rx-place{display:flex;flex-direction:column;font-size:8px;color:#444;max-width:60%}
+.rx-signature{text-align:right;min-width:180px}
+.rx-signature>span{display:block;font-weight:700}
+.rx-signature small{display:block;font-size:8px}
+.rx-sign-line{border-top:1px solid #333;margin-top:15px;padding-top:2px;font-size:7.5px}
+.prescription-one-page .print-footer-note{font-size:7px;margin-top:5px;padding-top:3px}
+@media print{
+  @page{size:A4;margin:10mm}
+  .prescription-one-page{max-width:none!important;width:100%!important;padding:0!important;margin:0!important}
+  .prescription-one-page .print-actions{display:none!important}
+  body.print-doc{font-size:10.5px}
+}
