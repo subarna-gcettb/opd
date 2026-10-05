@@ -80,181 +80,135 @@
 <% } %>
 
 <div class="row g-3">
-  <!-- LEFT: consultation form -->
+  <!-- UNIFIED CONSULTATION + PRESCRIPTION -->
   <div class="col-lg-8">
-    <form method="POST" action="/doctor/consultation/<%= visit.id %>" class="card mb-3">
+    <form method="POST" action="/doctor/consultation/<%= visit.id %>" class="card mb-3" id="consultationRxForm">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <div class="card-header">Consultation</div>
+      <input type="hidden" name="visitId" value="<%= visit.id %>">
+
+      <% if (String(visit.gender || '').toLowerCase() === 'female') { %>
+      <div class="pregnancy-doctor-card mb-3 border-0 rounded-0">
+        <div class="pregnancy-doctor-card__head">
+          <div><span class="small text-uppercase fw-bold">Female / Obstetric Assessment</span><h5 class="mb-0 mt-1"><i class="bi bi-gender-female me-1"></i> Pregnancy information</h5></div>
+          <span class="badge text-bg-<%= visit.pregnancy_status === 'PREGNANT' ? 'success' : 'secondary' %>"><%= visit.pregnancy_status || 'NOT RECORDED' %></span>
+        </div>
+        <div class="row g-2 mt-1">
+          <div class="col-6 col-md-4"><label class="form-label small">Pregnancy status</label><select name="pregnancyStatus" class="form-select form-select-sm" <%= isFinalized ? 'disabled' : '' %>><option value="">Not recorded</option><option value="NOT_PREGNANT" <%= visit.pregnancy_status === 'NOT_PREGNANT' ? 'selected' : '' %>>Not pregnant</option><option value="PREGNANT" <%= visit.pregnancy_status === 'PREGNANT' ? 'selected' : '' %>>Pregnant</option></select></div>
+          <div class="col-6 col-md-4"><label class="form-label small">LMP</label><input type="date" name="lmpDate" class="form-control form-control-sm" value="<%= visit.lmp_date ? String(visit.lmp_date).slice(0,10) : '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
+          <div class="col-6 col-md-4"><label class="form-label small">Gravida (G)</label><input type="number" min="0" name="gravida" class="form-control form-control-sm" value="<%= visit.gravida ?? '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
+          <div class="col-6 col-md-4"><label class="form-label small">Para (P)</label><input type="number" min="0" name="para" class="form-control form-control-sm" value="<%= visit.para ?? '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
+          <div class="col-6 col-md-4"><label class="form-label small">Abortions (A)</label><input type="number" min="0" name="abortions" class="form-control form-control-sm" value="<%= visit.abortions ?? '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
+          <div class="col-6 col-md-4"><label class="form-label small">Gestational age (weeks)</label><input type="number" min="0" name="gestationalAgeWeeks" class="form-control form-control-sm" value="<%= visit.gestational_age_weeks ?? (pregnancyCalculation?.gestationalAgeWeeks ?? '') %>" <%= isFinalized ? 'readonly' : '' %>></div>
+          <div class="col-6 col-md-4"><label class="form-label small">Gestational age (days)</label><input type="number" min="0" max="6" name="gestationalAgeDays" class="form-control form-control-sm" value="<%= visit.gestational_age_days ?? (pregnancyCalculation?.gestationalAgeDays ?? '') %>" <%= isFinalized ? 'readonly' : '' %>></div>
+          <div class="col-6 col-md-4"><label class="form-label small">EDD</label><input type="date" name="estimatedDueDate" class="form-control form-control-sm" value="<%= visit.estimated_due_date ? String(visit.estimated_due_date).slice(0,10) : '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
+          <div class="col-12"><label class="form-label small">Obstetric notes</label><textarea name="obstetricNotes" class="form-control form-control-sm" rows="2" <%= isFinalized ? 'readonly' : '' %>><%= visit.obstetric_notes || '' %></textarea></div>
+        </div>
+      </div>
+      <% } %>
+
+      <div class="card-header">Clinical Consultation</div>
       <div class="card-body">
         <div class="mb-3">
           <div class="d-flex justify-content-between align-items-center gap-2">
             <label class="form-label mb-1">Chief Complaint</label>
-            <span class="badge text-bg-light border">Press Enter to add a complaint</span>
+            <span class="badge text-bg-light border">Press Enter to add</span>
           </div>
           <input type="hidden" name="complaints" id="complaintValue">
           <div id="complaintTags" class="d-flex flex-wrap gap-2 mb-2"></div>
           <% if (!isFinalized) { %>
-            <div class="position-relative">
-              <input type="text" id="complaintInput" class="form-control" autocomplete="off" placeholder="Type a chief complaint and press Enter..." aria-label="Chief complaint">
-              <div id="complaintSuggestions" class="list-group position-absolute w-100 shadow-sm" style="z-index:20;display:none;max-height:220px;overflow:auto;"></div>
-            </div>
-            <div class="small text-muted mt-1">Existing complaints appear as suggestions. New complaints are saved to your doctor-specific suggestion list.</div>
+            <div class="position-relative"><input type="text" id="complaintInput" class="form-control" autocomplete="off" placeholder="Type a chief complaint and press Enter..." aria-label="Chief complaint"><div id="complaintSuggestions" class="list-group position-absolute w-100 shadow-sm" style="z-index:20;display:none;max-height:220px;overflow:auto;"></div></div>
+            <div class="small text-muted mt-1">Your saved complaint suggestions will appear here.</div>
           <% } %>
         </div>
+
         <div class="mb-3">
           <h6 class="text-uppercase text-muted small mb-2">Personal History</h6>
           <input type="hidden" name="personalHistory" id="personalHistoryValue">
           <div class="row g-2">
-            <div class="col-md-4"><label class="form-label small">Surgery</label><select id="phSurgery" class="form-select form-select-sm" <%= isFinalized ? 'disabled' : '' %>><option value="NO">No</option><option value="YES">Yes</option><option value="OTHER">Other</option></select><input id="phSurgeryOther" class="form-control form-control-sm mt-1" placeholder="Surgery details" style="display:none" <%= isFinalized ? 'readonly' : '' %>></div>
-            <div class="col-md-4"><label class="form-label small">Sleep</label><select id="phSleep" class="form-select form-select-sm" <%= isFinalized ? 'disabled' : '' %>><option value="NORMAL">Normal</option><option value="DISTURBED">Disturbed</option><option value="INSOMNIA">Insomnia</option><option value="EXCESSIVE">Excessive</option><option value="OTHER">Other</option></select><input id="phSleepOther" class="form-control form-control-sm mt-1" placeholder="Sleep details" style="display:none" <%= isFinalized ? 'readonly' : '' %>></div>
-            <div class="col-md-4"><label class="form-label small">Drinking / Alcohol</label><select id="phDrinking" class="form-select form-select-sm" <%= isFinalized ? 'disabled' : '' %>><option value="NO">No</option><option value="YES">Yes</option><option value="OCCASIONAL">Occasional</option><option value="OTHER">Other</option></select><input id="phDrinkingOther" class="form-control form-control-sm mt-1" placeholder="Drinking details" style="display:none" <%= isFinalized ? 'readonly' : '' %>></div>
-            <div class="col-md-4"><label class="form-label small">Bowel</label><select id="phBowel" class="form-select form-select-sm" <%= isFinalized ? 'disabled' : '' %>><option value="REGULAR">Regular</option><option value="CONSTIPATION">Constipation</option><option value="DIARRHEA">Diarrhea</option><option value="IRREGULAR">Irregular</option><option value="OTHER">Other</option></select><input id="phBowelOther" class="form-control form-control-sm mt-1" placeholder="Bowel details" style="display:none" <%= isFinalized ? 'readonly' : '' %>></div>
+            <div class="col-md-4"><label class="form-label small">Surgery</label><select id="phSurgery" class="form-select form-select-sm" <%= isFinalized ? 'disabled' : '' %>><option value="">Not recorded</option><option value="NO">No</option><option value="YES">Yes</option><option value="OTHER">Other</option></select><input id="phSurgeryOther" class="form-control form-control-sm mt-1" placeholder="Surgery details" style="display:none" <%= isFinalized ? 'readonly' : '' %>></div>
+            <div class="col-md-4"><label class="form-label small">Sleep</label><select id="phSleep" class="form-select form-select-sm" <%= isFinalized ? 'disabled' : '' %>><option value="">Not recorded</option><option value="NORMAL">Normal</option><option value="DISTURBED">Disturbed</option><option value="INSOMNIA">Insomnia</option><option value="EXCESSIVE">Excessive</option><option value="OTHER">Other</option></select><input id="phSleepOther" class="form-control form-control-sm mt-1" placeholder="Sleep details" style="display:none" <%= isFinalized ? 'readonly' : '' %>></div>
+            <div class="col-md-4"><label class="form-label small">Drinking / Alcohol</label><select id="phDrinking" class="form-select form-select-sm" <%= isFinalized ? 'disabled' : '' %>><option value="">Not recorded</option><option value="NO">No</option><option value="YES">Yes</option><option value="OCCASIONAL">Occasional</option><option value="OTHER">Other</option></select><input id="phDrinkingOther" class="form-control form-control-sm mt-1" placeholder="Drinking details" style="display:none" <%= isFinalized ? 'readonly' : '' %>></div>
+            <div class="col-md-4"><label class="form-label small">Bowel</label><select id="phBowel" class="form-select form-select-sm" <%= isFinalized ? 'disabled' : '' %>><option value="">Not recorded</option><option value="REGULAR">Regular</option><option value="CONSTIPATION">Constipation</option><option value="DIARRHEA">Diarrhea</option><option value="IRREGULAR">Irregular</option><option value="OTHER">Other</option></select><input id="phBowelOther" class="form-control form-control-sm mt-1" placeholder="Bowel details" style="display:none" <%= isFinalized ? 'readonly' : '' %>></div>
             <div class="col-12"><div class="d-flex justify-content-between align-items-center"><label class="form-label small mb-1">Additional history</label><% if (!isFinalized) { %><button type="button" class="btn btn-sm btn-outline-secondary" id="addHistoryItem"><i class="bi bi-plus"></i> Add item</button><% } %></div><div id="customHistoryItems" class="row g-2"></div></div>
           </div>
         </div>
+
         <div class="mb-3">
-          <label class="form-label">Symptoms</label>
-          <textarea name="symptoms" class="form-control" rows="2" <%= isFinalized ? 'readonly' : '' %>><%= c.symptoms || '' %></textarea>
+          <div class="d-flex justify-content-between align-items-center"><label class="form-label mb-1">Clinical Findings</label><span class="badge text-bg-light border">Press Enter to add</span></div>
+          <input type="hidden" name="clinicalNotes" id="clinicalFindingsValue">
+          <div id="clinicalFindingsTags" class="d-flex flex-wrap gap-2 mb-2"></div>
+          <% if (!isFinalized) { %><input type="text" id="clinicalFindingsInput" class="form-control" placeholder="Enter examination / clinical finding and press Enter..."><% } %>
         </div>
 
-        <h6 class="text-uppercase text-muted small mt-4 mb-2">Vitals</h6>
+        <h6 class="text-uppercase text-muted small mt-4 mb-2">Vitals <span class="badge text-bg-primary-subtle text-primary">Doctor editable</span></h6>
         <div class="row g-2">
-          <div class="col-6 col-md-2"><label class="form-label small">BP</label><input type="text" name="bp" class="form-control form-control-sm" placeholder="120/80" value="<%= c.bp || '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
-          <div class="col-6 col-md-2"><label class="form-label small">Pulse</label><input type="number" name="pulse" class="form-control form-control-sm" value="<%= c.pulse || '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
-          <div class="col-6 col-md-2"><label class="form-label small">Temp (°F)</label><input type="number" step="0.1" name="temperature" class="form-control form-control-sm" value="<%= c.temperature || '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
-          <div class="col-6 col-md-2"><label class="form-label small">SpO2 (%)</label><input type="number" name="spo2" class="form-control form-control-sm" value="<%= c.spo2 || '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
-          <div class="col-6 col-md-2"><label class="form-label small">Weight (kg)</label><input type="number" step="0.1" name="weightKg" class="form-control form-control-sm" value="<%= c.weight_kg || visit.profile_weight || '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
-          <div class="col-6 col-md-2"><label class="form-label small">Height (cm)</label><input type="number" step="0.1" name="heightCm" id="consultHeightCm" class="form-control form-control-sm" value="<%= c.height_cm || visit.profile_height || '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
-          <div class="col-6 col-md-2"><label class="form-label small">Respiratory rate</label><input type="number" name="respiratoryRate" class="form-control form-control-sm" value="<%= c.respiratory_rate || '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
-          <div class="col-6 col-md-2"><label class="form-label small">BMI</label><div class="form-control form-control-sm bg-light fw-semibold" id="consultBmi">—</div></div>
+          <div class="col-6 col-md-3"><label class="form-label small">BP</label><input type="text" name="bp" class="form-control form-control-sm" placeholder="120/80" value="<%= c.bp || '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
+          <div class="col-6 col-md-3"><label class="form-label small">Pulse</label><input type="number" name="pulse" class="form-control form-control-sm" value="<%= c.pulse ?? '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
+          <div class="col-6 col-md-3"><label class="form-label small">Temp (°F)</label><input type="number" step="0.1" name="temperature" class="form-control form-control-sm" value="<%= c.temperature ?? '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
+          <div class="col-6 col-md-3"><label class="form-label small">SpO₂ (%)</label><input type="number" name="spo2" class="form-control form-control-sm" value="<%= c.spo2 ?? '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
+          <div class="col-6 col-md-3"><label class="form-label small">Weight (kg)</label><input type="number" step="0.1" name="weightKg" class="form-control form-control-sm" value="<%= c.weight_kg ?? visit.profile_weight ?? '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
+          <div class="col-6 col-md-3"><label class="form-label small">Height (cm)</label><input type="number" step="0.1" name="heightCm" id="consultHeightCm" class="form-control form-control-sm" value="<%= c.height_cm ?? visit.profile_height ?? '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
+          <div class="col-6 col-md-3"><label class="form-label small">Respiratory rate</label><input type="number" name="respiratoryRate" class="form-control form-control-sm" value="<%= c.respiratory_rate ?? '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
+          <div class="col-6 col-md-3"><label class="form-label small">BMI</label><div class="form-control form-control-sm bg-light fw-semibold" id="consultBmi">—</div></div>
         </div>
 
-        <h6 class="text-uppercase text-muted small mt-4 mb-2">Clinical</h6>
-        <div class="mb-3">
-          <label class="form-label">Allergies (update if changed)</label>
+        <div class="mb-3 mt-4">
+          <label class="form-label">Allergies</label>
           <input type="text" name="allergies" class="form-control" value="<%= visit.allergies || '' %>" <%= isFinalized ? 'readonly' : '' %>>
         </div>
         <div class="mb-3">
-          <label class="form-label">Diagnosis</label>
+          <label class="form-label">Diagnosis / Provisional Diagnosis</label>
           <textarea name="diagnosis" class="form-control" rows="2" <%= isFinalized ? 'readonly' : '' %>><%= c.diagnosis || '' %></textarea>
         </div>
-        <div class="mb-3">
-          <div class="form-check form-switch border rounded p-3 bg-light-subtle">
-            <input class="form-check-input" type="checkbox" role="switch" id="complementaryRequested" name="complementaryRequested" value="1" <%= complementaryRequested ? 'checked' : '' %> <%= isFinalized ? 'disabled' : '' %>>
-            <label class="form-check-label" for="complementaryRequested"><strong>Complementary consultation</strong><span class="d-block small text-muted">Internal billing flag only. This requests a 100% discount and is not shown as “complementary” to the patient.</span></label>
-          </div>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Clinical Notes</label>
-          <textarea name="clinicalNotes" class="form-control" rows="3" <%= isFinalized ? 'readonly' : '' %>><%= c.clinical_notes || '' %></textarea>
-        </div>
+
         <div class="card border-primary-subtle bg-light-subtle mt-4 mb-3">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <span><i class="bi bi-clipboard2-pulse me-1"></i><strong>Laboratory & Diagnostic Centre</strong></span>
-            <% if (labOrder) { %><span class="badge text-bg-primary"><%= labOrder.order_code %> · <%= labOrder.status.replaceAll('_',' ') %></span><% } %>
-          </div>
+          <div class="card-header d-flex justify-content-between align-items-center"><span><i class="bi bi-clipboard2-pulse me-1"></i><strong>Laboratory & Diagnostic Centre</strong></span><% if (labOrder) { %><span class="badge text-bg-primary"><%= labOrder.order_code %> · <%= labOrder.status.replaceAll('_',' ') %></span><% } %></div>
           <div class="card-body">
-            <% if (!labTests || !labTests.length) { %>
-              <div class="alert alert-warning mb-0">No active laboratory/diagnostic tests are configured for this branch.</div>
-            <% } else { %>
-              <p class="small text-muted mb-3">Select tests available at Chhayabithi Laboratory & Diagnostic Centre. Selected tests are automatically referred into the LIS and become visible in the patient's portal. The patient can cancel the referral if they choose not to perform it here.</p>
+            <% if (!labTests || !labTests.length) { %><div class="alert alert-warning mb-0">No active laboratory/diagnostic tests are configured for this branch.</div><% } else { %>
               <div class="row g-2">
                 <% labTests.forEach(function(test) { %>
-                  <div class="col-md-6 col-xl-4">
-                    <label class="border rounded p-2 d-flex gap-2 align-items-start h-100 bg-white">
-                      <input class="form-check-input mt-1" type="checkbox" name="labTestIds" value="<%= test.id %>"
-                             <%= selectedLabTestIds && selectedLabTestIds.includes(Number(test.id)) ? 'checked' : '' %>
-                             <%= isFinalized ? 'disabled' : '' %>>
-                      <span>
-                        <strong class="d-block"><%= test.name %></strong>
-                        <small class="text-muted"><%= test.code %> · <%= test.test_type %> · ₹<%= Number(test.price || 0).toFixed(2) %></small>
-                        <% if (test.fasting_required) { %><span class="badge text-bg-warning ms-1">Fasting</span><% } %>
-                        <% if (test.category_name) { %><small class="d-block text-muted"><%= test.category_name %></small><% } %>
-                      </span>
-                    </label>
-                  </div>
+                  <div class="col-md-6 col-xl-4"><label class="border rounded p-2 d-flex gap-2 align-items-start h-100 bg-white"><input class="form-check-input mt-1" type="checkbox" name="labTestIds" value="<%= test.id %>" <%= selectedLabTestIds && selectedLabTestIds.includes(Number(test.id)) ? 'checked' : '' %> <%= isFinalized ? 'disabled' : '' %>><span><strong class="d-block"><%= test.name %></strong><small class="text-muted"><%= test.code %> · <%= test.test_type %> · ₹<%= Number(test.price || 0).toFixed(2) %></small><% if (test.fasting_required) { %><span class="badge text-bg-warning ms-1">Fasting</span><% } %></span></label></div>
                 <% }) %>
               </div>
-              <% if (!isFinalized) { %>
-                <div class="small text-muted mt-3"><i class="bi bi-info-circle me-1"></i>Saving the consultation updates the LIS referral. Tests already collected or processed are not silently cancelled.</div>
-              <% } %>
             <% } %>
           </div>
         </div>
 
         <div class="row g-3">
-          <div class="col-md-8">
-            <label class="form-label">Investigation Advice</label>
-            <textarea name="investigationAdvice" class="form-control" rows="2" <%= isFinalized ? 'readonly' : '' %>><%= c.investigation_advice || '' %></textarea>
-          </div>
-          <div class="col-md-4">
-            <label class="form-label">Follow-up Date</label>
-            <input type="date" name="followUpDate" class="form-control" value="<%= c.follow_up_date || '' %>" <%= isFinalized ? 'readonly' : '' %>>
+          <div class="col-md-8"><label class="form-label">Investigation Advice</label><textarea name="investigationAdvice" class="form-control" rows="2" <%= isFinalized ? 'readonly' : '' %>><%= c.investigation_advice || '' %></textarea></div>
+          <div class="col-md-4"><label class="form-label">Follow-up Date</label><input type="date" name="followUpDate" class="form-control" value="<%= c.follow_up_date || '' %>" <%= isFinalized ? 'readonly' : '' %>></div>
+        </div>
+
+        <hr class="my-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div><h5 class="mb-0">Rx <span class="text-muted fw-normal">Prescription / Medication</span></h5><div class="small text-muted">Use the same Save button below for consultation + prescription.</div></div>
+          <% if (hasPrescription) { %><span class="badge text-bg-primary">Current v<%= currentPrescriptions[0].version %></span><% } %>
+        </div>
+        <datalist id="medicineList"><% medicines.forEach(function(m) { %><option value="<%= m.name %>" label="<%= [m.strength, m.composition, m.form].filter(Boolean).join(' · ') %>"></option><% }) %></datalist>
+        <div class="table-responsive rx-editor-scroll">
+          <table class="table align-middle rx-editor-table" id="rxTable">
+            <thead><tr><th>Medicine *</th><th>Composition</th><th>Form</th><th>Dose</th><th>Frequency</th><th>Days</th><th>Route</th><th>Qty</th><th>Instructions</th><th></th></tr></thead>
+            <tbody id="rxBody"></tbody>
+          </table>
+        </div>
+        <% if (!isFinalized) { %><button type="button" class="btn btn-sm btn-outline-secondary" id="addRowBtn"><i class="bi bi-plus-lg"></i> Add Medicine</button><% } %>
+
+        <div class="mt-4 p-3 border rounded bg-light-subtle">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="complementaryRequested" name="complementaryRequested" value="1" <%= complementaryRequested ? 'checked' : '' %> <%= isFinalized ? 'disabled' : '' %>>
+            <label class="form-check-label" for="complementaryRequested"><strong>Is this consultation complementary?</strong><span class="d-block small text-muted">If selected, a 100% consultation-fee discount request is created for the authorized billing approver.</span></label>
           </div>
         </div>
+
+        <% if (!isFinalized) { %>
+          <div class="text-end mt-4"><button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-save2 me-1"></i> Save Consultation &amp; Prescription</button></div>
+        <% } %>
       </div>
-      <% if (!isFinalized) { %>
-        <div class="card-footer text-end"><button type="submit" class="btn btn-primary">Save Consultation</button></div>
-      <% } %>
     </form>
 
     <% if (invoice) { %>
-      <div class="card mb-3 border-warning">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <span><i class="bi bi-receipt"></i> OPD Billing</span>
-          <span class="badge text-bg-<%= invoice.status === 'PAID' ? 'success' : 'secondary' %>"><%= invoice.status %></span>
-        </div>
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center">
-            <div><strong><%= invoice.invoice_number %></strong><div class="small text-muted">Net ₹<%= Number(invoice.net_amount).toFixed(2) %></div></div>
-            <a href="/billing/invoices/<%= invoice.id %>" class="btn btn-sm btn-outline-warning">View / Request Discount</a>
-          </div>
-        </div>
-      </div>
+      <div class="card mb-3 border-warning"><div class="card-header d-flex justify-content-between align-items-center"><span><i class="bi bi-receipt"></i> OPD Billing</span><span class="badge text-bg-<%= invoice.status === 'PAID' ? 'success' : 'secondary' %>"><%= invoice.status %></span></div><div class="card-body"><div class="d-flex justify-content-between align-items-center"><div><strong><%= invoice.invoice_number %></strong><div class="small text-muted">Net ₹<%= Number(invoice.net_amount).toFixed(2) %></div></div><a href="/billing/invoices/<%= invoice.id %>" class="btn btn-sm btn-outline-warning">View / Request Discount</a></div></div></div>
     <% } %>
-
-    <!-- PRESCRIPTION -->
-    <div class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <span>Prescription</span>
-        <% if (hasPrescription) { %>
-          <a href="/prescriptions/<%= currentPrescriptions[0].id %>" class="btn btn-sm btn-outline-primary">
-            Open <%= currentPrescriptions[0].prescription_code %> (v<%= currentPrescriptions[0].version %>)
-          </a>
-        <% } %>
-      </div>
-      <div class="card-body">
-        <% if (hasPrescription) { %>
-          <div class="alert alert-info mb-0">
-            A prescription already exists for this visit. Open it to view, print, or amend it — finalized prescriptions are never overwritten.
-          </div>
-        <% } else if (isFinalized) { %>
-          <div class="text-muted">No prescription was issued for this visit.</div>
-        <% } else { %>
-          <form method="POST" action="/prescriptions" id="rxForm">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <input type="hidden" name="visitId" value="<%= visit.id %>">
-
-            <datalist id="medicineList">
-              <% medicines.forEach(function(m) { %>
-                <option value="<%= m.name %>" label="<%= [m.strength, m.composition, m.form].filter(Boolean).join(' · ') %>"></option>
-              <% }) %>
-            </datalist>
-
-            <div class="table-responsive">
-              <table class="table table-sm align-middle" id="rxTable">
-                <thead><tr><th style="min-width:190px;">Medicine *</th><th style="min-width:150px;">Composition</th><th>Type</th><th>Dosage</th><th style="min-width:190px;">Frequency</th><th>Days</th><th>Route</th><th>Qty</th><th style="min-width:150px;">Instructions</th><th></th></tr></thead>
-                <tbody id="rxBody"></tbody>
-              </table>
-            </div>
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="addRowBtn"><i class="bi bi-plus-lg"></i> Add Medicine</button>
-            <div class="text-end mt-3">
-              <button type="submit" class="btn btn-primary"><i class="bi bi-file-earmark-medical"></i> Create Prescription</button>
-            </div>
-          </form>
-        <% } %>
-      </div>
-    </div>
   </div>
 
   <!-- RIGHT: history -->
@@ -321,37 +275,40 @@
 <script>
 (function () {
   const body = document.getElementById('rxBody');
-  if (!body) return;
+  const form = document.getElementById('consultationRxForm');
+  if (!body || !form) return;
   const formOptions = <%- JSON.stringify(formOptions || []) %>;
   const routeOptions = <%- JSON.stringify(routeOptions || []) %>;
   const medicineCatalog = <%- JSON.stringify(medicines || []) %>;
+  const existingItems = <%- JSON.stringify(currentPrescriptionItems || []) %>;
   const freq = ['OD','BD','TDS','QDS','SOS'];
-  function esc(v){return String(v || '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+  function esc(v){return String(v ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
   function optionList(items){return items.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');}
-  function rowHtml(){
+  function rowHtml(item={}, index=0){
+    const selectedFreq = String(item.frequency || '').split(/[,;]+/).map(x=>x.trim()).filter(Boolean);
     return '<tr>'+
-      '<td><input type="text" name="medicineName" class="form-control form-control-sm" list="medicineList" required></td>'+
-      '<td><input type="text" name="composition" class="form-control form-control-sm" placeholder="Composition"></td>'+
-      '<td><select name="medicineForm" class="form-select form-select-sm medicine-form"><option value="">Select</option>'+optionList(formOptions)+'<option value="__OTHER__">+ Add type</option></select><input type="text" class="form-control form-control-sm mt-1 custom-form" placeholder="New type" style="display:none"></td>'+
-      '<td><input type="text" name="dosage" class="form-control form-control-sm" placeholder="1"></td>'+
-      '<td><div class="d-flex flex-wrap gap-1 frequency-pills">'+freq.map(x=>'<label class="badge rounded-pill text-bg-light border"><input type="checkbox" class="frequency-check me-1" value="'+x+'">'+x+'</label>').join('')+'</div><input type="hidden" name="frequency" class="frequency-value"></td>'+
-      '<td><input type="number" name="duration" class="form-control form-control-sm" min="1" step="1" placeholder="7"></td>'+
-      '<td><select name="route" class="form-select form-select-sm route-select"><option value="">Select</option>'+optionList(routeOptions)+'<option value="__OTHER__">+ Add route</option></select><span class="badge rounded-pill route-badge mt-1">Route</span><input type="text" class="form-control form-control-sm mt-1 custom-route" placeholder="New route" style="display:none"></td>'+
-      '<td><input type="text" name="quantity" class="form-control form-control-sm" placeholder="14"></td>'+
-      '<td><input type="text" name="instructions" class="form-control form-control-sm" placeholder="Before food"></td>'+
-      '<td><button type="button" class="btn btn-sm btn-outline-danger remove-row">&times;</button></td></tr>';
+      '<td><input type="text" name="medicineName" class="form-control medicine-name-field medicine-color-'+(index%5)+'" list="medicineList" value="'+esc(item.medicine_name_freetext)+'" placeholder="Medicine name" '+(<%= isFinalized ? 'true' : 'false' %>?'readonly':'required')+'></td>'+
+      '<td><input type="text" name="composition" class="form-control" value="'+esc(item.composition)+'" placeholder="Generic / composition" <%= isFinalized ? 'readonly' : '' %>></td>'+
+      '<td><select name="medicineForm" class="form-select medicine-form" <%= isFinalized ? 'disabled' : '' %>><option value="">Select</option>'+optionList(formOptions)+'<option value="__OTHER__">+ Add type</option></select><input type="text" class="form-control mt-1 custom-form" placeholder="New type" style="display:none" <%= isFinalized ? 'readonly' : '' %>></td>'+
+      '<td><input type="text" name="dosage" class="form-control" value="'+esc(item.dosage)+'" placeholder="1 tablet" <%= isFinalized ? 'readonly' : '' %>></td>'+
+      '<td><div class="d-flex flex-wrap gap-1 frequency-pills">'+freq.map(x=>'<label class="badge rounded-pill text-bg-light border"><input type="checkbox" class="frequency-check me-1" value="'+x+'" '+(selectedFreq.includes(x)?'checked':'')+' <%= isFinalized ? 'disabled' : '' %>>'+x+'</label>').join('')+'</div><input type="hidden" name="frequency" class="frequency-value" value="'+esc(item.frequency)+'"></td>'+
+      '<td><input type="text" name="duration" class="form-control" value="'+esc(item.duration)+'" placeholder="7 days" <%= isFinalized ? 'readonly' : '' %>></td>'+
+      '<td><select name="route" class="form-select route-select" <%= isFinalized ? 'disabled' : '' %>><option value="">Select</option>'+optionList(routeOptions)+'<option value="__OTHER__">+ Add route</option></select><input type="text" class="form-control mt-1 custom-route" placeholder="New route" style="display:none" <%= isFinalized ? 'readonly' : '' %>></td>'+
+      '<td><input type="text" name="quantity" class="form-control" value="'+esc(item.quantity)+'" placeholder="10" <%= isFinalized ? 'readonly' : '' %>></td>'+
+      '<td><input type="text" name="instructions" class="form-control" value="'+esc(item.instructions)+'" placeholder="After food" <%= isFinalized ? 'readonly' : '' %>></td>'+
+      '<td><button type="button" class="btn btn-outline-danger remove-row" <%= isFinalized ? 'disabled' : '' %>>&times;</button></td></tr>';
   }
-  function syncFrequency(row){row.querySelector('.frequency-value').value=Array.from(row.querySelectorAll('.frequency-check:checked')).map(x=>x.value).join(', ');}
-  function syncCustom(select,cls){const row=select.closest('tr'),input=row.querySelector(cls),other=select.value==='__OTHER__';input.style.display=other?'block':'none';if(other)input.focus();else input.value='';updateRouteBadge(row);}
-  function updateRouteBadge(row){const s=row.querySelector('.route-select'),b=row.querySelector('.route-badge');if(!b)return;const v=s.value;b.textContent=v==='__OTHER__'?'Custom':(v||'Route');b.className='badge rounded-pill route-badge mt-1 '+({'P/O':'route-po','P/V':'route-pv','S/L':'route-sl','PR':'route-pr','I/V':'route-iv','I/M':'route-im','S/C':'route-sc'}[v]||'route-other');}
-  function populateMedicine(row){const input=row.querySelector('input[name="medicineName"]');if(!input)return;const q=input.value.trim().toLowerCase();const m=medicineCatalog.find(x=>String(x.name||'').toLowerCase()===q || (String(x.name||'')+' '+String(x.strength||'')).trim().toLowerCase()===q);if(m){const comp=row.querySelector('input[name="composition"]');if(comp&&!comp.value)comp.value=m.composition||m.strength||'';const fs=row.querySelector('.medicine-form');if(fs&&!fs.value&&m.form){const match=Array.from(fs.options).find(o=>o.value.toLowerCase()===String(m.form).toLowerCase());if(match)fs.value=match.value;}}}
-  function addRow(){body.insertAdjacentHTML('beforeend',rowHtml());}
-  addRow();
-  document.getElementById('addRowBtn').addEventListener('click',addRow);
+  function syncFrequency(row){const target=row.querySelector('.frequency-value');if(target)target.value=Array.from(row.querySelectorAll('.frequency-check:checked')).map(x=>x.value).join(', ');}
+  function syncCustom(select,cls){const row=select.closest('tr'),input=row.querySelector(cls);if(!input)return;const other=select.value==='__OTHER__';input.style.display=other?'block':'none';if(other)input.focus();else input.value='';}
+  function setSelected(select,value){if(!select)return;const match=Array.from(select.options).find(o=>o.value===String(value||''));if(match)select.value=match.value;else if(value){select.value='__OTHER__';const custom=select.parentElement.querySelector(select.classList.contains('route-select')?'.custom-route':'.custom-form');if(custom){custom.style.display='block';custom.value=value;}}}
+  function populateMedicine(row){const input=row.querySelector('input[name="medicineName"]');if(!input)return;const q=input.value.trim().toLowerCase();const m=medicineCatalog.find(x=>String(x.name||'').toLowerCase()===q || (String(x.name||'')+' '+String(x.strength||'')).trim().toLowerCase()===q);if(m){const comp=row.querySelector('input[name="composition"]');if(comp&&!comp.value)comp.value=m.composition||m.strength||'';const fs=row.querySelector('.medicine-form');if(fs&&!fs.value&&m.form)fs.value=m.form;}}
+  function addRow(item={}){body.insertAdjacentHTML('beforeend',rowHtml(item,body.rows.length));const row=body.lastElementChild;setSelected(row.querySelector('.medicine-form'),item.medicine_form);setSelected(row.querySelector('.route-select'),item.route);syncFrequency(row);}
+  if(existingItems.length) existingItems.forEach(addRow); else if(!<%= isFinalized ? 'true' : 'false' %>) addRow();
+  document.getElementById('addRowBtn')?.addEventListener('click',()=>addRow());
   body.addEventListener('change',e=>{const row=e.target.closest('tr');if(!row)return;if(e.target.classList.contains('frequency-check'))syncFrequency(row);if(e.target.classList.contains('medicine-form'))syncCustom(e.target,'.custom-form');if(e.target.classList.contains('route-select'))syncCustom(e.target,'.custom-route');});
   body.addEventListener('input',e=>{if(e.target.name==='medicineName')populateMedicine(e.target.closest('tr'));});
   body.addEventListener('click',e=>{if(e.target.classList.contains('remove-row')&&body.rows.length>1)e.target.closest('tr').remove();});
-  document.getElementById('rxForm').addEventListener('submit',()=>{body.querySelectorAll('tr').forEach(row=>{const f=row.querySelector('.medicine-form'),rt=row.querySelector('.route-select');if(f.value==='__OTHER__')f.value=row.querySelector('.custom-form').value.trim();if(rt.value==='__OTHER__')rt.value=row.querySelector('.custom-route').value.trim();syncFrequency(row);});});
+  form.addEventListener('submit',()=>{body.querySelectorAll('tr').forEach(row=>{const f=row.querySelector('.medicine-form'),rt=row.querySelector('.route-select');if(f&&f.value==='__OTHER__')f.value=row.querySelector('.custom-form').value.trim();if(rt&&rt.value==='__OTHER__')rt.value=row.querySelector('.custom-route').value.trim();syncFrequency(row);});});
 })();
 </script>
 
