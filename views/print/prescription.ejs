@@ -50,7 +50,7 @@
     <div><span>Date/Time: <strong><%= new Date(prescription.created_at).toLocaleString('en-IN') %></strong></span><span>Rx: <strong><%= prescription.prescription_code %></strong></span></div>
   </div>
 
-  <% if (prescription.complementary) { %>
+  <% if (prescription.complementary_requested) { %>
     <div class="rx-complementary-mark" title="Complementary consultation">C</div>
   <% } %>
 
