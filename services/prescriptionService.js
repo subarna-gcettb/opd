@@ -271,9 +271,9 @@ async function amendPrescription(prescriptionId, items, reason, actorUserId) {
 
 async function getPrescription(prescriptionId) {
   const [[prescription]] = await pool.execute(
-    `SELECT pr.*, p.health_id, p.name AS patient_name, p.age_years, p.gender, p.mobile,
+    `SELECT pr.*, p.health_id, p.name AS patient_name, p.age_years, p.gender, p.mobile, p.email, p.address,
             m.allergies,
-            u.name AS doctor_name, d.qualification, d.professional_reg_number, d.specialisation,
+            u.name AS doctor_name, d.qualification, d.professional_reg_number, d.specialisation, d.address AS doctor_address, d.mobile AS doctor_mobile, d.email AS doctor_email,
             dept.name AS department_name,
             c.diagnosis, c.investigation_advice, c.follow_up_date, c.complaints,
             c.symptoms, c.personal_history, c.clinical_notes,
@@ -287,7 +287,7 @@ async function getPrescription(prescriptionId) {
             COALESCE(av.weight_kg, vt.weight_kg) AS weight_kg,
             COALESCE(av.height_cm, vt.height_cm) AS height_cm,
             av.respiratory_rate,
-            v.visit_code, b.name AS branch_name
+            v.visit_code, b.name AS branch_name, b.address AS branch_address, b.phone AS branch_phone, b.email AS branch_email
      FROM prescriptions pr
      JOIN patients p ON p.id = pr.patient_id
      LEFT JOIN patient_medical_profiles m ON m.patient_id = p.id
