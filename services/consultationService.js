@@ -288,32 +288,37 @@ async function saveConsultation(visitId, payload, actorUserId, prescriptionItems
       }
     }
 
-    // Doctor may correct pregnancy/obstetric information during consultation.
-    await conn.execute(
-      `UPDATE appointments SET
-         lmp_date = :lmpDate,
-         gravida = :gravida,
-         para = :para,
-         abortions = :abortions,
-         pregnancy_status = :pregnancyStatus,
-         gestational_age_weeks = :gestationalWeeks,
-         gestational_age_days = :gestationalDays,
-         estimated_due_date = :estimatedDueDate,
-         obstetric_notes = :obstetricNotes
-       WHERE id = :appointmentId`,
-      {
-        appointmentId: visit.appointment_id,
-        lmpDate: payload.lmpDate || null,
-        gravida: payload.gravida === '' || payload.gravida == null ? null : Number(payload.gravida),
-        para: payload.para === '' || payload.para == null ? null : Number(payload.para),
-        abortions: payload.abortions === '' || payload.abortions == null ? null : Number(payload.abortions),
-        pregnancyStatus: payload.pregnancyStatus || null,
-        gestationalWeeks: payload.gestationalAgeWeeks === '' || payload.gestationalAgeWeeks == null ? null : Number(payload.gestationalAgeWeeks),
-        gestationalDays: payload.gestationalAgeDays === '' || payload.gestationalAgeDays == null ? null : Number(payload.gestationalAgeDays),
-        estimatedDueDate: payload.estimatedDueDate || null,
-        obstetricNotes: payload.obstetricNotes || null
-      }
-    );
+    // Doctor may correct pregnancy/obstetric information when the female
+    // obstetric section is present. Other visits keep existing appointment data.
+    if (payload.pregnancyStatus !== undefined || payload.lmpDate !== undefined || payload.gravida !== undefined ||
+        payload.para !== undefined || payload.abortions !== undefined || payload.gestationalAgeWeeks !== undefined ||
+        payload.gestationalAgeDays !== undefined || payload.estimatedDueDate !== undefined || payload.obstetricNotes !== undefined) {
+      await conn.execute(
+        `UPDATE appointments SET
+           lmp_date = :lmpDate,
+           gravida = :gravida,
+           para = :para,
+           abortions = :abortions,
+           pregnancy_status = :pregnancyStatus,
+           gestational_age_weeks = :gestationalWeeks,
+           gestational_age_days = :gestationalDays,
+           estimated_due_date = :estimatedDueDate,
+           obstetric_notes = :obstetricNotes
+         WHERE id = :appointmentId`,
+        {
+          appointmentId: visit.appointment_id,
+          lmpDate: payload.lmpDate || null,
+          gravida: payload.gravida === '' || payload.gravida == null ? null : Number(payload.gravida),
+          para: payload.para === '' || payload.para == null ? null : Number(payload.para),
+          abortions: payload.abortions === '' || payload.abortions == null ? null : Number(payload.abortions),
+          pregnancyStatus: payload.pregnancyStatus || null,
+          gestationalWeeks: payload.gestationalAgeWeeks === '' || payload.gestationalAgeWeeks == null ? null : Number(payload.gestationalAgeWeeks),
+          gestationalDays: payload.gestationalAgeDays === '' || payload.gestationalAgeDays == null ? null : Number(payload.gestationalAgeDays),
+          estimatedDueDate: payload.estimatedDueDate || null,
+          obstetricNotes: payload.obstetricNotes || null
+        }
+      );
+    }
 
     // Vitals (1:1 with consultation)
     await conn.execute(
