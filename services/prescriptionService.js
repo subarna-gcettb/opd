@@ -113,6 +113,66 @@ async function createPrescription(visitId, items, actorUserId) {
   });
 }
 
+async function savePrescriptionInTransaction(conn, visit, items, actorUserId) {
+  if (!items.length) throw new AppError('Add at least one medicine to the prescription', 422);
+
+  const [[current]] = await conn.execute(
+    'SELECT * FROM prescriptions WHERE visit_id = :visitId AND is_current = 1 FOR UPDATE',
+    { visitId: visit.id }
+  );
+
+  const dateStr = new Date().toISOString().slice(0, 10);
+  let code;
+  let version = 1;
+  let amendedFrom = null;
+
+  if (current) {
+    code = current.prescription_code;
+    version = Number(current.version) + 1;
+    amendedFrom = current.id;
+    await conn.execute('UPDATE prescriptions SET is_current = 0 WHERE id = :id', { id: current.id });
+  } else {
+    code = await generatePrescriptionCode(conn, dateStr);
+  }
+
+  const [result] = await conn.execute(
+    `INSERT INTO prescriptions
+      (prescription_code, visit_id, patient_id, doctor_id, version, is_current, barcode_value,
+       amended_from_id, amendment_reason, created_by)
+     VALUES (:code, :visitId, :patientId, :doctorId, :version, 1, :barcode,
+             :amendedFrom, :reason, :createdBy)`,
+    {
+      code,
+      visitId: visit.id,
+      patientId: visit.patient_id,
+      doctorId: visit.doctor_id,
+      version,
+      barcode: visit.health_id,
+      amendedFrom,
+      reason: current ? 'Doctor updated consultation and prescription.' : null,
+      createdBy: actorUserId
+    }
+  );
+
+  const prescriptionId = result.insertId;
+  await rememberPrescriptionOptions(conn, items, actorUserId);
+  await insertItems(conn, prescriptionId, items);
+
+  await auditService.log(
+    {
+      userId: actorUserId,
+      action: current ? 'PRESCRIPTION_UPDATED' : 'PRESCRIPTION_CREATED',
+      entity: 'prescription',
+      entityId: prescriptionId,
+      oldValue: current ? { id: current.id, version: current.version } : null,
+      newValue: { code, version, visitId: visit.id, itemCount: items.length }
+    },
+    conn
+  );
+
+  return { id: prescriptionId, code, version };
+}
+
 async function rememberPrescriptionOptions(conn, items, actorUserId) {
   for (const item of items) {
     for (const [optionType, value] of [['FORM', item.medicineForm], ['ROUTE', item.route]]) {
@@ -272,6 +332,7 @@ async function assertCanAmend(prescriptionId, user) {
 
 module.exports = {
   createPrescription,
+  savePrescriptionInTransaction,
   amendPrescription,
   getPrescription,
   assertCanAmend,
