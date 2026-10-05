@@ -391,3 +391,18 @@ img, video, canvas { max-width: 100%; height: auto; }
 .route-im{background:#e8f8ff!important;color:#16718a!important}
 .route-sc{background:#f2f0e8!important;color:#75651b!important}
 .route-other{background:#eef2f2!important;color:#526260!important}
+
+/* Unified doctor consultation + prescription editor */
+.rx-editor-scroll{overflow-x:auto;border:1px solid #dfe7ea;border-radius:.65rem}
+.rx-editor-table{min-width:1450px;margin-bottom:0}
+.rx-editor-table th{font-size:.78rem;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;background:#f4f8f8}
+.rx-editor-table td{padding:.55rem .5rem;vertical-align:middle}
+.rx-editor-table .form-control,.rx-editor-table .form-select{min-height:42px;font-size:.92rem}
+.rx-editor-table .medicine-name-field{min-width:240px;font-weight:700}
+.rx-editor-table .frequency-pills{min-width:190px}
+.rx-editor-table .frequency-pills .badge{padding:.38rem .45rem;font-size:.72rem}
+.medicine-color-0{border-left:4px solid #2563eb!important;background:#eff6ff}
+.medicine-color-1{border-left:4px solid #059669!important;background:#ecfdf5}
+.medicine-color-2{border-left:4px solid #7c3aed!important;background:#f5f3ff}
+.medicine-color-3{border-left:4px solid #d97706!important;background:#fffbeb}
+.medicine-color-4{border-left:4px solid #db2777!important;background:#fdf2f8}
