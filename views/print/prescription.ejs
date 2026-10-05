@@ -1,175 +1,156 @@
 <script src="/js/print.js"></script>
 <link rel="stylesheet" href="/css/print.css">
 
-<link rel="stylesheet" href="/css/print.css">
+<%
+  let history = prescription.personal_history;
+  if (typeof history === 'string') {
+    try { history = JSON.parse(history); } catch (_) { history = {}; }
+  }
+  history = history && typeof history === 'object' ? history : {};
+  const historyLabels = { surgery:'Surgery', sleep:'Sleep', drinking:'Alcohol / Drinking', bowel:'Bowel', smoking:'Smoking', appetite:'Appetite', diet:'Diet', occupation:'Occupation', exercise:'Exercise', other:'Other' };
+  const historyEntries = Object.keys(historyLabels)
+    .filter(key => history[key] && (history[key].value || history[key].other))
+    .map(key => ({ label: historyLabels[key], value: history[key].value || '', other: history[key].other || '' }));
+  const customHistory = Array.isArray(history.customItems) ? history.customItems.filter(x => x && (x.key || x.label || x.name) && (x.value || x.answer || x.other)) : [];
+  const hasHistory = historyEntries.length || customHistory.length || history.notes;
+  const hasObstetric = String(prescription.gender || '').toLowerCase() === 'female' &&
+    [prescription.pregnancy_status, prescription.lmp_date, prescription.gravida, prescription.para, prescription.abortions,
+     prescription.gestational_age_weeks, prescription.gestational_age_days, prescription.estimated_due_date, prescription.obstetric_notes]
+      .some(v => v !== null && v !== undefined && String(v).trim() !== '');
+  const hasVitals = [prescription.bp, prescription.pulse, prescription.temperature, prescription.spo2, prescription.weight_kg, prescription.height_cm, prescription.respiratory_rate]
+    .some(v => v !== null && v !== undefined && String(v).trim() !== '');
+  const hasFindings = Boolean(String(prescription.clinical_notes || '').trim());
+  const hasComplaint = Boolean(String(prescription.complaints || '').trim());
+  const hasDiagnosis = Boolean(String(prescription.diagnosis || '').trim());
+  const hasInvestigations = Boolean(String(prescription.investigation_advice || '').trim());
+  const hasFollowUp = Boolean(prescription.follow_up_date);
+  const bmi = prescription.height_cm && prescription.weight_kg
+    ? (Number(prescription.weight_kg) / Math.pow(Number(prescription.height_cm) / 100, 2)).toFixed(1)
+    : null;
+%>
 
-<div class="print-sheet">
-  <%- include('./_header') %>
-
-  <div class="doc-title">Prescription</div>
-
-  <div class="kv-grid three">
-    <div class="kv"><span class="k">Patient</span><span class="v"><strong><%= prescription.patient_name %></strong></span></div>
-    <div class="kv"><span class="k">Health ID</span><span class="v"><%= prescription.health_id %></span></div>
-    <div class="kv"><span class="k">Age / Gender</span><span class="v"><%= prescription.age_years || '—' %> / <%= prescription.gender %></span></div>
-    <div class="kv"><span class="k">Date</span><span class="v"><%= new Date(prescription.created_at).toLocaleDateString() %></span></div>
-    <div class="kv"><span class="k">Doctor</span><span class="v"><%= prescription.doctor_name %></span></div>
-    <div class="kv"><span class="k">Reg. No.</span><span class="v"><%= prescription.professional_reg_number || '—' %></span></div>
-    <div class="kv"><span class="k">Qualification</span><span class="v"><%= prescription.qualification || '—' %></span></div>
-    <div class="kv"><span class="k">Department</span><span class="v"><%= prescription.department_name %></span></div>
-    <div class="kv"><span class="k">Prescription No.</span><span class="v"><%= prescription.prescription_code %> (v<%= prescription.version %>)</span></div>
+<div class="print-sheet prescription-one-page">
+  <div class="rx-letterhead">
+    <div class="rx-brand">
+      <%- include('./_header') %>
+    </div>
+    <div class="rx-rmp">
+      <strong>Dr. <%= prescription.doctor_name %></strong>
+      <% if (prescription.qualification) { %><span><%= prescription.qualification %></span><% } %>
+      <% if (prescription.specialisation) { %><span><%= prescription.specialisation %></span><% } %>
+      <% if (prescription.professional_reg_number) { %><span>Reg. No. <%= prescription.professional_reg_number %></span><% } %>
+      <% if (prescription.doctor_address) { %><span><%= prescription.doctor_address %></span><% } %>
+      <% if (prescription.doctor_mobile || prescription.doctor_email) { %><span><%= [prescription.doctor_mobile, prescription.doctor_email].filter(Boolean).join(' · ') %></span><% } %>
+    </div>
   </div>
 
-  <div class="section-label">Female / Obstetric Assessment</div>
-  <% if (String(prescription.gender || '').toLowerCase() === 'female') { %>
-    <div class="subsection-label">Pregnancy information</div>
-    <div class="kv-grid three">
-      <div class="kv"><span class="k">Pregnancy Status</span><span class="v"><%= prescription.pregnancy_status || '—' %></span></div>
-      <div class="kv"><span class="k">LMP</span><span class="v"><%= prescription.lmp_date ? new Date(prescription.lmp_date).toLocaleDateString() : '—' %></span></div>
-      <div class="kv"><span class="k">Gravida (G)</span><span class="v"><%= prescription.gravida ?? '—' %></span></div>
-      <div class="kv"><span class="k">Para (P)</span><span class="v"><%= prescription.para ?? '—' %></span></div>
-      <div class="kv"><span class="k">Abortions (A)</span><span class="v"><%= prescription.abortions ?? '—' %></span></div>
-      <div class="kv"><span class="k">Gestational Age</span><span class="v"><%= prescription.gestational_age_weeks != null ? prescription.gestational_age_weeks + 'w ' + (prescription.gestational_age_days || 0) + 'd' : '—' %></span></div>
-      <div class="kv"><span class="k">EDD</span><span class="v"><%= prescription.estimated_due_date ? new Date(prescription.estimated_due_date).toLocaleDateString() : '—' %></span></div>
-      <% if (prescription.obstetric_notes) { %><div class="kv"><span class="k">Obstetric Notes</span><span class="v"><%= prescription.obstetric_notes %></span></div><% } %>
-    </div>
+  <div class="rx-patient-bar">
+    <div><strong><%= prescription.patient_name %></strong><span><%= prescription.age_years || '—' %> yrs</span><span><%= prescription.gender || '—' %></span></div>
+    <div><span>Health ID: <strong><%= prescription.health_id %></strong></span><% if (prescription.mobile) { %><span>Mob: <%= prescription.mobile %></span><% } %></div>
+    <div><span>Date/Time: <strong><%= new Date(prescription.created_at).toLocaleString('en-IN') %></strong></span><span>Rx: <strong><%= prescription.prescription_code %></strong></span></div>
+  </div>
+
+  <% if (prescription.complementary) { %>
+    <div class="rx-complementary-mark" title="Complementary consultation">C</div>
   <% } %>
 
-  <div class="section-label">Vitals</div>
-  <div class="kv-grid three">
-    <div class="kv"><span class="k">BP</span><span class="v"><%= prescription.bp || '—' %></span></div>
-    <div class="kv"><span class="k">Pulse</span><span class="v"><%= prescription.pulse ?? '—' %></span></div>
-    <div class="kv"><span class="k">Temp (°F)</span><span class="v"><%= prescription.temperature ?? '—' %></span></div>
-    <div class="kv"><span class="k">SpO2 (%)</span><span class="v"><%= prescription.spo2 ?? '—' %></span></div>
-    <div class="kv"><span class="k">Weight (kg)</span><span class="v"><%= prescription.weight_kg ?? '—' %></span></div>
-    <div class="kv"><span class="k">Height (cm)</span><span class="v"><%= prescription.height_cm ?? '—' %></span></div>
-    <div class="kv"><span class="k">Respiratory rate</span><span class="v"><%= prescription.respiratory_rate ?? '—' %></span></div>
-    <div class="kv"><span class="k">BMI</span><span class="v"><%= prescription.height_cm && prescription.weight_kg ? (Number(prescription.weight_kg) / Math.pow(Number(prescription.height_cm) / 100, 2)).toFixed(1) : '—' %></span></div>
+  <div class="rx-clinical-grid">
+    <div class="rx-left">
+      <% if (hasComplaint) { %><section><h3>Chief Complaint</h3><p><%= prescription.complaints %></p></section><% } %>
+
+      <% if (hasHistory) { %>
+      <section><h3>Relevant History</h3><div class="rx-history-inline">
+        <% historyEntries.forEach(function(item){ %><span><strong><%= item.label %>:</strong> <%= item.value %><%= item.other ? ' — ' + item.other : '' %></span><% }) %>
+        <% customHistory.forEach(function(item){ const label=item.key||item.label||item.name; const value=item.value||item.answer||item.other; %><span><strong><%= label %>:</strong> <%= value %></span><% }) %>
+        <% if (history.notes) { %><span><%= history.notes %></span><% } %>
+      </div></section>
+      <% } %>
+
+      <% if (hasFindings) { %><section><h3>Clinical Findings</h3><p><%= prescription.clinical_notes %></p></section><% } %>
+
+      <% if (hasObstetric) { %>
+      <section><h3>Female / Obstetric Assessment</h3>
+        <div class="rx-mini-grid">
+          <% if (prescription.pregnancy_status) { %><span><b>Status:</b> <%= prescription.pregnancy_status %></span><% } %>
+          <% if (prescription.lmp_date) { %><span><b>LMP:</b> <%= new Date(prescription.lmp_date).toLocaleDateString('en-IN') %></span><% } %>
+          <% if (prescription.gravida != null) { %><span><b>G:</b> <%= prescription.gravida %></span><% } %>
+          <% if (prescription.para != null) { %><span><b>P:</b> <%= prescription.para %></span><% } %>
+          <% if (prescription.abortions != null) { %><span><b>A:</b> <%= prescription.abortions %></span><% } %>
+          <% if (prescription.gestational_age_weeks != null) { %><span><b>GA:</b> <%= prescription.gestational_age_weeks %>w <%= prescription.gestational_age_days || 0 %>d</span><% } %>
+          <% if (prescription.estimated_due_date) { %><span><b>EDD:</b> <%= new Date(prescription.estimated_due_date).toLocaleDateString('en-IN') %></span><% } %>
+          <% if (prescription.obstetric_notes) { %><span class="span-all"><b>Notes:</b> <%= prescription.obstetric_notes %></span><% } %>
+        </div>
+      </section>
+      <% } %>
+
+      <% if (hasVitals) { %>
+      <section><h3>Vitals</h3><div class="rx-mini-grid">
+        <% if (prescription.bp) { %><span><b>BP:</b> <%= prescription.bp %></span><% } %>
+        <% if (prescription.pulse != null) { %><span><b>Pulse:</b> <%= prescription.pulse %>/min</span><% } %>
+        <% if (prescription.temperature != null) { %><span><b>Temp:</b> <%= prescription.temperature %> °F</span><% } %>
+        <% if (prescription.spo2 != null) { %><span><b>SpO₂:</b> <%= prescription.spo2 %>%</span><% } %>
+        <% if (prescription.weight_kg != null) { %><span><b>Wt:</b> <%= prescription.weight_kg %> kg</span><% } %>
+        <% if (prescription.height_cm != null) { %><span><b>Ht:</b> <%= prescription.height_cm %> cm</span><% } %>
+        <% if (prescription.respiratory_rate != null) { %><span><b>RR:</b> <%= prescription.respiratory_rate %>/min</span><% } %>
+        <% if (bmi) { %><span><b>BMI:</b> <%= bmi %></span><% } %>
+      </div></section>
+      <% } %>
+    </div>
+
+    <div class="rx-right">
+      <% if (hasDiagnosis) { %><section class="rx-diagnosis"><h3>Diagnosis / Provisional Diagnosis</h3><p><%= prescription.diagnosis %></p></section><% } %>
+
+      <section class="rx-medicines">
+        <div class="rx-title"><span class="rx-symbol">℞</span> Prescription</div>
+        <table class="rx-compact-table">
+          <thead><tr><th>#</th><th>Medicine</th><th>Dose</th><th>Frequency</th><th>Duration</th><th>Instructions</th></tr></thead>
+          <tbody>
+          <% items.forEach(function(it,i){ %>
+            <tr>
+              <td><%= i + 1 %></td>
+              <td><strong class="rx-med-name rx-med-<%= i % 5 %>"><%= String(it.medicine_name_freetext || '').toUpperCase() %></strong><% if (it.composition) { %><small class="rx-generic"><%= it.composition %></small><% } %><% if (it.medicine_form) { %><small><%= it.medicine_form %></small><% } %></td>
+              <td><%= it.dosage || '—' %></td>
+              <td><%= it.frequency || '—' %></td>
+              <td><%= it.duration || '—' %></td>
+              <td><%= it.instructions || it.route || '—' %></td>
+            </tr>
+          <% }) %>
+          </tbody>
+        </table>
+      </section>
+
+      <% if (hasInvestigations) { %><section><h3>Suggested Investigations</h3><p><%= prescription.investigation_advice %></p></section><% } %>
+    </div>
   </div>
 
-  <div class="section-label">Chief Complaint</div>
-  <div><%= prescription.complaints || '—' %></div>
+  <% if (hasFollowUp) { %><div class="rx-bottom-line"><strong>Follow-up:</strong> <%= new Date(prescription.follow_up_date).toLocaleDateString('en-IN') %></div><% } %>
 
-  <%
-    let personalHistory = prescription.personal_history;
-    if (typeof personalHistory === 'string') {
-      try { personalHistory = JSON.parse(personalHistory); } catch (_) { personalHistory = { notes: personalHistory }; }
-    }
-    personalHistory = personalHistory && typeof personalHistory === 'object' ? personalHistory : {};
-    const historyLabels = {
-      surgery: 'Surgery',
-      sleep: 'Sleep',
-      drinking: 'Alcohol / Drinking',
-      bowel: 'Bowel',
-      smoking: 'Smoking',
-      appetite: 'Appetite',
-      diet: 'Diet',
-      occupation: 'Occupation',
-      exercise: 'Exercise',
-      other: 'Other'
-    };
-    const historyEntries = Object.keys(historyLabels)
-      .filter(key => personalHistory[key] && (personalHistory[key].value || personalHistory[key].other))
-      .map(key => ({
-        label: historyLabels[key],
-        value: personalHistory[key].value || '—',
-        other: personalHistory[key].other || ''
-      }));
-    const customHistory = Array.isArray(personalHistory.customItems) ? personalHistory.customItems : [];
-  %>
-  <div class="section-label">Personal History</div>
-  <div class="history-grid">
-    <% historyEntries.forEach(function(item) { %>
-      <div class="history-item">
-        <span class="history-label"><%= item.label %></span>
-        <span class="history-value"><%= item.value %><% if (item.other) { %> — <%= item.other %><% } %></span>
-      </div>
-    <% }) %>
-    <% customHistory.forEach(function(item) {
-      const label = item && (item.label || item.name || item.title);
-      const value = item && (item.value || item.answer || item.other);
-      if (label && value) { %>
-      <div class="history-item">
-        <span class="history-label"><%= label %></span>
-        <span class="history-value"><%= value %></span>
-      </div>
-    <% } }) %>
-    <% if (!historyEntries.length && !customHistory.length && personalHistory.notes) { %>
-      <div class="history-free-text"><%= personalHistory.notes %></div>
-    <% } %>
-    <% if (!historyEntries.length && !customHistory.length && !personalHistory.notes) { %>
-      <div class="text-muted">No personal history recorded.</div>
-    <% } %>
+  <div class="rx-signature-row">
+    <div class="rx-place"><strong><%= prescription.branch_name || 'Chhayabithi' %></strong><% if (prescription.branch_address) { %><span><%= prescription.branch_address %></span><% } %><% if (prescription.branch_phone || prescription.branch_email) { %><span><%= [prescription.branch_phone, prescription.branch_email].filter(Boolean).join(' · ') %></span><% } %></div>
+    <div class="rx-signature"><span>Dr. <%= prescription.doctor_name %></span><small><%= prescription.qualification || '' %><% if (prescription.professional_reg_number) { %> · Reg. <%= prescription.professional_reg_number %><% } %></small><div class="rx-sign-line">Signature / Stamp</div></div>
   </div>
 
-  <div class="section-label">Symptoms</div>
-  <div><%= prescription.symptoms || '—' %></div>
-
-  <div class="section-label">Allergies</div>
-  <div><%= prescription.allergies || 'None recorded' %></div>
-
-  <div class="section-label">Diagnosis</div>
-  <div><%= prescription.diagnosis || '—' %></div>
-
-  <div class="section-label">Clinical Notes</div>
-  <div><%= prescription.clinical_notes || '—' %></div>
-
-  <div class="section-label">Investigation Advice</div>
-  <div><%= prescription.investigation_advice || '—' %></div>
-
-  <div class="section-label rx-heading"><span>Rx</span> Prescription / Medication</div>
-  <table class="rx-print-table">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Medicine / Composition</th>
-        <th>Form</th>
-        <th>Dose</th>
-        <th>Frequency</th>
-        <th>Duration</th>
-        <th>Route</th>
-        <th>Qty</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% items.forEach(function(it, i) { %>
-        <tr>
-          <td class="rx-no"><%= i + 1 %></td>
-          <td>
-            <strong><%= it.medicine_name_freetext %></strong>
-            <% if (it.composition) { %><div class="rx-composition"><%= it.composition %></div><% } %>
-            <% if (it.prescriptionText) { %>
-              <div class="rx-instruction-en"><strong>English:</strong> <%= it.prescriptionText.english %></div>
-              <div class="rx-instruction-bn"><strong>বাংলা:</strong> <%= it.prescriptionText.bengali %></div>
-            <% } %>
-            <% if (it.instructions) { %><div class="rx-additional"><%= it.instructions %></div><% } %>
-          </td>
-          <td><%= it.medicine_form || '—' %></td>
-          <td><%= it.dosage || '—' %></td>
-          <td><%= it.frequency || '—' %></td>
-          <td><%= it.duration ? it.duration + (String(it.duration).match(/days?$/i) ? '' : ' days') : '—' %></td>
-          <td><%= it.route || '—' %></td>
-          <td><%= it.quantity || '—' %></td>
-        </tr>
-      <% }) %>
-    </tbody>
-  </table>
-
-  <div class="section-label">Follow-up</div>
-  <div><%= prescription.follow_up_date ? new Date(prescription.follow_up_date).toLocaleDateString() : 'As needed' %></div>
-
-  <div class="barcode-area">
-    <img src="<%= barcodeDataUri %>" alt="Health ID barcode">
-  </div>
-
-  <div class="signature">
-    <span class="line">Dr. <%= prescription.doctor_name %><br><%= prescription.qualification || '' %></span>
-  </div>
-
-  <div class="print-footer-note">Barcode encodes the patient's Health ID only. This prescription does not authorize dispensing without valid identification.</div>
+  <div class="print-footer-note">Prescription No. <%= prescription.prescription_code %> · Health ID <%= prescription.health_id %> · This is a digitally generated prescription.</div>
 
   <div class="print-actions no-print">
     <button type="button" data-print-action="print" class="btn btn-primary">Print Prescription</button>
     <button type="button" data-print-action="close" class="btn btn-outline-secondary">Close</button>
   </div>
 </div>
+
+<script>
+(function(){
+  function fitPrescription(){
+    const sheet=document.querySelector('.prescription-one-page');
+    if(!sheet) return;
+    sheet.style.zoom='1';
+    const maxHeight=Math.max(1, (297 - 24) / 25.4 * 96);
+    const naturalHeight=sheet.scrollHeight;
+    const scale=Math.min(1, maxHeight / Math.max(naturalHeight,1));
+    sheet.style.zoom=String(Math.max(scale,0.48));
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(fitPrescription,40));
+  else setTimeout(fitPrescription,40);
+  window.addEventListener('beforeprint',fitPrescription);
+})();
+</script>
