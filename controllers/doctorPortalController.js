@@ -2,6 +2,7 @@ const consultationService = require('../services/consultationService');
 const opdService = require('../services/opdService');
 const { pool } = require('../config/database');
 const AppError = require('../utils/AppError');
+const prescriptionService = require('../services/prescriptionService');
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
@@ -116,8 +117,10 @@ async function saveConsultation(req, res, next) {
   try {
     requireDoctorContext(req);
     await consultationService.assertDoctorCanAccessVisit(req.params.visitId, req.user);
-    await consultationService.saveConsultation(req.params.visitId, req.body, req.user.id);
-    req.flash('success', 'Consultation saved.');
+    const items = prescriptionService.itemsFromBody(req.body);
+    if (!items.length) throw new AppError('Add at least one medicine to save the consultation and prescription.', 422);
+    const result = await consultationService.saveConsultation(req.params.visitId, req.body, req.user.id, items);
+    req.flash('success', `Consultation and prescription ${result.prescription.code} (v${result.prescription.version}) saved together.`);
     res.redirect(`/doctor/consultation/${req.params.visitId}`);
   } catch (err) {
     if (err instanceof AppError) {
