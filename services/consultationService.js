@@ -2,6 +2,7 @@ const { pool, withTransaction } = require('../config/database');
 const auditService = require('./auditService');
 const AppError = require('../utils/AppError');
 const labService = require('./labService');
+const prescriptionService = require('./prescriptionService');
 
 /**
  * Doctor-scope authorization guard. A doctor may only open visits
@@ -133,6 +134,17 @@ async function getConsultationContext(visitId) {
      WHERE pr.visit_id = :visitId AND pr.is_current = 1`,
     { visitId }
   );
+  let currentPrescriptionItems = [];
+  if (currentPrescriptions.length) {
+    [currentPrescriptionItems] = await pool.execute(
+      `SELECT medicine_id, medicine_name_freetext, composition, medicine_form, dosage,
+              frequency, duration, route, quantity, instructions, sort_order
+       FROM prescription_items
+       WHERE prescription_id = :prescriptionId
+       ORDER BY sort_order`,
+      { prescriptionId: currentPrescriptions[0].id }
+    );
+  }
 
   const labTests = await labService.getAvailableTestsForBranch(visit.branch_id);
   const [[labOrder]] = await pool.execute(
@@ -161,6 +173,7 @@ async function getConsultationContext(visitId) {
     previousVisits,
     previousPrescriptions,
     currentPrescriptions,
+    currentPrescriptionItems,
     invoice: invoice || null,
     pregnancyCalculation,
     complaintSuggestions,
@@ -178,7 +191,7 @@ async function getConsultationContext(visitId) {
  * visit is COMPLETED it is locked, and corrections to the clinical record
  * go through the prescription amendment mechanism / audit trail.
  */
-async function saveConsultation(visitId, payload, actorUserId) {
+async function saveConsultation(visitId, payload, actorUserId, prescriptionItems = []) {
   return withTransaction(async (conn) => {
     const [[visit]] = await conn.execute('SELECT * FROM opd_visits WHERE id = :id FOR UPDATE', { id: visitId });
     if (!visit) throw new AppError('Visit not found', 404);
@@ -275,6 +288,33 @@ async function saveConsultation(visitId, payload, actorUserId) {
       }
     }
 
+    // Doctor may correct pregnancy/obstetric information during consultation.
+    await conn.execute(
+      `UPDATE appointments SET
+         lmp_date = :lmpDate,
+         gravida = :gravida,
+         para = :para,
+         abortions = :abortions,
+         pregnancy_status = :pregnancyStatus,
+         gestational_age_weeks = :gestationalWeeks,
+         gestational_age_days = :gestationalDays,
+         estimated_due_date = :estimatedDueDate,
+         obstetric_notes = :obstetricNotes
+       WHERE id = :appointmentId`,
+      {
+        appointmentId: visit.appointment_id,
+        lmpDate: payload.lmpDate || null,
+        gravida: payload.gravida === '' || payload.gravida == null ? null : Number(payload.gravida),
+        para: payload.para === '' || payload.para == null ? null : Number(payload.para),
+        abortions: payload.abortions === '' || payload.abortions == null ? null : Number(payload.abortions),
+        pregnancyStatus: payload.pregnancyStatus || null,
+        gestationalWeeks: payload.gestationalAgeWeeks === '' || payload.gestationalAgeWeeks == null ? null : Number(payload.gestationalAgeWeeks),
+        gestationalDays: payload.gestationalAgeDays === '' || payload.gestationalAgeDays == null ? null : Number(payload.gestationalAgeDays),
+        estimatedDueDate: payload.estimatedDueDate || null,
+        obstetricNotes: payload.obstetricNotes || null
+      }
+    );
+
     // Vitals (1:1 with consultation)
     await conn.execute(
       `INSERT INTO vitals (consultation_id, bp, pulse, temperature, spo2, weight_kg, height_cm)
@@ -319,6 +359,13 @@ async function saveConsultation(visitId, payload, actorUserId) {
       );
     }
 
+    const savedPrescription = await prescriptionService.savePrescriptionInTransaction(
+      conn,
+      visit,
+      prescriptionItems,
+      actorUserId
+    );
+
     await labService.syncDoctorRequestedTests(
       conn,
       visitId,
@@ -339,7 +386,7 @@ async function saveConsultation(visitId, payload, actorUserId) {
       conn
     );
 
-    return { consultationId };
+    return { consultationId, prescription: savedPrescription };
   });
 }
 
