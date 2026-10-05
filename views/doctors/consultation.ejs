@@ -314,7 +314,7 @@
 
 <script>
 (function(){
-  const value=document.getElementById('complaintValue'),tags=document.getElementById('complaintTags'),input=document.getElementById('complaintInput'),box=document.getElementById('complaintSuggestions'),form=document.querySelector('form[action^="/doctor/consultation/"]'),historyValue=document.getElementById('personalHistoryValue');
+  const value=document.getElementById('complaintValue'),tags=document.getElementById('complaintTags'),input=document.getElementById('complaintInput'),box=document.getElementById('complaintSuggestions'),form=document.getElementById('consultationRxForm'),historyValue=document.getElementById('personalHistoryValue'),clinicalValue=document.getElementById('clinicalFindingsValue'),clinicalTags=document.getElementById('clinicalFindingsTags'),clinicalInput=document.getElementById('clinicalFindingsInput');
   if(!form)return;
   let complaints=<%- JSON.stringify(String(c.complaints || visit.reason || '').split(/[,;]+/).map(x=>x.trim()).filter(Boolean)) %>;
   const suggestions=<%- JSON.stringify((complaintSuggestions || []).map(x=>x.complaint)) %>;
@@ -330,8 +330,24 @@
   const custom=document.getElementById('customHistoryItems');
   function addItem(k='',v=''){const row=document.createElement('div');row.className='col-md-6 d-flex gap-2';row.innerHTML='<input class="form-control form-control-sm ph-key" placeholder="Item" value="'+esc(k)+'"><input class="form-control form-control-sm ph-val" placeholder="Value" value="'+esc(v)+'"><button type="button" class="btn btn-sm btn-outline-danger ph-remove">&times;</button>';custom.appendChild(row);}
   (Array.isArray(ph.customItems)?ph.customItems:[]).forEach(x=>addItem(x.key,x.value));document.getElementById('addHistoryItem')?.addEventListener('click',()=>addItem());
-  function syncHistory(){historyValue.value=JSON.stringify({surgery:{value:document.getElementById('phSurgery')?.value||'NO',other:document.getElementById('phSurgeryOther')?.value||''},sleep:{value:document.getElementById('phSleep')?.value||'NORMAL',other:document.getElementById('phSleepOther')?.value||''},drinking:{value:document.getElementById('phDrinking')?.value||'NO',other:document.getElementById('phDrinkingOther')?.value||''},bowel:{value:document.getElementById('phBowel')?.value||'REGULAR',other:document.getElementById('phBowelOther')?.value||''},customItems:Array.from(custom.children).map(r=>({key:r.querySelector('.ph-key').value.trim(),value:r.querySelector('.ph-val').value.trim()})).filter(x=>x.key||x.value)});}
-  form.addEventListener('submit',syncHistory);custom.addEventListener('input',syncHistory);custom.addEventListener('click',e=>{if(e.target.classList.contains('ph-remove')){e.target.closest('.col-md-6').remove();syncHistory();}});
+  function syncHistory(){
+    const defaults={surgery:'NO',sleep:'NORMAL',drinking:'NO',bowel:'REGULAR'};
+    const data={};
+    ['surgery','sleep','drinking','bowel'].forEach(key=>{
+      const value=document.getElementById('ph'+key.charAt(0).toUpperCase()+key.slice(1))?.value||'';
+      const other=document.getElementById('ph'+key.charAt(0).toUpperCase()+key.slice(1)+'Other')?.value.trim()||'';
+      if(value && (value!==defaults[key] || other)) data[key]={value,other};
+    });
+    data.customItems=Array.from(custom.children).map(r=>({key:r.querySelector('.ph-key').value.trim(),value:r.querySelector('.ph-val').value.trim()})).filter(x=>x.key||x.value);
+    historyValue.value=JSON.stringify(data);
+  }
+  let findings=<%- JSON.stringify(String(c.clinical_notes || '').split(/[;\n]+/).map(x=>x.trim()).filter(Boolean)) %>;
+  function syncFindings(){findings=[...new Set(findings.map(x=>x.trim()).filter(Boolean))];if(clinicalValue)clinicalValue.value=findings.join('; ');if(clinicalTags)clinicalTags.innerHTML=findings.map((x,i)=>'<span class="badge rounded-pill text-bg-success d-inline-flex align-items-center gap-1">'+esc(x)+'<button type="button" class="btn-close btn-close-white btn-sm finding-remove" data-index="'+i+'"></button></span>').join('');}
+  function addFinding(raw){const x=String(raw||'').trim().replace(/\s+/g,' ');if(!x||findings.some(c=>c.toLowerCase()===x.toLowerCase()))return;findings.push(x);syncFindings();}
+  if(clinicalInput){clinicalInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addFinding(clinicalInput.value);clinicalInput.value='';}});}
+  document.addEventListener('click',e=>{if(e.target.classList.contains('finding-remove')){findings.splice(Number(e.target.dataset.index),1);syncFindings();}});
+  syncFindings();
+  form.addEventListener('submit',()=>{syncHistory();syncFindings();});custom.addEventListener('input',syncHistory);custom.addEventListener('click',e=>{if(e.target.classList.contains('ph-remove')){e.target.closest('.col-md-6').remove();syncHistory();}});
   if(ph.surgery){document.getElementById('phSurgery').value=ph.surgery.value||'NO';document.getElementById('phSurgeryOther').value=ph.surgery.other||'';}if(ph.sleep){document.getElementById('phSleep').value=ph.sleep.value||'NORMAL';document.getElementById('phSleepOther').value=ph.sleep.other||'';}if(ph.drinking){document.getElementById('phDrinking').value=ph.drinking.value||'NO';document.getElementById('phDrinkingOther').value=ph.drinking.other||'';}if(ph.bowel){document.getElementById('phBowel').value=ph.bowel.value||'REGULAR';document.getElementById('phBowelOther').value=ph.bowel.other||'';}['phSurgery','phSleep','phDrinking','phBowel'].forEach(id=>document.getElementById(id)?.dispatchEvent(new Event('change')));sync();syncHistory();
 })();
 </script>
