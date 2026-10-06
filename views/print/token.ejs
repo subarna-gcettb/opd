@@ -1,19 +1,17 @@
 <script src="/js/print.js"></script>
 <link rel="stylesheet" href="/css/print.css">
 
-<link rel="stylesheet" href="/css/print.css">
-
-<div class="print-sheet" style="max-width: 420px;">
+<div class="print-sheet">
   <%- include('./_header') %>
 
   <div class="doc-title">OPD Token</div>
 
-  <div class="token-box">
+  <div class="token-box token-slip-box">
     <div class="token-label">Token Number</div>
     <div class="token-num"><%= String(appointment.token_number).padStart(3, '0') %></div>
   </div>
 
-  <div class="kv-grid" style="grid-template-columns: 1fr;">
+  <div class="kv-grid">
     <div class="kv"><span class="k">Patient</span><span class="v"><strong><%= appointment.patient_name %></strong></span></div>
     <div class="kv"><span class="k">Health ID</span><span class="v"><%= appointment.health_id %></span></div>
     <div class="kv"><span class="k">Age / Gender</span><span class="v"><%= appointment.age_years || '—' %> / <%= appointment.gender %></span></div>
@@ -24,7 +22,10 @@
     <div class="kv"><span class="k">Appointment No.</span><span class="v"><%= appointment.appointment_code %></span></div>
   </div>
 
-  <div style="text-align:center;margin:1rem 0 .5rem;"><img src="/opd/appointments/<%= appointment.id %>/barcode" alt="Appointment barcode" style="width:320px;height:80px;object-fit:contain;"><div style="font-size:.75rem;color:#666;">Scan appointment barcode at the doctor desk</div></div>
+  <div class="barcode-area token-barcode-area">
+    <img src="/opd/appointments/<%= appointment.id %>/barcode" alt="Appointment barcode" class="token-barcode">
+    <div style="font-size:.75rem;color:#666;">Scan appointment barcode at the doctor desk</div>
+  </div>
 
   <div class="print-footer-note">
     Please be seated in the waiting area. Tokens are called in order. Report to reception if you miss your call.
