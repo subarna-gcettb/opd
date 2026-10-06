@@ -61,11 +61,18 @@ function exposeCsrfToken(req, res, next) {
      * browser. This keeps the protection session-bound without disabling CSRF
      * validation on OTP endpoints.
      */
-    if (req.session && !req.session.csrfInitialized) {
+    const initializeSessionCsrf = Boolean(req.session && !req.session.csrfInitialized);
+    if (initializeSessionCsrf) {
       req.session.csrfInitialized = true;
     }
 
-    res.locals.csrfToken = generate(req, res);
+    // If this session predates the bootstrap flag, replace any stale CSRF
+    // cookie that may have been minted against an unsaved/previous session id.
+    res.locals.csrfToken = generate(
+      req,
+      res,
+      initializeSessionCsrf ? { overwrite: true } : undefined
+    );
   } catch (err) {
     return next(err);
   }
