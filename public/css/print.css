@@ -64,6 +64,12 @@ body.print-doc {
 .print-actions{text-align:center;margin:18px 0}
 .print-footer-note{margin-top:14px;font-size:10px;color:#666;text-align:center;border-top:1px dashed #ccc;padding-top:6px;break-inside:avoid}
 
+/* OPD token uses the same A4 sheet dimensions as the patient registration slip. */
+.token-slip-box{margin:16px 0 14px;padding:20px}
+.token-slip-box .token-num{font-size:64px}
+.token-barcode-area{margin-top:16px}
+.token-barcode{width:420px;height:100px;object-fit:contain;max-width:90%}
+
 @media print{
   .print-actions,.no-print{display:none!important}
   .print-sheet{width:auto;max-width:none;padding:0}
