@@ -36,7 +36,7 @@ test('anonymous GET session is persisted so OTP POST keeps the same session-boun
   const token = page.text.match(/name="_csrf" value="([^"]+)"/)?.[1];
 
   assert.ok(token, 'GET must expose a CSRF token');
-  assert.match(page.headers['set-cookie'].join('; '), /hms.sid=/);
+  assert.match(page.headers['set-cookie'].join('; '), /connect.sid=/);
 
   await agent
     .post('/auth/login/request-otp')
