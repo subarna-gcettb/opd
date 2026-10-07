@@ -19,7 +19,7 @@
       <td><%= o.total_tests %> <% if(o.reported_tests){ %><span class="text-muted">/ <%= o.reported_tests %> reported</span><% } %></td>
       <td><span class="badge text-bg-light border"><%= o.source %></span></td>
       <td><span class="badge text-bg-<%= o.status==='REPORTED'?'success':(o.status==='CANCELLED'?'secondary':'primary') %>"><%= o.status.replaceAll('_',' ') %></span></td>
-      <td><%= new Date(o.created_at).toLocaleString() %></td><td><a href="/lab/orders/<%= o.id %>" class="btn btn-sm btn-outline-primary">Open</a></td>
+      <td><%= formatDateTime(o.created_at) %></td><td><a href="/lab/orders/<%= o.id %>" class="btn btn-sm btn-outline-primary">Open</a></td>
     </tr><% }) %>
     <% if(!orders.length){ %><tr><td colspan="8" class="text-center text-muted py-4">No laboratory orders yet.</td></tr><% } %>
     </tbody>
