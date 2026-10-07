@@ -20,6 +20,7 @@ const { attachClientIp } = require('./middleware/audit');
 const { exposeCsrfToken } = require('./middleware/csrf');
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
 const settingsService = require('./services/settingsService');
+const { formatDate, formatDateTime } = require('./utils/dateFormat');
 
 const app = express();
 const MySQLStore = MySQLStoreFactory(session);
@@ -115,6 +116,8 @@ app.use(async (req, res, next) => {
   res.locals.flashErrors = req.flash('errors');
   res.locals.flashSuccess = req.flash('success');
   res.locals.formData = req.flash('formData')[0] || {};
+  res.locals.formatDate = formatDate;
+  res.locals.formatDateTime = formatDateTime;
   try {
     res.locals.siteSettings = await settingsService.getSettings();
   } catch (err) {
