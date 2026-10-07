@@ -31,7 +31,7 @@
       <tbody>
         <% rows.forEach(function(a) { %>
           <tr>
-            <td class="text-nowrap"><%= new Date(a.created_at).toLocaleString() %></td>
+            <td class="text-nowrap"><%= formatDateTime(a.created_at) %></td>
             <td><%= a.user_name || 'System' %></td>
             <td><span class="badge text-bg-secondary"><%= a.action %></span></td>
             <td><%= a.entity %></td>
