@@ -17,7 +17,7 @@
     <div class="kv"><span class="k">Age / Gender</span><span class="v"><%= appointment.age_years || '—' %> / <%= appointment.gender %></span></div>
     <div class="kv"><span class="k">Doctor</span><span class="v"><%= appointment.doctor_name %></span></div>
     <div class="kv"><span class="k">Department</span><span class="v"><%= appointment.department_name %></span></div>
-    <div class="kv"><span class="k">Date</span><span class="v"><%= new Date(appointment.appointment_date).toLocaleDateString() %></span></div>
+    <div class="kv"><span class="k">Date</span><span class="v"><%= formatDate(appointment.appointment_date) %></span></div>
     <div class="kv"><span class="k">Reporting Time</span><span class="v"><%= appointment.slot_time.slice(0,5) %></span></div>
     <div class="kv"><span class="k">Appointment No.</span><span class="v"><%= appointment.appointment_code %></span></div>
   </div>
