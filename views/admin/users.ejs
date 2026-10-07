@@ -17,7 +17,7 @@
             <td><span class="badge text-bg-<%= u.is_active ? 'success' : 'secondary' %>"><%= u.is_active ? 'Active' : 'Inactive' %></span>
               <% if (u.must_reset_password) { %><span class="badge text-bg-warning">Must reset PW</span><% } %>
             </td>
-            <td><%= u.last_login_at ? new Date(u.last_login_at).toLocaleString() : 'Never' %></td>
+            <td><%= u.last_login_at ? formatDateTime(u.last_login_at) : 'Never' %></td>
             <td>
               <div class="d-flex gap-1">
                 <form method="POST" action="/admin/users/<%= u.id %>/active">
