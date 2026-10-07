@@ -68,13 +68,13 @@ test('USG dating migration and Bengali prescription rows are present', () => {
   }
   const prescription = fs.readFileSync(path.join(__dirname, '..', 'views', 'print', 'prescription.ejs'), 'utf8');
   assert.match(prescription, /rx-bengali-row/);
-  assert.match(prescription, /<td colspan="2"><\/td>\s*<td colspan="4">/);
+  assert.match(prescription, /<td colspan="6">[\s\S]*?বাংলা নির্দেশনা:/);
   const adviceIndex = prescription.indexOf('<% if (prescription.advice)');
   const rightColumnIndex = prescription.indexOf('<div class="rx-right">');
   assert.ok(adviceIndex > 0 && adviceIndex < rightColumnIndex, 'Advice must stay in the left column');
   const vitalsMarker = prescription.lastIndexOf('<% if (hasVitals)');
   assert.ok(adviceIndex > vitalsMarker, 'Advice must be rendered after the left-column clinical sections');
-  assert.match(prescription, /class="rx-bengali-row"[\\s\\S]*?<td colspan="2"><\\/td>\\s*<td colspan="4">/);
+  assert.match(prescription, /class="rx-bengali-row"[\\s\\S]*?<td colspan="6">/);
   assert.doesNotMatch(prescription, /rx-bengali-row[\\s\\S]{0,800}medicine_name_freetext/);
   const textUtil = require('../utils/prescriptionText');
   const result = textUtil.describeItem({ medicine_form: 'tablet', dosage: '1', frequency: 'BD', route: 'P/O', duration: '5', instructions: 'After food' });
