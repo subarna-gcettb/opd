@@ -16,7 +16,7 @@
     <div class="kv"><span class="k">Age / Gender</span><span class="v"><%= patient.age_years || '—' %> / <%= patient.gender %></span></div>
     <div class="kv"><span class="k">Blood Group</span><span class="v"><%= patient.blood_group || '—' %></span></div>
     <div class="kv"><span class="k">Mobile</span><span class="v"><%= patient.mobile %></span></div>
-    <div class="kv"><span class="k">Registered On</span><span class="v"><%= new Date(patient.created_at).toLocaleString() %></span></div>
+    <div class="kv"><span class="k">Registered On</span><span class="v"><%= formatDateTime(patient.created_at) %></span></div>
     <div class="kv" style="grid-column: 1 / -1;"><span class="k">Address</span><span class="v"><%= [patient.address, patient.village_town, patient.police_station, patient.district, patient.state, patient.pin_code].filter(Boolean).join(', ') || '—' %></span></div>
     <div class="kv"><span class="k">Branch</span><span class="v"><%= patient.branch_name %></span></div>
     <div class="kv"><span class="k">Aadhaar</span><span class="v"><%= patient.aadhaar_masked || 'Not provided' %></span></div>
