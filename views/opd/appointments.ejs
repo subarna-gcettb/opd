@@ -50,7 +50,7 @@
             <td><%= a.patient_name %><div class="text-muted small"><%= a.health_id %> · <%= a.age_years || '—' %>/<%= a.gender %></div></td>
             <td><%= a.doctor_name %></td>
             <td><%= a.department_name %></td>
-            <td><%= new Date(a.appointment_date).toLocaleDateString() %><div class="text-muted small"><%= a.slot_time.slice(0,5) %></div></td>
+            <td><%= formatDate(a.appointment_date) %><div class="text-muted small"><%= a.slot_time.slice(0,5) %></div></td>
             <td><strong><%= a.referral_code || "—" %></strong><div class="small text-muted"><%= a.referral_provider_name || "" %></div></td>
             <td>
               <span class="badge text-bg-<%= a.status === 'COMPLETED' ? 'success' : (a.status === 'CANCELLED' || a.status === 'NO_SHOW' ? 'danger' : 'primary') %>"><%= a.status.replace('_',' ') %></span>
