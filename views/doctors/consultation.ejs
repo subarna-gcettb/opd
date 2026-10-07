@@ -39,7 +39,7 @@
     <span class="badge text-bg-<%= visit.pregnancy_status === 'PREGNANT' ? 'success' : 'secondary' %>"><%= visit.pregnancy_status || 'UNKNOWN' %></span>
   </div>
   <div class="row g-2 mt-1 small">
-    <div class="col-6 col-md-3"><strong>LMP</strong><span><%= visit.lmp_date ? new Date(visit.lmp_date).toLocaleDateString() : '—' %></span></div>
+    <div class="col-6 col-md-3"><strong>LMP</strong><span><%= visit.lmp_date ? formatDate(visit.lmp_date) : '—' %></span></div>
     <div class="col-6 col-md-3"><strong>Gravida (G)</strong><span><%= visit.gravida ?? '—' %></span></div>
     <div class="col-6 col-md-3"><strong>Para (P)</strong><span><%= visit.para ?? '—' %></span></div>
     <div class="col-6 col-md-3"><strong>Abortions (A)</strong><span><%= visit.abortions ?? '—' %></span></div>
@@ -230,7 +230,7 @@
           <% previousVisits.forEach(function(v) { %>
             <li class="list-group-item small">
               <div class="d-flex justify-content-between">
-                <strong><%= new Date(v.checked_in_at).toLocaleDateString() %></strong>
+                <strong><%= formatDate(v.checked_in_at) %></strong>
                 <span class="text-muted"><%= v.doctor_name %></span>
               </div>
               <div><strong>Dx:</strong> <%= v.diagnosis || '—' %></div>
@@ -257,7 +257,7 @@
           <% previousPrescriptions.forEach(function(p) { %>
             <li class="list-group-item small d-flex justify-content-between align-items-center">
               <div>
-                <div><strong><%= new Date(p.created_at).toLocaleDateString() %></strong> — <%= p.doctor_name %></div>
+                <div><strong><%= formatDate(p.created_at) %></strong> — <%= p.doctor_name %></div>
                 <div class="text-muted"><%= p.diagnosis || p.prescription_code %></div>
               </div>
               <a href="/prescriptions/<%= p.id %>/print" target="_blank" class="btn btn-sm btn-outline-secondary">View</a>
