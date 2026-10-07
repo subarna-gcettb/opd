@@ -1,7 +1,7 @@
 <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
   <div>
     <h4 class="mb-0">Prescription <code><%= prescription.prescription_code %></code> <span class="badge text-bg-secondary">v<%= prescription.version %></span></h4>
-    <div class="text-muted">Dr. <%= prescription.doctor_name %> &middot; <%= new Date(prescription.created_at).toLocaleDateString() %></div>
+    <div class="text-muted">Dr. <%= prescription.doctor_name %> &middot; <%= formatDate(prescription.created_at) %></div>
   </div>
   <a href="/patient-portal/prescriptions/<%= prescription.id %>/print" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="bi bi-printer"></i> Print</a>
 </div>
@@ -11,7 +11,7 @@
   <div class="card-body small">
     <div><strong>Diagnosis:</strong> <%= prescription.diagnosis || '—' %></div>
     <div><strong>Advice:</strong> <%= prescription.investigation_advice || '—' %></div>
-    <div><strong>Follow-up:</strong> <%= prescription.follow_up_date ? new Date(prescription.follow_up_date).toLocaleDateString() : '—' %></div>
+    <div><strong>Follow-up:</strong> <%= prescription.follow_up_date ? formatDate(prescription.follow_up_date) : '—' %></div>
   </div>
 </div>
 
