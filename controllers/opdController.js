@@ -4,6 +4,7 @@ const liveOpdService = require('../services/liveOpdService');
 const emailService = require('../services/emailService');
 const { pool } = require('../config/database');
 const AppError = require('../utils/AppError');
+const { formatDate } = require('../utils/dateFormat');
 
 function todayStr() {
   return new Intl.DateTimeFormat('en-CA', { timeZone: process.env.APP_TIMEZONE || 'Asia/Kolkata' }).format(new Date());
@@ -227,7 +228,7 @@ async function notifyCancelled(appointmentId, reason) {
     patientName: appointment.patient_name,
     healthId: appointment.health_id,
     doctorName: appointment.doctor_name,
-    date: new Date(appointment.appointment_date).toLocaleDateString(),
+    date: formatDate(appointment.appointment_date),
     time: String(appointment.slot_time).slice(0, 5),
     reason
   });
