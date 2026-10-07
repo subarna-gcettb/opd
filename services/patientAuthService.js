@@ -26,8 +26,8 @@ async function issueOtp(purpose, email, payload = null) {
 
   const otp = makeOtp();
   const otpHash = hashOtp(otp);
-  const expiryMinutes = Number(process.env.OTP_EXPIRY_MINUTES) || 10;
-  const cooldownSeconds = Number(process.env.OTP_RESEND_COOLDOWN_SECONDS) || 60;
+  const expiryMinutes = authConfig.otpExpiryMinutes;
+  const cooldownSeconds = authConfig.otpResendCooldownSeconds;
 
   // Do not invalidate a working code before we know that the replacement
   // email was actually accepted by the SMTP server.
@@ -93,7 +93,7 @@ async function consumeOtp(purpose, email, otp) {
   if (!rows.length) throw new AppError('The verification code is invalid or expired', 422);
 
   const record = rows[0];
-  if (record.attempts >= 5) throw new AppError('Too many verification attempts. Request a new code.', 429);
+  if (record.attempts >= authConfig.otpMaxAttempts) throw new AppError('Too many verification attempts. Request a new code.', 429);
 
   const storedHash = String(record.otp_hash || '').trim().toLowerCase();
   const suppliedHash = hashOtp(normalizedOtp);
