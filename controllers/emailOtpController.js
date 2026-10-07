@@ -1,8 +1,8 @@
 const auditService = require('../services/auditService');
 const patientAuthService = require('../services/patientAuthService');
 const AppError = require('../utils/AppError');
-const appConfig = require('../config/appConfig');
 const { rotateCsrfToken } = require('../middleware/csrf');
+const { pool } = require('../config/database');
 
 function redirectLogin(req, res, query = '') {
   return res.redirect('/auth/login' + query);
@@ -79,7 +79,7 @@ async function verifyLoginOtp(req, res, next) {
 
     await patientAuthService.consumeOtp('LOGIN', email, otp);
 
-    await require('../config/database').pool.execute(
+    await pool.execute(
       'UPDATE users SET failed_login_attempts = 0, locked_until = NULL, last_login_at = NOW() WHERE id = :id',
       { id: patient.id }
     );
