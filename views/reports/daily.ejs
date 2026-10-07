@@ -31,7 +31,7 @@
       <tbody>
         <% rows.forEach(function(r) { %>
           <tr>
-            <td><%= new Date(r.date).toLocaleDateString() %></td>
+            <td><%= formatDate(r.date) %></td>
             <td><%= r.total_patients %></td>
             <td><%= r.completed %></td>
             <td><%= r.cancelled %></td>
