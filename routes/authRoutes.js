@@ -1,12 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
+const emailOtpController = require('../controllers/emailOtpController');
 const { requireAuth } = require('../middleware/auth');
 const { csrfProtection } = require('../middleware/csrf');
 
 router.get('/login', authController.showLogin);
 router.post('/login', csrfProtection, authController.login);
-router.post('/login/request-otp', csrfProtection, authController.requestLoginOtp);
+router.post('/login/request-otp', csrfProtection, emailOtpController.requestLoginOtp);
+router.post('/login/verify-otp', csrfProtection, emailOtpController.verifyLoginOtp);
 router.get('/signup', authController.showSignup);
 router.post('/signup/request-otp', csrfProtection, authController.signupRequestOtp);
 router.get('/verify-signup', authController.showVerifySignup);
