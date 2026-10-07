@@ -61,6 +61,14 @@ test('OTP signup verification accepts mysql2 JSON objects without JSON.parse err
   assert.doesNotMatch(source, /const payload = JSON\.parse\(record\.payload/);
 });
 
+test('login page does not offer Google sign-in', () => {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'views', 'auth', 'login.ejs'), 'utf8');
+  assert.doesNotMatch(source, /Continue with Google/i);
+  assert.doesNotMatch(source, /href=["']\/auth\/google["']/i);
+  assert.match(source, /name=["']identifier["']/);
+  assert.match(source, /name=["']password["']/);
+});
+
 test('doctor Rx editor uses the requested default form, dose, and instructions for new medicines', () => {
   const source = fs.readFileSync(path.join(__dirname, '..', 'views', 'doctors', 'consultation.ejs'), 'utf8');
   assert.match(source, /const medicineForm = item\.medicine_form \|\| 'Tablet';/);
