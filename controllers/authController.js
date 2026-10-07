@@ -11,7 +11,26 @@ const { rotateCsrfToken } = require('../middleware/csrf');
 
 function showLogin(req, res) {
   if (req.user) return res.redirect('/dashboard');
-  res.render('auth/login', { layout: 'layouts/blank', title: 'Login', otpMode: req.query.otp === '1', otpEmail: req.session.loginOtpEmail || req.query.email || '' });
+
+  const challengeEmail = String(req.session.loginOtpEmail || '').trim().toLowerCase();
+  const challengeStarted = Number(req.session.loginOtpIssuedAt || 0);
+  const challengeValid = Boolean(
+    challengeEmail &&
+    challengeStarted &&
+    Date.now() - challengeStarted < authConfig.otpExpiryMinutes * 60 * 1000
+  );
+
+  if (!challengeValid) {
+    delete req.session.loginOtpEmail;
+    delete req.session.loginOtpIssuedAt;
+  }
+
+  res.render('auth/login', {
+    layout: 'layouts/blank',
+    title: 'Login',
+    otpMode: req.query.otp === '1' && challengeValid,
+    otpEmail: challengeValid ? challengeEmail : ''
+  });
 }
 
 function showSignup(req, res) {
