@@ -27,7 +27,7 @@
             <td><%= i.patient_name %><div class="text-muted small"><%= i.health_id %></div></td>
             <td><strong><%= i.referral_code || '—' %></strong><div class="text-muted small"><%= i.referral_provider_name || '' %></div></td>
             <td><%= i.doctor_name %></td>
-            <td><%= new Date(i.created_at).toLocaleDateString() %></td>
+            <td><%= formatDate(i.created_at) %></td>
             <td>₹<%= Number(i.gross_amount).toFixed(2) %></td>
             <td>₹<%= Number(i.discount_amount).toFixed(2) %></td>
             <td>₹<%= Number(i.net_amount).toFixed(2) %></td>
