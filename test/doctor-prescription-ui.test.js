@@ -78,6 +78,8 @@ test('USG dating migration and Bengali prescription rows are present', () => {
   assert.doesNotMatch(prescription, /rx-bengali-row[\\s\\S]{0,800}medicine_name_freetext/);
   const textUtil = require('../utils/prescriptionText');
   const result = textUtil.describeItem({ medicine_form: 'tablet', dosage: '1', frequency: 'BD', route: 'P/O', duration: '5', instructions: 'After food' });
-  assert.match(result.bengali, /দিনে ২ বার/);
+  assert.match(result.bengali, /দিনে 02 বার/);
+  assert.doesNotMatch(result.bengali, /tablet|ট্যাবলেট.*[A-Z][A-Z]/i);
+  assert.doesNotMatch(result.bengali, /medicine_name_freetext/i);
   assert.match(result.bengali, /খাবারের পরে/);
 });
