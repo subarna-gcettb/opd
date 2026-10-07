@@ -11,7 +11,7 @@ const { rotateCsrfToken } = require('../middleware/csrf');
 
 function showLogin(req, res) {
   if (req.user) return res.redirect('/dashboard');
-  res.render('auth/login', { layout: 'layouts/blank', title: 'Login', otpMode: req.query.otp === '1', otpEmail: req.query.email || '' });
+  res.render('auth/login', { layout: 'layouts/blank', title: 'Login', otpMode: req.query.otp === '1', otpEmail: req.session.loginOtpEmail || req.query.email || '' });
 }
 
 function showSignup(req, res) {
