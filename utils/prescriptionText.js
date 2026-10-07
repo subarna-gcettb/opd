@@ -1,8 +1,8 @@
 const FREQUENCY = {
-  OD: { en: 'once daily', bn: 'দিনে ১ বার' },
-  BD: { en: 'twice daily', bn: 'দিনে ২ বার' },
-  TDS: { en: 'three times daily', bn: 'দিনে ৩ বার' },
-  QDS: { en: 'four times daily', bn: 'দিনে ৪ বার' },
+  OD: { en: 'once daily', bn: 'দিনে 01 বার' },
+  BD: { en: 'twice daily', bn: 'দিনে 02 বার' },
+  TDS: { en: 'three times daily', bn: 'দিনে 03 বার' },
+  QDS: { en: 'four times daily', bn: 'দিনে 04 বার' },
   SOS: { en: 'as needed', bn: 'প্রয়োজনে' }
 };
 const ROUTE = {
@@ -44,6 +44,6 @@ function buildPrescriptionInstructions(item) {
   const composition = String(item.composition || '').trim();
   const name = String(item.medicine_name_freetext || '').trim();
   const heading = composition ? name + ' [' + composition + ']' : name;
-  return { heading, english: heading + ' — ' + described.english, bengali: heading + ' — ' + described.bengali };
+  return { heading, english: heading + ' — ' + described.english, bengali: described.bengali };
 }
 module.exports = { buildPrescriptionInstructions, describeItem };
