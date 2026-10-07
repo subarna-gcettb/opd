@@ -44,7 +44,7 @@
               </span>
               <span class="badge text-bg-<%= dr.status === 'APPROVED' ? 'success' : (dr.status === 'REJECTED' ? 'danger' : 'warning') %>"><%= dr.status %></span>
             </div>
-            <div class="text-muted">Requested by <%= dr.requested_by_name %> on <%= new Date(dr.requested_at).toLocaleString() %>
+            <div class="text-muted">Requested by <%= dr.requested_by_name %> on <%= formatDateTime(dr.requested_at) %>
               <% if (dr.approved_by_name) { %> &middot; Decided by <%= dr.approved_by_name %><% } %>
             </div>
             <% if (dr.rejection_reason) { %><div class="text-danger">Reason: <%= dr.rejection_reason %></div><% } %>
@@ -68,7 +68,7 @@
           <li class="list-group-item small d-flex justify-content-between align-items-center">
             <div>
               <strong>₹<%= Number(p.amount).toFixed(2) %></strong> via <%= p.method %>
-              <div class="text-muted"><%= p.payment_code %> &middot; <%= new Date(p.paid_at).toLocaleString() %></div>
+              <div class="text-muted"><%= p.payment_code %> &middot; <%= formatDateTime(p.paid_at) %></div>
             </div>
             <a href="/billing/invoices/<%= invoice.id %>/receipt/<%= p.id %>" target="_blank" class="btn btn-sm btn-outline-secondary">Receipt</a>
           </li>
