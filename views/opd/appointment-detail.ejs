@@ -39,10 +39,10 @@
           <div><strong>Referral Provider:</strong> <%= appointment.referral_provider_name || "—" %></div>
           <div><strong>Doctor:</strong> <%= appointment.doctor_name %></div>
           <div><strong>Department:</strong> <%= appointment.department_name %></div>
-          <div><strong>Date:</strong> <%= new Date(appointment.appointment_date).toLocaleDateString() %></div>
+          <div><strong>Date:</strong> <%= formatDate(appointment.appointment_date) %></div>
           <div><strong>Time:</strong> <%= appointment.slot_time.slice(0,5) %></div>
           <div><strong>Consultation Fee:</strong> ₹<%= Number(appointment.consultation_fee).toFixed(2) %></div>
-          <div><strong>Booked At:</strong> <%= new Date(appointment.created_at).toLocaleString() %></div>
+          <div><strong>Booked At:</strong> <%= formatDateTime(appointment.created_at) %></div>
           <div class="col-12"><strong>Reason:</strong> <%= appointment.reason || '—' %></div>
         </div>
       </div>
@@ -104,7 +104,7 @@
           <% prescriptionAttachments.forEach(function(a) { %>
             <a class="list-group-item list-group-item-action px-0" href="/prescriptions/attachments/<%= a.id %>" target="_blank">
               <i class="bi bi-file-image me-1"></i><%= a.original_name %>
-              <span class="text-muted"> · <%= new Date(a.created_at).toLocaleString() %> · <%= a.uploaded_by_name %></span>
+              <span class="text-muted"> · <%= formatDateTime(a.created_at) %> · <%= a.uploaded_by_name %></span>
             </a>
           <% }) %>
         </div>
@@ -121,10 +121,10 @@
       <tbody>
         <% history.forEach(function(h) { %>
           <tr>
-            <td><%= new Date(h.changed_at).toLocaleString() %></td>
+            <td><%= formatDateTime(h.changed_at) %></td>
             <td><span class="badge text-bg-secondary"><%= h.action.replace('_',' ') %></span></td>
-            <td><%= h.old_date ? new Date(h.old_date).toLocaleDateString() + ' ' + (h.old_time || '').slice(0,5) : '—' %></td>
-            <td><%= h.new_date ? new Date(h.new_date).toLocaleDateString() + ' ' + (h.new_time || '').slice(0,5) : '—' %></td>
+            <td><%= h.old_date ? formatDate(h.old_date) + ' ' + (h.old_time || '').slice(0,5) : '—' %></td>
+            <td><%= h.new_date ? formatDate(h.new_date) + ' ' + (h.new_time || '').slice(0,5) : '—' %></td>
             <td><%= h.reason || '—' %></td>
             <td><%= h.changed_by_name %></td>
           </tr>
