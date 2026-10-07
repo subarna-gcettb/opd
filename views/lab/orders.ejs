@@ -13,6 +13,6 @@
 <td><strong><%= o.order_code %></strong></td><td><%= o.patient_name %><div class="small text-muted"><%= o.health_id %></div></td>
 <td><%= o.total_tests %> <small class="text-muted"><%= o.reported_tests||0 %> reported</small></td><td><%= o.source %></td><td><strong><%= o.referral_code || '—' %></strong><div class="small text-muted"><%= o.referral_provider_name || '' %></div></td><td>₹<%= Number(o.net_amount||0).toFixed(2) %></td>
 <td><span class="badge text-bg-<%= o.status==='REPORTED'?'success':(o.status==='CANCELLED'?'secondary':'primary') %>"><%= o.status.replaceAll('_',' ') %></span></td>
-<td><%= new Date(o.booking_date).toLocaleDateString() %></td><td><a href="/lab/orders/<%= o.id %>" class="btn btn-sm btn-outline-primary">Open</a></td>
+<td><%= formatDate(o.booking_date) %></td><td><a href="/lab/orders/<%= o.id %>" class="btn btn-sm btn-outline-primary">Open</a></td>
 </tr><% }) %><% if(!orders.length){ %><tr><td colspan="9" class="text-center text-muted py-4">No matching orders.</td></tr><% } %></tbody>
 </table></div></div>
