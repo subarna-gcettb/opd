@@ -42,7 +42,7 @@
       <tbody>
         <% upcoming.forEach(function(a) { %>
           <tr>
-            <td><%= new Date(a.appointment_date).toLocaleDateString() %></td>
+            <td><%= formatDate(a.appointment_date) %></td>
             <td><%= a.slot_time.slice(0,5) %></td>
             <td><span class="token-badge"><%= String(a.token_number).padStart(3,'0') %></span></td>
             <td><%= a.doctor_name %></td>
@@ -68,11 +68,11 @@
       <tbody>
         <% history.forEach(function(v) { %>
           <tr>
-            <td><%= new Date(v.checked_in_at).toLocaleString() %></td>
+            <td><%= formatDateTime(v.checked_in_at) %></td>
             <td><%= v.doctor_name %></td>
             <td><%= v.department_name %></td>
             <td><%= v.diagnosis || '—' %></td>
-            <td><%= v.follow_up_date ? new Date(v.follow_up_date).toLocaleDateString() : '—' %></td>
+            <td><%= v.follow_up_date ? formatDate(v.follow_up_date) : '—' %></td>
           </tr>
         <% }) %>
         <% if (history.length === 0) { %><tr><td colspan="5" class="text-center text-muted py-3">No completed visits yet.</td></tr><% } %>
@@ -85,7 +85,7 @@
       <tbody>
         <% prescriptions.forEach(function(p) { %>
           <tr>
-            <td><%= new Date(p.created_at).toLocaleDateString() %></td>
+            <td><%= formatDate(p.created_at) %></td>
             <td><%= p.doctor_name %></td>
             <td><%= p.prescription_code %> <span class="text-muted small">v<%= p.version %></span></td>
             <td><a href="/patient-portal/prescriptions/<%= p.id %>/print" target="_blank" class="btn btn-sm btn-outline-secondary">View / Print</a></td>
@@ -102,7 +102,7 @@
         <% invoices.forEach(function(i) { %>
           <tr>
             <td><%= i.invoice_number %></td>
-            <td><%= new Date(i.created_at).toLocaleDateString() %></td>
+            <td><%= formatDate(i.created_at) %></td>
             <td>₹<%= Number(i.net_amount).toFixed(2) %></td>
             <td><span class="badge text-bg-<%= i.status === 'PAID' ? 'success' : 'secondary' %>"><%= i.status.replace('_',' ') %></span></td>
             <td><a href="/patient-portal/invoices/<%= i.id %>" class="btn btn-sm btn-outline-primary">View</a></td>
@@ -128,7 +128,7 @@
           <td><strong><%= o.order_code %></strong></td>
           <td><%= o.total_tests %> test(s) · <%= o.reported_tests || 0 %> reported</td>
           <td><span class="badge text-bg-<%= o.status==='REPORTED'?'success':(o.status==='CANCELLED'?'secondary':'primary') %>"><%= o.status.replaceAll('_',' ') %></span></td>
-          <td><%= new Date(o.booking_date).toLocaleDateString() %></td>
+          <td><%= formatDate(o.booking_date) %></td>
           <td><a href="/patient-portal/lab/orders/<%= o.id %>" class="btn btn-sm btn-outline-primary">Track</a></td>
         </tr>
       <% }) %>
