@@ -1,7 +1,7 @@
 <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
   <div>
     <h4 class="mb-0">Invoice <code><%= invoice.invoice_number %></code></h4>
-    <div class="text-muted"><%= invoice.doctor_name %> &middot; <%= invoice.department_name %> &middot; <%= new Date(invoice.created_at).toLocaleDateString() %></div>
+    <div class="text-muted"><%= invoice.doctor_name %> &middot; <%= invoice.department_name %> &middot; <%= formatDate(invoice.created_at) %></div>
   </div>
   <span class="badge fs-6 text-bg-<%= invoice.status === 'PAID' ? 'success' : 'secondary' %> align-self-center"><%= invoice.status.replace('_',' ') %></span>
 </div>
@@ -35,7 +35,7 @@
           <li class="list-group-item small d-flex justify-content-between align-items-center">
             <div>
               <strong>₹<%= Number(p.amount).toFixed(2) %></strong> via <%= p.method %>
-              <div class="text-muted"><%= new Date(p.paid_at).toLocaleString() %></div>
+              <div class="text-muted"><%= formatDateTime(p.paid_at) %></div>
             </div>
             <a href="/patient-portal/invoices/<%= invoice.id %>/receipt/<%= p.id %>" target="_blank" class="btn btn-sm btn-outline-secondary">Receipt</a>
           </li>
