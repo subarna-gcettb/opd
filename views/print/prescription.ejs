@@ -35,7 +35,7 @@
   <div class="rx-patient-bar">
     <div><strong>Patient Name: <%= prescription.patient_name %></strong><span><%= prescription.age_years || '—' %> yrs</span><span><%= prescription.gender || '—' %></span></div>
     <div><span>Health ID: <strong><%= prescription.health_id %></strong></span><% if (prescription.mobile) { %><span>Mob: <%= prescription.mobile %></span><% } %></div>
-    <div><span>Date/Time: <strong><%= new Date(prescription.created_at).toLocaleString('en-IN') %></strong></span><span>Rx: <strong><%= prescription.prescription_code %></strong></span></div>
+    <div><span>Date/Time: <strong><%= formatDateTime(prescription.created_at) %></strong></span><span>Rx: <strong><%= prescription.prescription_code %></strong></span></div>
     <% if (barcodeDataUri && prescription.health_id) { %>
       <div class="rx-health-barcode" aria-label="Patient Health ID barcode">
         <img src="<%= barcodeDataUri %>" alt="Health ID barcode">
@@ -66,12 +66,12 @@
       <section><h3>Female / Obstetric Assessment</h3>
         <div class="rx-mini-grid">
           <% if (prescription.pregnancy_status) { %><span><b>Status:</b> <%= prescription.pregnancy_status %></span><% } %>
-          <% if (prescription.lmp_date) { %><span><b>LMP:</b> <%= new Date(prescription.lmp_date).toLocaleDateString('en-IN') %></span><% } %>
+          <% if (prescription.lmp_date) { %><span><b>LMP:</b> <%= formatDate(prescription.lmp_date) %></span><% } %>
           <% if (prescription.gravida != null) { %><span><b>G:</b> <%= prescription.gravida %></span><% } %>
           <% if (prescription.para != null) { %><span><b>P:</b> <%= prescription.para %></span><% } %>
           <% if (prescription.abortions != null) { %><span><b>A:</b> <%= prescription.abortions %></span><% } %>
           <% if (prescription.gestational_age_weeks != null) { %><span><b>GA:</b> <%= prescription.gestational_age_weeks %>w <%= prescription.gestational_age_days || 0 %>d</span><% } %>
-          <% if (prescription.estimated_due_date) { %><span><b>EDD:</b> <%= new Date(prescription.estimated_due_date).toLocaleDateString('en-IN') %></span><% } %>
+          <% if (prescription.estimated_due_date) { %><span><b>EDD:</b> <%= formatDate(prescription.estimated_due_date) %></span><% } %>
           <% if (prescription.obstetric_notes) { %><span class="span-all"><b>Notes:</b> <%= prescription.obstetric_notes %></span><% } %>
         </div>
       </section>
@@ -122,7 +122,7 @@
     </div>
   </div>
 
-  <% if (hasFollowUp) { %><div class="rx-bottom-line"><strong>Follow-up:</strong> <%= new Date(prescription.follow_up_date).toLocaleDateString('en-IN') %></div><% } %>
+  <% if (hasFollowUp) { %><div class="rx-bottom-line"><strong>Follow-up:</strong> <%= formatDate(prescription.follow_up_date) %></div><% } %>
 
   <div class="rx-signature-row">
     <div class="rx-place"><strong><%= prescription.branch_name || 'Chhayabithi' %></strong><% if (prescription.branch_address) { %><span><%= prescription.branch_address %></span><% } %><% if (prescription.branch_phone || prescription.branch_email) { %><span><%= [prescription.branch_phone, prescription.branch_email].filter(Boolean).join(' · ') %></span><% } %></div>
