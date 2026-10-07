@@ -9,7 +9,7 @@
 
   <div class="kv-grid three">
     <div class="kv"><span class="k">Invoice No.</span><span class="v"><strong><%= invoice.invoice_number %></strong></span></div>
-    <div class="kv"><span class="k">Date</span><span class="v"><%= new Date(invoice.created_at).toLocaleDateString() %></span></div>
+    <div class="kv"><span class="k">Date</span><span class="v"><%= formatDate(invoice.created_at) %></span></div>
     <div class="kv"><span class="k">Status</span><span class="v"><%= invoice.status.replace('_',' ') %></span></div>
     <div class="kv"><span class="k">Patient</span><span class="v"><%= invoice.patient_name %></span></div>
     <div class="kv"><span class="k">Health ID</span><span class="v"><%= invoice.health_id %></span></div>
