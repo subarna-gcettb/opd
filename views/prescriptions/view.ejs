@@ -29,7 +29,7 @@
     <% versions.forEach(function(v){ %>
       <div class="list-group-item d-flex justify-content-between align-items-center">
         <span>Version <strong><%= v.version %></strong> <%= v.is_current ? '(Current)' : '' %><% if (v.amendment_reason) { %><span class="text-muted ms-2">— <%= v.amendment_reason %></span><% } %></span>
-        <span class="small text-muted"><%= new Date(v.created_at).toLocaleString('en-IN') %></span>
+        <span class="small text-muted"><%= formatDateTime(v.created_at) %></span>
       </div>
     <% }) %>
   </div>
