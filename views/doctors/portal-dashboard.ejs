@@ -52,7 +52,7 @@
           <tbody>
             <% upcoming.forEach(function(a) { %>
               <tr>
-                <td><%= new Date(a.appointment_date).toLocaleDateString() %></td>
+                <td><%= formatDate(a.appointment_date) %></td>
                 <td><%= a.slot_time.slice(0,5) %></td>
                 <td><%= a.patient_name %><div class="text-muted small"><%= a.health_id %></div></td>
                 <td><strong><%= a.referral_code || '—' %></strong><div class="text-muted small"><%= a.referral_provider_name || '' %></div></td>
