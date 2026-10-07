@@ -44,7 +44,7 @@
     <tbody>
     <% recentPatients.forEach(function(p){ %>
       <tr>
-        <td><%= new Date(p.created_at).toLocaleString() %></td>
+        <td><%= formatDateTime(p.created_at) %></td>
         <td><strong><%= p.name %></strong><div class="small text-muted"><%= p.registration_number %></div></td>
         <td><code><%= p.health_id %></code></td>
         <td><%= p.provider_name || 'Legacy / Unmapped' %></td>
