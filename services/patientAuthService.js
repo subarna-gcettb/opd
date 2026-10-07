@@ -26,26 +26,42 @@ async function issueOtp(purpose, email, payload = null) {
 
   const otp = makeOtp();
   const otpHash = hashOtp(otp);
+  const expiryMinutes = Number(process.env.OTP_EXPIRY_MINUTES) || 10;
+  const cooldownSeconds = Number(process.env.OTP_RESEND_COOLDOWN_SECONDS) || 60;
 
-  await pool.execute(
-    'UPDATE auth_otps SET consumed_at = NOW() WHERE purpose = :purpose AND email = :email AND consumed_at IS NULL',
+  // Do not invalidate a working code before we know that the replacement
+  // email was actually accepted by the SMTP server.
+  const [[recent]] = await pool.execute(
+    `SELECT id, created_at
+     FROM auth_otps
+     WHERE purpose = :purpose
+       AND email = :email
+       AND consumed_at IS NULL
+       AND created_at > DATE_SUB(NOW(), INTERVAL ${Math.max(1, cooldownSeconds)} SECOND)
+     ORDER BY id DESC
+     LIMIT 1`,
     { purpose, email: normalized }
   );
+  if (recent) {
+    throw new AppError('A verification code was sent recently. Please wait before requesting another code.', 429);
+  }
 
-  await pool.execute(
+  const [insertResult] = await pool.execute(
     `INSERT INTO auth_otps (purpose, email, otp_hash, payload, expires_at)
-     VALUES (:purpose, :email, :otpHash, :payload, DATE_ADD(NOW(), INTERVAL 10 MINUTE))`,
+     VALUES (:purpose, :email, :otpHash, :payload, DATE_ADD(NOW(), INTERVAL ${Math.max(1, expiryMinutes)} MINUTE))`,
     { purpose, email: normalized, otpHash, payload: payload ? JSON.stringify(payload) : null }
   );
 
+  const otpId = insertResult.insertId;
   const result = await emailService.sendMail({
     to: normalized,
     subject: 'Chhayabithi HMS — Your verification code',
-    html: `<p>Your Chhayabithi HMS verification code is <strong style="font-size:24px;letter-spacing:4px;">${otp}</strong>.</p><p>This code expires in 10 minutes. If you did not request it, you can ignore this email.</p>`,
-    text: `Your Chhayabithi HMS verification code is ${otp}. It expires in 10 minutes.`
+    html: `<p>Your Chhayabithi HMS verification code is <strong style="font-size:24px;letter-spacing:4px;">${otp}</strong>.</p><p>This code expires in ${Math.max(1, expiryMinutes)} minutes. If you did not request it, you can ignore this email.</p>`,
+    text: `Your Chhayabithi HMS verification code is ${otp}. It expires in ${Math.max(1, expiryMinutes)} minutes.`
   });
 
   if (!result.sent) {
+    await pool.execute('DELETE FROM auth_otps WHERE id = :id AND consumed_at IS NULL', { id: otpId }).catch(() => {});
     throw new AppError(
       result.reason === 'smtp_disabled'
         ? 'Email service is not configured. Please contact the hospital administrator.'
@@ -54,7 +70,13 @@ async function issueOtp(purpose, email, payload = null) {
     );
   }
 
-  return { sent: true };
+  // Only the successfully delivered code remains valid.
+  await pool.execute(
+    'UPDATE auth_otps SET consumed_at = NOW() WHERE purpose = :purpose AND email = :email AND consumed_at IS NULL AND id <> :id',
+    { purpose, email: normalized, id: otpId }
+  );
+
+  return { sent: true, expiresInMinutes: Math.max(1, expiryMinutes) };
 }
 
 async function consumeOtp(purpose, email, otp) {
