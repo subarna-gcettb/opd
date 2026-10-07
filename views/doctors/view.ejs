@@ -136,7 +136,7 @@
       <tbody>
         <% exceptions.forEach(function(e) { %>
           <tr>
-            <td><%= new Date(e.exception_date).toLocaleDateString() %></td>
+            <td><%= formatDate(e.exception_date) %></td>
             <td><span class="badge text-bg-<%= e.is_unavailable ? 'danger' : 'info' %>"><%= e.is_unavailable ? 'Unavailable' : 'Special Hours' %></span></td>
             <td><%= e.start_time ? e.start_time.slice(0,5) + ' – ' + e.end_time.slice(0,5) : '—' %></td>
             <td><%= e.reason || '—' %></td>
@@ -170,7 +170,7 @@
       <tbody>
         <% opdHistory.forEach(function(v) { %>
           <tr>
-            <td><%= new Date(v.checked_in_at).toLocaleString() %></td>
+            <td><%= formatDateTime(v.checked_in_at) %></td>
             <td><%= v.patient_name %></td>
             <td><code><%= v.health_id %></code></td>
             <td><strong><%= v.referral_code || '—' %></strong><div class="small text-muted"><%= v.referral_provider_name || '' %></div></td>
