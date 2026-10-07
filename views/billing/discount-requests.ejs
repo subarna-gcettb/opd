@@ -13,7 +13,7 @@
             <td><%= dr.requested_amount ? '₹' + Number(dr.requested_amount).toFixed(2) : dr.requested_percentage + '%' %></td>
             <td><%= dr.reason %></td>
             <td><%= dr.requested_by_name %></td>
-            <td><%= new Date(dr.requested_at).toLocaleString() %></td>
+            <td><%= formatDateTime(dr.requested_at) %></td>
             <td>
               <div class="d-flex gap-1">
                 <form method="POST" action="/billing/discount-requests/<%= dr.id %>/decide">
