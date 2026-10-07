@@ -10,5 +10,10 @@ module.exports = {
 
   // Login lockout policy
   maxFailedLoginAttempts: 5,
-  lockoutDurationMs: 15 * 60 * 1000
+  lockoutDurationMs: 15 * 60 * 1000,
+
+  // Email OTP policy
+  otpExpiryMinutes: Number(process.env.OTP_EXPIRY_MINUTES) || 10,
+  otpResendCooldownSeconds: Number(process.env.OTP_RESEND_COOLDOWN_SECONDS) || 60,
+  otpMaxAttempts: Number(process.env.OTP_MAX_ATTEMPTS) || 5
 };
