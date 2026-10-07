@@ -61,6 +61,15 @@ test('OTP signup verification accepts mysql2 JSON objects without JSON.parse err
   assert.doesNotMatch(source, /const payload = JSON\.parse\(record\.payload/);
 });
 
+test('doctor Rx editor uses the requested default form, dose, and instructions for new medicines', () => {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'views', 'doctors', 'consultation.ejs'), 'utf8');
+  assert.match(source, /const medicineForm = item\.medicine_form \|\| 'Tablet';/);
+  assert.match(source, /const dosage = item\.dosage \|\| '1';/);
+  assert.match(source, /const instructions = item\.instructions \|\| 'After food';/);
+  assert.match(source, /value="\'+esc\(dosage\)\+'"/);
+  assert.match(source, /value="\'+esc\(instructions\)\+'"/);
+});
+
 test('USG dating migration and Bengali prescription rows are present', () => {
   const migration = fs.readFileSync(path.join(__dirname, '..', 'database', 'migrations', '1007_ultrasound_pregnancy_dating.sql'), 'utf8');
   for (const field of ['pregnancy_dating_method', 'usg_date', 'usg_gestational_age_weeks', 'usg_gestational_age_days', 'usg_edd']) {
