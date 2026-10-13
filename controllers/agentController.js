@@ -57,8 +57,16 @@ async function opdForm(req,res,next){
     const context=await agentService.getBookingContext(bid);
     const referralProviders=await agentService.getReferralProviders();
     const patient=req.query.healthId?await agentService.getPatient(req.query.healthId,bid):null;
-    res.render('agent/opd-book',{title:'Book OPD — Agent Portal',...context,patient,referralProviders,today:new Date().toISOString().slice(0,10),selectedReferralCode:agentService.referralCode(req.query.referralCode,req.user.id)});
+    res.render('agent/opd-book',{title:'Book OPD — Agent Portal',...context,patient,agentBranchId:bid,referralProviders,today:new Date().toISOString().slice(0,10),selectedReferralCode:agentService.referralCode(req.query.referralCode,req.user.id)});
   }catch(err){next(err);}
+}
+
+async function searchPatients(req,res,next){
+  try {
+    const bid=branchId(req);
+    const results=await agentService.searchPatientsForAgent(req.query.q,bid);
+    res.json({results});
+  } catch(err) { next(err); }
 }
 
 async function bookOpd(req,res,next){
@@ -143,4 +151,4 @@ async function referrals(req,res,next){
   }catch(err){next(err);}
 }
 
-module.exports={dashboard,patients,newPatient,createPatient,opdForm,bookOpd,testForm,bookTest,referrals};
+module.exports={dashboard,patients,newPatient,createPatient,opdForm,searchPatients,bookOpd,testForm,bookTest,referrals};
