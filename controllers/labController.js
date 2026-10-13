@@ -197,6 +197,13 @@ async function exportCsv(req,res,next){try{
   res.send('\uFEFF'+csv);
 }catch(err){next(err);}}
 
+async function printSampleLabel(req,res,next){try{
+  const [[sample]]=await pool.execute('SELECT oi.id item_id,oi.test_name_snapshot,oi.test_code_snapshot,o.order_code,p.name patient_name,p.health_id,l.name laboratory_name,s.sample_code,s.barcode_value,s.specimen_type,s.container_type,s.volume,s.collected_at,s.received_at,s.status sample_status FROM lab_samples s JOIN lab_order_items oi ON oi.id=s.lab_order_item_id JOIN lab_orders o ON o.id=oi.lab_order_id JOIN laboratories l ON l.id=o.laboratory_id JOIN patients p ON p.id=o.patient_id WHERE oi.id=:itemId AND l.branch_id=:branchId ORDER BY s.id DESC LIMIT 1',{itemId:req.params.itemId,branchId:branchId(req)});
+  if(!sample)throw new AppError('Sample barcode not found for this test.',404);
+  const barcode=await bwipjs.toBuffer({bcid:'code128',text:sample.barcode_value,scale:2,height:14,includetext:true});
+  res.render('print/lab-sample-label',{layout:'layouts/blank',title:'Sample Barcode Label',sample,barcodeDataUri:'data:image/png;base64,'+barcode.toString('base64')});
+}catch(err){next(err);}}
+
 async function printBill(req,res,next){try{
   const data=await labService.getOrder(req.params.id);if(!data)throw new AppError('Laboratory order not found',404);
   if(!req.user.roles.includes('SUPER_ADMIN')&&Number(data.order.branch_id)!==Number(branchId(req)))throw new AppError('You do not have access to this laboratory branch',403);
@@ -245,4 +252,4 @@ async function emailReport(req,res,next){try{
   res.redirect('/lab/results/'+req.params.id+'/share');
 }catch(err){if(err instanceof AppError){req.flash('errors',[{message:err.message}]);return res.redirect('/lab/results/'+req.params.id+'/share');}next(err);}}
 
-module.exports={dashboard,orders,showNewOrder,createOrder,orderDetail,printBill,collectSample,receiveSample,rejectSample,resultForm,saveResult,viewResult,verifyResult,releaseResult,attachFile,printReport,downloadReportFile,tests,showTestForm,saveTest,cancelOrder,packages,packageForm,savePackage,accounting,createExpense,recordPayment,exportCsv,shareOrder,shareResult,emailReport};
+module.exports={dashboard,orders,showNewOrder,createOrder,orderDetail,printBill,printSampleLabel,collectSample,receiveSample,rejectSample,resultForm,saveResult,viewResult,verifyResult,releaseResult,attachFile,printReport,downloadReportFile,tests,showTestForm,saveTest,cancelOrder,packages,packageForm,savePackage,accounting,createExpense,recordPayment,exportCsv,shareOrder,shareResult,emailReport};
