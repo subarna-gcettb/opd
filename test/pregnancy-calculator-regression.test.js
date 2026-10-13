@@ -52,8 +52,8 @@ test('OPD booking validates the correct form, uses appointment date for dating, 
   assert.doesNotMatch(source, /document\.querySelector\('form'\)\?\.addEventListener\('submit'/);
   assert.match(source, /const selectedAppointmentDate = bookingParseDate\(dateInput\.value\)/);
   assert.match(source, /pregnancyUsgWeeks\.value\.trim\(\) === ''/);
-  assert.match(source, /bookingConceptionDate\.value = ''/);
-  assert.match(source, /bookingReferenceHidden\.value = ''/);
+  assert.match(source, /pregnancyConceptionDate\.value = ''/);
+  assert.match(source, /pregnancyReferenceHidden\.value = ''/);
 });
 
 test('server persistence stores a scan date only for USG gestational-age mode', () => {
