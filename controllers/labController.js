@@ -2,6 +2,9 @@ const path = require('path');
 const fs = require('fs');
 const { pool } = require('../config/database');
 const labService = require('../services/labService');
+const labSmartService = require('../services/labSmartService');
+const emailService = require('../services/emailService');
+const bwipjs = require('bwip-js');
 const AppError = require('../utils/AppError');
 const { uploadDir } = require('../utils/labReportUpload');
 
@@ -25,19 +28,23 @@ async function showNewOrder(req,res,next){try{
   let patient=null;
   if(req.query.healthId)[[patient]]=await pool.execute('SELECT id,health_id,name,mobile,gender,age_years FROM patients WHERE health_id=:healthId AND deleted_at IS NULL LIMIT 1',{healthId:String(req.query.healthId).trim()});
   const tests=await labService.getAvailableTestsForBranch(branchId(req));
-  res.render('lab/new-order',{title:'New Laboratory Order',patient,tests,today:new Date().toISOString().slice(0,10)});
+  const packages=await labSmartService.listPackages(branchId(req));
+  res.render('lab/new-order',{title:'New Laboratory Order',patient,tests,packages,today:new Date().toISOString().slice(0,10)});
 }catch(err){next(err);}}
 
 async function createOrder(req,res,next){try{
   const testIds=Array.isArray(req.body.testIds)?req.body.testIds:(req.body.testIds?[req.body.testIds]:[]);
-  const result=await labService.createOrder(Number(req.body.patientId),branchId(req),req.user.id,{testIds,source:req.body.source||'RECEPTION',bookingDate:req.body.bookingDate,priority:req.body.priority,clinicalNotes:req.body.clinicalNotes});
+  const result=await labService.createOrder(Number(req.body.patientId),branchId(req),req.user.id,{testIds,packageIds:req.body.packageIds,source:req.body.source||'RECEPTION',bookingDate:req.body.bookingDate,priority:req.body.priority,clinicalNotes:req.body.clinicalNotes,collectionType:req.body.collectionType,homeCollectionAddress:req.body.homeCollectionAddress,homeCollectionScheduledAt:req.body.homeCollectionScheduledAt});
   req.flash('success','Laboratory order '+result.orderCode+' created.');
   res.redirect('/lab/orders/'+result.id);
 }catch(err){if(err instanceof AppError){req.flash('errors',[{message:err.message}]);return res.redirect('/lab/orders/new');}next(err);}}
 
 async function orderDetail(req,res,next){try{
   const data=await labService.getOrder(req.params.id); if(!data)throw new AppError('Laboratory order not found',404); if(!req.user.roles.includes('SUPER_ADMIN')&&Number(data.order.branch_id)!==Number(req.user.branch_id))throw new AppError('You do not have access to this laboratory branch',403);
-  res.render('lab/order-detail',{title:data.order.order_code+' · Laboratory Order',...data});
+  const payments=await labSmartService.getOrderPayments(branchId(req),data.order.id);
+  const paid=payments.reduce((sum,p)=>sum+Number(p.amount||0),0);
+  const shareUrl=req.protocol+'://'+req.get('host')+'/lab/orders/'+data.order.id+'/share';
+  res.render('lab/order-detail',{title:data.order.order_code+' · Laboratory Order',...data,payments,paid,due:Math.max(0,Number(data.order.net_amount||0)-paid),shareUrl});
 }catch(err){next(err);}}
 
 async function collectSample(req,res,next){try{
@@ -110,4 +117,95 @@ async function saveTest(req,res,next){try{
 
 async function cancelOrder(req,res,next){try{await labService.cancelOrder(req.params.id,req.user.id,req.body.reason,false);req.flash('success','Laboratory order cancelled.');res.redirect('/lab/orders/'+req.params.id);}catch(err){if(err instanceof AppError){req.flash('errors',[{message:err.message}]);return res.redirect('/lab/orders/'+req.params.id);}next(err);}}
 
-module.exports={dashboard,orders,showNewOrder,createOrder,orderDetail,collectSample,receiveSample,rejectSample,resultForm,saveResult,viewResult,verifyResult,releaseResult,attachFile,printReport,downloadReportFile,tests,showTestForm,saveTest,cancelOrder};
+
+async function packages(req,res,next){try{
+  const rows=await labSmartService.listPackages(branchId(req),true);
+  res.render('lab/packages',{title:'Laboratory Packages & Panels',packages:rows});
+}catch(err){next(err);}}
+
+async function packageForm(req,res,next){try{
+  const id=req.params.id?Number(req.params.id):null;
+  const item=id?await labSmartService.getPackage(id,branchId(req)):null;
+  if(id&&!item)throw new AppError('Package not found',404);
+  const tests=await labService.getAvailableTestsForBranch(branchId(req));
+  res.render('lab/package-form',{title:item?'Edit Test Package':'New Test Package',item,tests});
+}catch(err){next(err);}}
+
+async function savePackage(req,res,next){try{
+  const id=await labSmartService.savePackage(branchId(req),req.user.id,req.body,req.params.id?Number(req.params.id):null);
+  req.flash('success','Laboratory package saved.');
+  res.redirect('/lab/packages/'+id+'/edit');
+}catch(err){if(err instanceof AppError){req.flash('errors',[{message:err.message}]);return res.redirect(req.params.id?'/lab/packages/'+req.params.id+'/edit':'/lab/packages/new');}next(err);}}
+
+async function accounting(req,res,next){try{
+  const today=new Date().toISOString().slice(0,10);
+  const fromDate=/^\d{4}-\d{2}-\d{2}$/.test(String(req.query.from||''))?req.query.from:today.slice(0,8)+'01';
+  const toDate=/^\d{4}-\d{2}-\d{2}$/.test(String(req.query.to||''))?req.query.to:today;
+  if(fromDate>toDate)throw new AppError('Start date must be on or before end date.',422);
+  const data=await labSmartService.getAccounting(branchId(req),fromDate,toDate);
+  res.render('lab/accounting',{title:'Laboratory Business Analytics',...data,fromDate,toDate,net:Number(data.summary.collected)-Number(data.summary.expenses)});
+}catch(err){next(err);}}
+
+async function createExpense(req,res,next){try{
+  await labSmartService.createExpense(branchId(req),req.user.id,req.body);
+  req.flash('success','Laboratory expense recorded.');
+  res.redirect('/lab/accounting?from='+encodeURIComponent(req.body.expenseDate)+'&to='+encodeURIComponent(req.body.expenseDate));
+}catch(err){if(err instanceof AppError){req.flash('errors',[{message:err.message}]);return res.redirect('/lab/accounting');}next(err);}}
+
+async function recordPayment(req,res,next){try{
+  const result=await labSmartService.recordPayment(branchId(req),req.user.id,Number(req.params.id),req.body);
+  req.flash('success','Payment recorded. Outstanding balance: ₹'+result.due.toFixed(2)+'.');
+  res.redirect('/lab/orders/'+req.params.id);
+}catch(err){if(err instanceof AppError){req.flash('errors',[{message:err.message}]);return res.redirect('/lab/orders/'+req.params.id);}next(err);}}
+
+async function exportCsv(req,res,next){try{
+  const today=new Date().toISOString().slice(0,10);
+  const fromDate=/^\d{4}-\d{2}-\d{2}$/.test(String(req.query.from||''))?req.query.from:today.slice(0,8)+'01';
+  const toDate=/^\d{4}-\d{2}-\d{2}$/.test(String(req.query.to||''))?req.query.to:today;
+  if(fromDate>toDate)throw new AppError('Start date must be on or before end date.',422);
+  const rows=await labSmartService.exportRows(branchId(req),fromDate,toDate);
+  const headers=['Order code','Booking date','Health ID','Patient','Gender','Age','Source','Priority','Order status','Test code','Test','Test status','Test price','Order net amount','Payment status','Paid amount','Due amount','Created at','Reported at'];
+  const keys=['order_code','booking_date','health_id','patient_name','gender','age_years','source','priority','status','test_code_snapshot','test_name_snapshot','test_status','price_snapshot','net_amount','payment_status','paid_amount','due_amount','created_at','completed_at'];
+  const csv=[headers, ...rows.map(row=>keys.map(key=>row[key]))].map(row=>row.map(labSmartService.csvCell).join(',')).join('\r\n');
+  res.setHeader('Content-Type','text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition','attachment; filename="chhayabithi-lab-export-'+fromDate+'-to-'+toDate+'.csv"');
+  res.send('\uFEFF'+csv);
+}catch(err){next(err);}}
+
+async function shareOrder(req,res,next){try{
+  const data=await labService.getOrder(req.params.id);if(!data)throw new AppError('Laboratory order not found',404);
+  if(!req.user.roles.includes('SUPER_ADMIN')&&Number(data.order.branch_id)!==Number(branchId(req)))throw new AppError('You do not have access to this laboratory branch',403);
+  const token=await labSmartService.createShareToken(branchId(req),req.user.id,data.order.id);
+  const url=(process.env.PUBLIC_BASE_URL||req.protocol+'://'+req.get('host')).replace(/\/$/,'')+'/lab/share/'+token;
+  const png=await bwipjs.toBuffer({bcid:'qrcode',text:url,scale:5,padding:2});
+  res.render('lab/share',{title:'Share Lab Bill & Report Status',order:data.order,token,url,qrDataUri:'data:image/png;base64,'+png.toString('base64'),phone:data.order.mobile||'',kind:'order'});
+}catch(err){next(err);}}
+
+async function shareResult(req,res,next){try{
+  const data=await labService.getResult(req.params.id);if(!data)throw new AppError('Report not found',404);
+  if(!req.user.roles.includes('SUPER_ADMIN')&&Number(data.result.branch_id)!==Number(branchId(req)))throw new AppError('You do not have access to this laboratory branch',403);
+  if(data.result.status!=='RELEASED')throw new AppError('Only a released report can be shared.',409);
+  const token=await labSmartService.createShareToken(branchId(req),req.user.id,data.result.lab_order_id,data.result.id);
+  const url=(process.env.PUBLIC_BASE_URL||req.protocol+'://'+req.get('host')).replace(/\/$/,'')+'/lab/share/'+token;
+  const png=await bwipjs.toBuffer({bcid:'qrcode',text:url,scale:5,padding:2});
+  const [[patient]]=await pool.execute('SELECT mobile,email FROM patients WHERE id=:id',{id:data.result.patient_id});
+  res.render('lab/share',{title:'Share Laboratory Report',order:{id:data.result.lab_order_id,order_code:data.result.order_code,patient_name:data.result.patient_name},result:data.result,token,url,qrDataUri:'data:image/png;base64,'+png.toString('base64'),phone:patient?.mobile||'',email:patient?.email||'',kind:'result'});
+}catch(err){next(err);}}
+
+async function emailReport(req,res,next){try{
+  const data=await labService.getResult(req.params.id);if(!data)throw new AppError('Report not found',404);
+  if(!req.user.roles.includes('SUPER_ADMIN')&&Number(data.result.branch_id)!==Number(branchId(req)))throw new AppError('You do not have access to this laboratory branch',403);
+  if(data.result.status!=='RELEASED')throw new AppError('Only a released report can be shared.',409);
+  const to=String(req.body.email||'').trim();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))throw new AppError('Enter a valid email address.',422);
+  const token=await labSmartService.createShareToken(branchId(req),req.user.id,data.result.lab_order_id,data.result.id);
+  const url=(process.env.PUBLIC_BASE_URL||req.protocol+'://'+req.get('host')).replace(/\/$/,'')+'/lab/share/'+token;
+  const safe=value=>String(value||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  const result=await emailService.sendMail({to,subject:'Chhayabithi Laboratory Report — '+data.result.order_code,html:'<p>Dear '+safe(data.result.patient_name)+',</p><p>Your laboratory report is ready.</p><p><strong>Test:</strong> '+safe(data.result.test_name_snapshot)+'</p><p><a href="'+safe(url)+'">View secure report</a></p><p>This link expires in 7 days. Please do not forward it to unauthorized people.</p>',text:'Your Chhayabithi laboratory report is ready. View securely: '+url+' (link expires in 7 days).'});
+  await labSmartService.logNotification({orderId:data.result.lab_order_id,resultId:data.result.id,channel:'EMAIL',recipient:to,status:result.sent?'SENT':'FAILED',message:'Secure report link email',errorMessage:result.sent?null:result.reason,userId:req.user.id});
+  if(!result.sent)throw new AppError('Email was not sent ('+result.reason+'). Check SMTP configuration and logs.',502);
+  req.flash('success','Secure report link emailed to '+to+'.');
+  res.redirect('/lab/results/'+req.params.id+'/share');
+}catch(err){if(err instanceof AppError){req.flash('errors',[{message:err.message}]);return res.redirect('/lab/results/'+req.params.id+'/share');}next(err);}}
+
+module.exports={dashboard,orders,showNewOrder,createOrder,orderDetail,collectSample,receiveSample,rejectSample,resultForm,saveResult,viewResult,verifyResult,releaseResult,attachFile,printReport,downloadReportFile,tests,showTestForm,saveTest,cancelOrder,packages,packageForm,savePackage,accounting,createExpense,recordPayment,exportCsv,shareOrder,shareResult,emailReport};
