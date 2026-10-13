@@ -166,7 +166,7 @@ async function bookAppointment(payload, actorUserId) {
         reason: reason || null,
         lmpDate: isFemale && obstetricStatus === 'PREGNANT' ? obstetric.lmpDate : null,
         datingMethod: isFemale && obstetricStatus === 'PREGNANT' ? datingMethod : null,
-        usgDate: isFemale && obstetricStatus === 'PREGNANT' && datingMethod.startsWith('USG') ? (payload.usgDate || null) : null,
+        usgDate: isFemale && obstetricStatus === 'PREGNANT' && datingMethod === 'USG' ? (payload.usgDate || null) : null,
         usgWeeks: isFemale && obstetricStatus === 'PREGNANT' && datingMethod === 'USG' ? Number(payload.usgGestationalAgeWeeks) : null,
         usgDays: isFemale && obstetricStatus === 'PREGNANT' && datingMethod === 'USG' ? Number(payload.usgGestationalAgeDays || 0) : null,
         usgEdd: isFemale && obstetricStatus === 'PREGNANT' && datingMethod === 'USG_EDD' ? (payload.usgEdd || null) : null,
