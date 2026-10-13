@@ -407,3 +407,29 @@
   }
 })();
 </script>
+
+
+<script>
+(function () {
+  const params = new URLSearchParams(window.location.search);
+  const prescriptionId = params.get('printPrescriptionId');
+  if (!prescriptionId || !/^\\d+$/.test(prescriptionId)) return;
+
+  // Consume the one-time prompt parameter so refreshing the consultation page
+  // does not repeatedly ask the doctor to print the same prescription.
+  params.delete('printPrescriptionId');
+  const cleanUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
+  window.history.replaceState({}, document.title, cleanUrl);
+
+  window.setTimeout(function () {
+    const shouldPrint = window.confirm('Consultation and prescription saved successfully. Would you like to print the latest prescription now?');
+    if (shouldPrint) {
+      const printUrl = '/prescriptions/' + encodeURIComponent(prescriptionId) + '/print';
+      const printWindow = window.open(printUrl, '_blank', 'noopener');
+      if (!printWindow) {
+        window.location.href = printUrl;
+      }
+    }
+  }, 150);
+})();
+</script>
