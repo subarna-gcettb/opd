@@ -111,6 +111,22 @@ async function registerPatient(payload, agentId, branchId) {
   return patientService.registerPatient({ ...payload, branchId, referralCode: provider.referral_code, referralProviderId: provider.id }, agentId);
 }
 
+async function searchPatientsForAgent(q, branchId, limit = 10) {
+  const term = String(q || '').trim();
+  if (term.length < 2) return [];
+  const safeLimit = Math.min(20, Math.max(1, Number.parseInt(limit, 10) || 10));
+  const like = '%' + term + '%';
+  const isAadhaarLast4 = /^\\d{4}$/.test(term);
+  const sql = 'SELECT p.id, p.health_id, p.registration_number, p.name, p.gender, p.age_years, p.mobile, p.aadhaar_last4, p.referral_code, p.referral_provider_id, rp.provider_name AS referral_provider_name ' +
+    'FROM patients p LEFT JOIN referral_providers rp ON rp.id = p.referral_provider_id ' +
+    'WHERE p.branch_id = :branchId AND p.deleted_at IS NULL ' +
+    'AND (p.health_id = :exact OR p.registration_number LIKE :like OR p.name LIKE :like OR p.mobile LIKE :like ' +
+    (isAadhaarLast4 ? 'OR p.aadhaar_last4 = :aadhaarLast4 ' : '') +
+    ') ORDER BY CASE WHEN p.health_id = :exact THEN 0 ELSE 1 END, p.created_at DESC LIMIT ' + safeLimit;
+  const params = isAadhaarLast4 ? { branchId, exact: term, like, aadhaarLast4: term } : { branchId, exact: term, like };
+  const [rows] = await pool.execute(sql, params);
+  return rows.map((row) => ({ ...row, aadhaar_masked: row.aadhaar_last4 ? '•••• •••• ' + row.aadhaar_last4 : null }));
+}
 async function getReferralProviders() { return referralService.listActiveProviders(); }
 
 async function getBookingContext(branchId) {
@@ -135,4 +151,4 @@ async function getPatient(healthId, branchId) {
   return data.patient;
 }
 
-module.exports = { dashboard, patientList, referralStats, registerPatient, referralCode, requireReferralCode, resolveReferralForPatient, getReferralProviders, getBookingContext, getTestContext, getPatient };
+module.exports = { dashboard, patientList, referralStats, registerPatient, referralCode, requireReferralCode, resolveReferralForPatient, getReferralProviders, searchPatientsForAgent, getBookingContext, getTestContext, getPatient };
