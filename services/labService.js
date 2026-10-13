@@ -3,6 +3,7 @@ const { pool, withTransaction } = require('../config/database');
 const sequenceService = require('./sequenceService');
 const auditService = require('./auditService');
 const AppError = require('../utils/AppError');
+const { evaluateFormula } = require('../utils/labFormula');
 
 async function actorBranch(conn, actorUserId) {
   const [[user]] = await conn.execute('SELECT branch_id FROM users WHERE id=:id AND deleted_at IS NULL LIMIT 1', { id: actorUserId });
@@ -232,7 +233,7 @@ async function getOrder(orderId) {
 async function collectSample(itemId,actorUserId,payload={}) {
   return withTransaction(async conn=>{
     const branchId = await actorBranch(conn, actorUserId);
-    const [[item]]=await conn.execute('SELECT oi.*,o.order_code,o.patient_id,o.branch_id FROM lab_order_items oi JOIN lab_orders o ON o.id=oi.lab_order_id WHERE oi.id=:id AND o.branch_id=:branchId FOR UPDATE',{id:itemId,branchId});
+    const [[item]]=await conn.execute('SELECT oi.*,o.order_code,o.patient_id,l.branch_id FROM lab_order_items oi JOIN lab_orders o ON o.id=oi.lab_order_id JOIN laboratories l ON l.id=o.laboratory_id WHERE oi.id=:id AND l.branch_id=:branchId FOR UPDATE',{id:itemId,branchId});
     if(!item)throw new AppError('Laboratory order item not found',404);
     if(['CANCELLED','REJECTED','REPORTED'].includes(item.status))throw new AppError('This test cannot accept a sample now',409);
     const [[existing]]=await conn.execute('SELECT id,sample_code,barcode_value FROM lab_samples WHERE lab_order_item_id=:id AND status NOT IN ("REJECTED","DISPOSED") ORDER BY id DESC LIMIT 1 FOR UPDATE',{id:itemId});
@@ -249,7 +250,7 @@ async function collectSample(itemId,actorUserId,payload={}) {
 async function receiveSample(itemId,actorUserId) {
   return withTransaction(async conn=>{
     const branchId = await actorBranch(conn, actorUserId);
-    const [[s]]=await conn.execute('SELECT s.*,oi.lab_order_id FROM lab_samples s JOIN lab_order_items oi ON oi.id=s.lab_order_item_id JOIN lab_orders o ON o.id=oi.lab_order_id WHERE oi.id=:itemId AND o.branch_id=:branchId ORDER BY s.id DESC LIMIT 1 FOR UPDATE',{itemId,branchId});
+    const [[s]]=await conn.execute('SELECT s.*,oi.lab_order_id FROM lab_samples s JOIN lab_order_items oi ON oi.id=s.lab_order_item_id JOIN lab_orders o ON o.id=oi.lab_order_id JOIN laboratories l ON l.id=o.laboratory_id WHERE oi.id=:itemId AND l.branch_id=:branchId ORDER BY s.id DESC LIMIT 1 FOR UPDATE',{itemId,branchId});
     if(!s)throw new AppError('No sample found',404);
     if(s.status==='REJECTED')throw new AppError('Sample already rejected',409);
     await conn.execute('UPDATE lab_samples SET status="RECEIVED",received_at=NOW(),received_by=:userId WHERE id=:id',{id:s.id,userId:actorUserId});
@@ -272,7 +273,7 @@ async function rejectSample(itemId,actorUserId,reason) {
 }
 
 async function getResult(resultId) {
-  const [[result]]=await pool.execute('SELECT r.*,oi.lab_order_id,oi.test_id,oi.test_name_snapshot,oi.test_code_snapshot,o.order_code,o.patient_id,o.visit_id,p.health_id,p.name patient_name,p.gender,p.age_years,p.dob,l.name laboratory_name,l.address laboratory_address,l.phone laboratory_phone,l.email laboratory_email,l.report_header,l.report_footer,l.signatory_name,l.signatory_qualification,l.signatory_registration_no,pu.name performer_name,ru.name reviewer_name,au.name releaser_name FROM lab_results r JOIN lab_order_items oi ON oi.id=r.lab_order_item_id JOIN lab_orders o ON o.id=oi.lab_order_id JOIN patients p ON p.id=o.patient_id JOIN laboratories l ON l.id=o.laboratory_id LEFT JOIN users pu ON pu.id=r.performed_by LEFT JOIN users ru ON ru.id=r.reviewed_by LEFT JOIN users au ON au.id=r.released_by WHERE r.id=:id',{id:resultId});
+  const [[result]]=await pool.execute('SELECT r.*,oi.lab_order_id,oi.test_id,oi.test_name_snapshot,oi.test_code_snapshot,o.order_code,o.patient_id,o.visit_id,p.health_id,p.name patient_name,p.gender,p.age_years,p.dob,p.email,p.mobile,l.branch_id,l.name laboratory_name,l.address laboratory_address,l.phone laboratory_phone,l.email laboratory_email,l.report_header,l.report_footer,l.signatory_name,l.signatory_qualification,l.signatory_registration_no,pu.name performer_name,ru.name reviewer_name,au.name releaser_name FROM lab_results r JOIN lab_order_items oi ON oi.id=r.lab_order_item_id JOIN lab_orders o ON o.id=oi.lab_order_id JOIN patients p ON p.id=o.patient_id JOIN laboratories l ON l.id=o.laboratory_id LEFT JOIN users pu ON pu.id=r.performed_by LEFT JOIN users ru ON ru.id=r.reviewed_by LEFT JOIN users au ON au.id=r.released_by WHERE r.id=:id',{id:resultId});
   if(!result)return null;
   const [parameters]=await pool.execute('SELECT p.*,rv.value_text,rv.value_numeric,rv.unit_snapshot,rv.reference_range_snapshot,rv.abnormal_flag,rv.remarks FROM lab_test_parameters p LEFT JOIN lab_result_values rv ON rv.parameter_id=p.id AND rv.result_id=:resultId WHERE p.test_id=:testId AND p.is_active=1 ORDER BY p.sort_order,p.name',{resultId,testId:result.test_id});
   return {result,parameters};
@@ -281,7 +282,7 @@ async function getResult(resultId) {
 async function saveResult(itemId,actorUserId,payload,mode='enter') {
   return withTransaction(async conn=>{
     const branchId = await actorBranch(conn, actorUserId);
-    const [[item]]=await conn.execute('SELECT oi.*,o.order_code,o.patient_id,o.branch_id,t.name test_name,t.methodology FROM lab_order_items oi JOIN lab_orders o ON o.id=oi.lab_order_id JOIN lab_tests t ON t.id=oi.test_id WHERE oi.id=:id AND o.branch_id=:branchId FOR UPDATE',{id:itemId,branchId});
+    const [[item]]=await conn.execute('SELECT oi.*,o.order_code,o.patient_id,l.branch_id,t.name test_name,t.methodology,p.age_years,p.gender FROM lab_order_items oi JOIN lab_orders o ON o.id=oi.lab_order_id JOIN laboratories l ON l.id=o.laboratory_id JOIN patients p ON p.id=o.patient_id JOIN lab_tests t ON t.id=oi.test_id WHERE oi.id=:id AND l.branch_id=:branchId FOR UPDATE',{id:itemId,branchId});
     if(!item)throw new AppError('Laboratory order item not found',404);
     if(['CANCELLED','REJECTED'].includes(item.status))throw new AppError('This test is not editable',409);
     const [[current]]=await conn.execute('SELECT * FROM lab_results WHERE lab_order_item_id=:itemId AND is_current=1 ORDER BY version DESC LIMIT 1 FOR UPDATE',{itemId});
@@ -290,8 +291,37 @@ async function saveResult(itemId,actorUserId,payload,mode='enter') {
     if(current&&current.status!=='RELEASED'){resultId=current.id;await conn.execute('UPDATE lab_results SET status="RESULT_ENTERED",result_summary=:summary,interpretation=:interpretation,comments=:comments,instrument_name=:instrument,method_used=:method,performed_by=:userId,performed_at=NOW() WHERE id=:id',{id:resultId,summary:payload.resultSummary||null,interpretation:payload.interpretation||null,comments:payload.comments||null,instrument:payload.instrumentName||null,method:payload.methodUsed||item.methodology||null,userId:actorUserId});}
     else{if(current){version++;await conn.execute('UPDATE lab_results SET is_current=0 WHERE id=:id',{id:current.id});}const [r]=await conn.execute('INSERT INTO lab_results (lab_order_item_id,version,status,result_summary,interpretation,comments,instrument_name,method_used,performed_by,performed_at,is_current) VALUES (:itemId,:version,"RESULT_ENTERED",:summary,:interpretation,:comments,:instrument,:method,:userId,NOW(),1)',{itemId,version,summary:payload.resultSummary||null,interpretation:payload.interpretation||null,comments:payload.comments||null,instrument:payload.instrumentName||null,method:payload.methodUsed||item.methodology||null,userId:actorUserId});resultId=r.insertId;if(current&&mode==='amend')await conn.execute('INSERT INTO lab_result_amendments (result_id,old_version,new_version,reason,amended_by) VALUES (:resultId,:oldVersion,:newVersion,:reason,:userId)',{resultId,oldVersion:current.version,newVersion:version,reason:String(payload.amendmentReason||'Report amended').trim(),userId:actorUserId});}
     await conn.execute('DELETE FROM lab_result_values WHERE result_id=:resultId',{resultId});
-    const [params]=await conn.execute('SELECT id,unit,reference_range_text,critical_low,critical_high FROM lab_test_parameters WHERE test_id=:testId AND is_active=1 ORDER BY sort_order',{testId:item.test_id});
-    for(const p of params){const raw=payload.values&&payload.values[p.id]!==undefined?payload.values[p.id]:'';const value=String(raw??'').trim();if(!value)continue;const num=Number(value),numeric=Number.isFinite(num);let flag='NORMAL';if(numeric&&p.critical_low!==null&&num<Number(p.critical_low))flag='CRITICAL_LOW';else if(numeric&&p.critical_high!==null&&num>Number(p.critical_high))flag='CRITICAL_HIGH';await conn.execute('INSERT INTO lab_result_values (result_id,parameter_id,value_text,value_numeric,unit_snapshot,reference_range_snapshot,abnormal_flag,remarks) VALUES (:resultId,:parameterId,:valueText,:valueNumeric,:unit,:rangeText,:flag,:remarks)',{resultId,parameterId:p.id,valueText:value,valueNumeric:numeric?num:null,unit:p.unit||null,rangeText:p.reference_range_text||null,flag,remarks:payload.remarks&&payload.remarks[p.id]?String(payload.remarks[p.id]).trim():null});}
+    const [params]=await conn.execute('SELECT id,code,name,unit,reference_range_text,critical_low,critical_high,formula_expression FROM lab_test_parameters WHERE test_id=:testId AND is_active=1 ORDER BY sort_order',{testId:item.test_id});
+    const resultInputs={...(payload.values||{})};
+    const byCode={};
+    for(const p of params){const raw=String(resultInputs[p.id]??'').trim();if(raw!==''&&Number.isFinite(Number(raw)))byCode[String(p.code||'').toUpperCase()]=Number(raw);}
+    // Safe formula parser supports arithmetic only; no JavaScript evaluation.
+    for(let pass=0;pass<params.length;pass++){
+      let changed=false;
+      for(const p of params){
+        if(!p.formula_expression||String(resultInputs[p.id]??'').trim()!=='')continue;
+        try{const calculated=evaluateFormula(p.formula_expression,byCode);resultInputs[p.id]=String(Number(calculated.toFixed(6)));byCode[String(p.code||'').toUpperCase()]=calculated;changed=true;}catch(_){}
+      }
+      if(!changed)break;
+    }
+    for(const p of params){
+      const value=String(resultInputs[p.id]??'').trim();if(!value)continue;
+      const num=Number(value),numeric=Number.isFinite(num);
+      let rangeText=p.reference_range_text||null,low=null,high=null;
+      const age=item.age_years===null||item.age_years===undefined||item.age_years===''?null:Number(item.age_years);
+      const sex=String(item.gender||'').toUpperCase()==='MALE'?'MALE':(String(item.gender||'').toUpperCase()==='FEMALE'?'FEMALE':'ALL');
+      const [[reference]]=await conn.execute(
+        'SELECT low_value,high_value,range_text FROM lab_reference_ranges WHERE parameter_id=:parameterId AND is_active=1 AND (sex=\\'ALL\\' OR sex=:sex) AND ((:age IS NULL AND age_min_years IS NULL AND age_max_years IS NULL) OR (:age IS NOT NULL AND (age_min_years IS NULL OR age_min_years<=:age) AND (age_max_years IS NULL OR age_max_years>=:age))) ORDER BY (sex=:sex) DESC,(age_min_years IS NOT NULL) DESC LIMIT 1',
+        {parameterId:p.id,sex,age}
+      );
+      if(reference){low=reference.low_value===null?null:Number(reference.low_value);high=reference.high_value===null?null:Number(reference.high_value);rangeText=reference.range_text||(low!==null&&high!==null?low+' - '+high:low!==null?'≥ '+low:high!==null?'≤ '+high:rangeText);}
+      let flag='NORMAL';
+      if(numeric&&p.critical_low!==null&&num<Number(p.critical_low))flag='CRITICAL_LOW';
+      else if(numeric&&p.critical_high!==null&&num>Number(p.critical_high))flag='CRITICAL_HIGH';
+      else if(numeric&&low!==null&&num<low)flag='LOW';
+      else if(numeric&&high!==null&&num>high)flag='HIGH';
+      await conn.execute('INSERT INTO lab_result_values (result_id,parameter_id,value_text,value_numeric,unit_snapshot,reference_range_snapshot,abnormal_flag,remarks) VALUES (:resultId,:parameterId,:valueText,:valueNumeric,:unit,:rangeText,:flag,:remarks)',{resultId,parameterId:p.id,valueText:value,valueNumeric:numeric?num:null,unit:p.unit||null,rangeText:rangeText||null,flag,remarks:payload.remarks&&payload.remarks[p.id]?String(payload.remarks[p.id]).trim():null});
+    }
     await conn.execute('UPDATE lab_order_items SET status="RESULT_ENTERED" WHERE id=:id',{id:itemId});await recalcOrder(conn,item.lab_order_id);
     await auditService.log({userId:actorUserId,action:mode==='amend'?'LAB_RESULT_AMENDED':'LAB_RESULT_ENTERED',entity:'lab_result',entityId:resultId,newValue:{itemId,version}},conn);
     return {resultId,version};
@@ -320,7 +350,7 @@ async function attachReportFile(resultId,actorUserId,file) {
   if(!file)throw new AppError('Select a report file',422);
   return withTransaction(async conn=>{
     const branchId = await actorBranch(conn, actorUserId);
-    const [[r]]=await conn.execute('SELECT r.id,r.status FROM lab_results r JOIN lab_order_items oi ON oi.id=r.lab_order_item_id JOIN lab_orders o ON o.id=oi.lab_order_id WHERE r.id=:id AND r.is_current=1 AND o.branch_id=:branchId FOR UPDATE',{id:resultId,branchId});
+    const [[r]]=await conn.execute('SELECT r.id,r.status FROM lab_results r JOIN lab_order_items oi ON oi.id=r.lab_order_item_id JOIN lab_orders o ON o.id=oi.lab_order_id JOIN laboratories l ON l.id=o.laboratory_id WHERE r.id=:id AND r.is_current=1 AND l.branch_id=:branchId FOR UPDATE',{id:resultId,branchId});
     if(!r)throw new AppError('Current result not found',404);if(r.status==='RELEASED')throw new AppError('Released report file cannot be replaced directly',409);
     await conn.execute('UPDATE lab_results SET report_file_name=:name,report_storage_path=:path,report_mime_type=:mime,report_file_size=:size WHERE id=:id',{id:resultId,name:file.originalname,path:file.path,mime:file.mimetype,size:file.size});
     await auditService.log({userId:actorUserId,action:'LAB_REPORT_FILE_ATTACHED',entity:'lab_result',entityId:resultId,newValue:{name:file.originalname,mime:file.mimetype,size:file.size}},conn);
@@ -330,7 +360,7 @@ async function attachReportFile(resultId,actorUserId,file) {
 async function cancelOrder(orderId,actorUserId,reason,patientInitiated=false) {
   return withTransaction(async conn=>{
     const branchId = await actorBranch(conn, actorUserId);
-    const [[o]]=await conn.execute('SELECT * FROM lab_orders WHERE id=:id AND branch_id=:branchId FOR UPDATE',{id:orderId,branchId});
+    const [[o]]=await conn.execute('SELECT o.* FROM lab_orders o JOIN laboratories l ON l.id=o.laboratory_id WHERE o.id=:id AND l.branch_id=:branchId FOR UPDATE',{id:orderId,branchId});
     if(!o)throw new AppError('Laboratory order not found',404);if(['PROCESSING','PARTIALLY_REPORTED','REPORTED'].includes(o.status))throw new AppError('This order can no longer be cancelled',409);if(o.status==='CANCELLED')throw new AppError('Order already cancelled',409);
     const why=String(reason||(patientInitiated?'Cancelled by patient':'Cancelled by laboratory')).trim();
     await conn.execute('UPDATE lab_order_items SET status="CANCELLED",cancellation_reason=:reason WHERE lab_order_id=:id AND status<>"REPORTED"',{id:orderId,reason:why});
