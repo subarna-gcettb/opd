@@ -3,18 +3,23 @@ const router = express.Router();
 const { body } = require('express-validator');
 const doctorController = require('../controllers/doctorController');
 const { requireAuth } = require('../middleware/auth');
-const { requirePermission } = require('../middleware/roles');
+const { requirePermission, requirePermissionOrRole } = require('../middleware/roles');
 const { handleValidation } = require('../middleware/validation');
 const { csrfProtection } = require('../middleware/csrf');
 const asyncHandler = require('../utils/asyncHandler');
 
 router.use(requireAuth);
 
-// JSON helpers used by the OPD booking screen — available to anyone who
-// can book an appointment, not just doctor administrators.
-router.get('/api/list', requirePermission('appointment.create', 'doctor.manage', 'agent.appointment.create'), asyncHandler(doctorController.doctorsByFilter));
-router.get('/:id/available-dates', requirePermission('appointment.create', 'doctor.manage', 'agent.appointment.create'), asyncHandler(doctorController.availableDates));
-router.get('/:id/slots', requirePermission('appointment.create', 'doctor.manage', 'agent.appointment.create'), asyncHandler(doctorController.availableSlots));
+// Booking lookup APIs are read-only. AGENT role is an explicit fallback so
+// stale role_permissions rows cannot break the agent cascade. The controller
+// independently restricts an agent to their assigned branch for all 3 APIs.
+const requireBookingLookup = requirePermissionOrRole(
+  ['appointment.create', 'doctor.manage', 'agent.appointment.create'],
+  ['AGENT']
+);
+router.get('/api/list', requireBookingLookup, asyncHandler(doctorController.doctorsByFilter));
+router.get('/:id/available-dates', requireBookingLookup, asyncHandler(doctorController.availableDates));
+router.get('/:id/slots', requireBookingLookup, asyncHandler(doctorController.availableSlots));
 
 router.get('/', requirePermission('doctor.manage'), asyncHandler(doctorController.list));
 router.get('/new', requirePermission('doctor.manage'), asyncHandler(doctorController.showNewForm));
