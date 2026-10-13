@@ -99,6 +99,7 @@ CREATE TABLE IF NOT EXISTS lab_notification_logs (
 ) ENGINE=InnoDB;
 
 ALTER TABLE lab_orders
+  ADD COLUMN discount_reason VARCHAR(500) NULL,
   ADD COLUMN collection_type ENUM('IN_LAB','HOME') NOT NULL DEFAULT 'IN_LAB',
   ADD COLUMN home_collection_address VARCHAR(700) NULL,
   ADD COLUMN home_collection_scheduled_at DATETIME NULL;
