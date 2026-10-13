@@ -13,11 +13,33 @@ function requirePermission(...permissionCodes) {
     if (!req.user) {
       return next(new AppError('Authentication required', 401));
     }
-    const has = permissionCodes.some((code) => req.user.permissions.includes(code));
+    const permissions = Array.isArray(req.user.permissions) ? req.user.permissions : [];
+    const has = permissionCodes.some((code) => permissions.includes(code));
     if (!has) {
       return next(new AppError('You do not have permission to perform this action', 403));
     }
     next();
+  };
+}
+
+/**
+ * Allows a permission OR a narrowly-scoped role to use an endpoint.
+ * Use for read-only booking lookups where role provisioning may lag behind
+ * application code. Mutating booking routes must still validate permissions
+ * and enforce their own resource/branch scope.
+ */
+function requirePermissionOrRole(permissionCodes = [], roleCodes = []) {
+  return function (req, res, next) {
+    if (!req.user) {
+      return next(new AppError('Authentication required', 401));
+    }
+    const permissions = Array.isArray(req.user.permissions) ? req.user.permissions : [];
+    const roles = Array.isArray(req.user.roles) ? req.user.roles : [];
+    if (permissionCodes.some((code) => permissions.includes(code)) ||
+        roleCodes.some((code) => roles.includes(code))) {
+      return next();
+    }
+    return next(new AppError('You do not have permission to perform this action', 403));
   };
 }
 
@@ -27,7 +49,8 @@ function requireRole(...roleCodes) {
     if (!req.user) {
       return next(new AppError('Authentication required', 401));
     }
-    const has = roleCodes.some((code) => req.user.roles.includes(code));
+    const roles = Array.isArray(req.user.roles) ? req.user.roles : [];
+    const has = roleCodes.some((code) => roles.includes(code));
     if (!has) {
       return next(new AppError('You do not have access to this section', 403));
     }
@@ -35,4 +58,4 @@ function requireRole(...roleCodes) {
   };
 }
 
-module.exports = { requirePermission, requireRole };
+module.exports = { requirePermission, requirePermissionOrRole, requireRole };
