@@ -40,6 +40,8 @@ router.get('/packages/new',requirePermission('lab.packages.manage'),asyncHandler
 router.get('/packages/:id/edit',requirePermission('lab.packages.manage'),asyncHandler(labController.packageForm));
 router.post('/packages',requirePermission('lab.packages.manage'),csrfProtection,asyncHandler(labController.savePackage));
 router.post('/packages/:id',requirePermission('lab.packages.manage'),csrfProtection,asyncHandler(labController.savePackage));
+router.get('/workers',requirePermission('lab.manage'),asyncHandler(labController.staff));
+router.post('/workers',requirePermission('lab.manage'),csrfProtection,asyncHandler(labController.saveStaff));
 router.get('/settings',requirePermission('lab.manage'),asyncHandler(labController.settings));
 router.post('/settings',requirePermission('lab.manage'),csrfProtection,asyncHandler(labController.saveSettings));
 router.get('/review-builder',requirePermission('lab.view'),asyncHandler(labController.reviewBuilder));
