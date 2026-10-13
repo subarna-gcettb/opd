@@ -282,12 +282,16 @@ test('prescription save auto-registers medicine name and composition in medicine
 });
 
 
-test('saving a doctor consultation prompts to print the newly saved latest prescription', () => {
+test('only completing a doctor consultation prompts to print the latest prescription', () => {
   const controller = fs.readFileSync(path.join(__dirname, '..', 'controllers', 'doctorPortalController.js'), 'utf8');
   const view = fs.readFileSync(path.join(__dirname, '..', 'views', 'doctors', 'consultation.ejs'), 'utf8');
-  assert.match(controller, /printPrescriptionId=\$\{encodeURIComponent\(result\.prescription\.id\)\}/);
+  assert.match(controller, /res\.redirect\(`\/doctor\/consultation\/\$\{req\.params\.visitId\}`\);/);
+  assert.doesNotMatch(controller, /printPrescriptionId=\$\{encodeURIComponent\(result\.prescription\.id\)\}/);
+  assert.match(controller, /SELECT id FROM prescriptions WHERE visit_id = :visitId AND is_current = 1/);
+  assert.match(controller, /afterComplete=\$\{encodeURIComponent\(destination\)\}/);
   assert.match(view, /params\.get\('printPrescriptionId'\)/);
-  assert.match(view, /Would you like to print the latest prescription now\?/);
+  assert.match(view, /Consultation completed successfully\. Would you like to print the latest prescription now\?/);
+  assert.match(view, /const afterComplete = params\.get\('afterComplete'\)/);
   assert.match(view, /'\/prescriptions\/' \+ encodeURIComponent\(prescriptionId\) \+ '\/print'/);
   assert.match(view, /params\.delete\('printPrescriptionId'\)/);
 });
