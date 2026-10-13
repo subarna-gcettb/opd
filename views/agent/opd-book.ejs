@@ -1,8 +1,18 @@
 <div class="d-flex justify-content-between align-items-center mb-3"><div><h4>Book OPD</h4><div class="small text-muted">Agent booking is attributed to your account and referral number.</div></div><a href="/agent" class="btn btn-outline-secondary btn-sm">Agent Dashboard</a></div>
 <form method="POST" action="/agent/opd"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><div class="card mb-3"><div class="card-body"><div class="row g-3">
-<div class="col-md-6"><label class="form-label">Patient Health ID *</label><div class="input-group"><input name="healthId" class="form-control" value="<%= patient ? patient.health_id : '' %>" required><button type="button" class="btn btn-outline-secondary" onclick="location.href='/agent/opd/new?healthId='+encodeURIComponent(document.querySelector('[name=healthId]').value)">Find</button></div></div>
+<div class="col-12">
+  <label class="form-label">Find Patient *</label>
+  <input type="hidden" name="healthId" id="agentHealthId" value="<%= patient ? patient.health_id : '' %>">
+  <div class="input-group">
+    <input type="search" id="agentPatientSearch" class="form-control" placeholder="Search by Health ID, patient name, mobile, registration number or Aadhaar last 4 digits" autocomplete="off" <%= patient ? 'disabled' : '' %>>
+    <button type="button" class="btn btn-outline-primary" id="agentPatientSearchBtn" <%= patient ? 'disabled' : '' %>><i class="bi bi-search me-1"></i> Search</button>
+  </div>
+  <div class="form-text">Search works like Receptionist Patient Search and only shows patients in your assigned branch.</div>
+  <div id="agentPatientSearchStatus" class="small mt-2" role="status" aria-live="polite"></div>
+  <div id="agentPatientResults" class="list-group mt-2"></div>
+</div>
 <div class="col-md-6"><label class="form-label">Referral Provider / Code *</label><% if (patient && patient.referral_code) { %><input type="hidden" name="referralCode" value="<%= patient.referral_code %>"><div class="form-control bg-light"><strong><%= patient.referral_provider_name || "Legacy / Unmapped" %></strong> — <code><%= patient.referral_code %></code></div><div class="form-text">Inherited from the patient registration and kept consistent for attribution.</div><% } else { %><select name="referralCode" class="form-select" required><option value="">Select referral provider</option><% referralProviders.forEach(function(r){ %><option value="<%= r.referral_code %>" <%= selectedReferralCode===r.referral_code ? "selected" : "" %>><%= r.provider_name %> — <%= r.referral_code %></option><% }) %></select><% } %></div>
-<% if(patient){ %><div class="col-12"><div class="alert alert-success mb-0"><strong><%= patient.name %></strong> · <%= patient.health_id %> · <%= patient.mobile %></div></div><% } %>
+<% if(patient){ %><div class="col-12"><div class="alert alert-success d-flex flex-wrap justify-content-between align-items-center gap-2 mb-0"><div><strong>Selected patient: <%= patient.name %></strong> · Health ID <code><%= patient.health_id %></code> · <%= patient.mobile %><div class="small"><%= patient.registration_number || '' %> · <%= patient.age_years || '—' %> / <%= patient.gender %></div></div><a href="/agent/opd/new" class="btn btn-sm btn-outline-secondary">Change Patient</a></div></div><% } %>
 <div class="col-md-4"><label class="form-label">Department *</label><select name="departmentId" id="agentDepartmentId" class="form-select" required><option value="">Select department</option><% departments.forEach(function(d){ %><option value="<%= d.id %>"><%= d.name %></option><% }) %></select></div>
 <div class="col-md-4"><label class="form-label">Doctor *</label><select name="doctorId" id="agentDoctorId" class="form-select" required disabled><option value="">Select department first</option></select><div id="doctorStatus" class="form-text"></div></div>
 <div class="col-md-4"><label class="form-label">Appointment Date *</label><input type="text" name="appointmentDate" id="agentAppointmentDate" class="form-control" value="" placeholder="Select an available date" autocomplete="off" required><div id="dateStatus" class="form-text">Select a doctor first.</div></div>
@@ -29,7 +39,54 @@
   const doctorStatus=document.getElementById('doctorStatus');
   const dateStatus=document.getElementById('dateStatus');
   const slotStatus=document.getElementById('slotStatus');
-  const branchId='<%= patient ? patient.branch_id : "" %>';
+  const branchId='<%= agentBranchId %>';
+  const patientSearch=document.getElementById('agentPatientSearch');
+  const patientSearchBtn=document.getElementById('agentPatientSearchBtn');
+  const patientResults=document.getElementById('agentPatientResults');
+  const patientSearchStatus=document.getElementById('agentPatientSearchStatus');
+  const healthIdField=document.getElementById('agentHealthId');
+  let patientSearchRequest=0;
+  async function searchPatients(){
+    const q=patientSearch.value.trim();
+    if(q.length<2){patientSearchStatus.textContent='Enter at least 2 characters to search.';patientResults.replaceChildren();return;}
+    const request=++patientSearchRequest;
+    patientSearchBtn.disabled=true;
+    patientSearchStatus.textContent='Searching patients…';
+    patientResults.replaceChildren();
+    try{
+      const response=await fetch('/agent/api/patients?q='+encodeURIComponent(q),{headers:{Accept:'application/json'}});
+      const data=await response.json();
+      if(request!==patientSearchRequest)return;
+      if(!response.ok)throw new Error(data.error||data.message||'Patient search failed.');
+      const results=data.results||[];
+      if(!results.length){patientSearchStatus.textContent='No matching patient found in your branch. Try Health ID, name, mobile, registration number or Aadhaar last 4 digits.';return;}
+      patientSearchStatus.textContent=results.length+' patient(s) found. Select the correct patient below.';
+      results.forEach(p=>{
+        const button=document.createElement('button');
+        button.type='button';button.className='list-group-item list-group-item-action';
+        const name=document.createElement('strong');name.textContent=p.name||'Unnamed patient';
+        const meta=document.createElement('div');meta.className='small text-muted';
+        meta.textContent='Health ID: '+(p.health_id||'—')+' · Reg: '+(p.registration_number||'—')+' · Mobile: '+(p.mobile||'—');
+        const details=document.createElement('div');details.className='small';
+        details.textContent=(p.age_years||'—')+' / '+(p.gender||'—')+(p.aadhaar_masked?' · Aadhaar '+p.aadhaar_masked:'');
+        button.append(name,meta,details);
+        button.addEventListener('click',()=>{
+          healthIdField.value=p.health_id;
+          window.location.href='/agent/opd/new?healthId='+encodeURIComponent(p.health_id);
+        });
+        patientResults.appendChild(button);
+      });
+    }catch(error){
+      if(request===patientSearchRequest)patientSearchStatus.textContent=error.message||'Unable to search patients.';
+    }finally{
+      if(request===patientSearchRequest)patientSearchBtn.disabled=false;
+    }
+  }
+  if(patientSearch && patientSearchBtn){
+    patientSearchBtn.addEventListener('click',searchPatients);
+    patientSearch.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();searchPatients();}});
+    patientSearch.addEventListener('input',()=>{if(patientSearch.value.trim().length<2){patientResults.replaceChildren();patientSearchStatus.textContent='';}});
+  }
   let picker=null,availableDates=new Set(),requestId=0;
   function initPicker(){
     if(picker || !window.flatpickr) return;
@@ -66,6 +123,6 @@
   }
   departmentSel.addEventListener('change',loadDoctors);doctorSel.addEventListener('change',loadDates);initPicker();
   <% if (patient) { %>loadDoctors();<% } %>
-  form.addEventListener('submit',e=>{if(!doctorSel.value||!dateInput.value||!slotTime.value){e.preventDefault();alert('Select doctor, available date and slot before booking.');}});
+  form.addEventListener('submit',e=>{if(!healthIdField.value){e.preventDefault();alert('Search for a patient and select them before booking.');return;}if(!doctorSel.value||!dateInput.value||!slotTime.value){e.preventDefault();alert('Select doctor, available date and slot before booking.');}});
 })();
 </script>
