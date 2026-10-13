@@ -415,21 +415,30 @@
   const prescriptionId = params.get('printPrescriptionId');
   if (!prescriptionId || !/^\d+$/.test(prescriptionId)) return;
 
-  // Consume the one-time prompt parameter so refreshing the consultation page
-  // does not repeatedly ask the doctor to print the same prescription.
+  // This flag is only set by the Complete Consultation action. Saving the
+  // prescription alone must never trigger a print prompt.
+  const afterComplete = params.get('afterComplete') || '';
+  const validAfterComplete = afterComplete === '/doctor/queue' || /^\/billing\/invoices\/\d+$/.test(afterComplete);
+  if (!validAfterComplete) return;
+
   params.delete('printPrescriptionId');
+  params.delete('afterComplete');
   const cleanUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
   window.history.replaceState({}, document.title, cleanUrl);
 
   window.setTimeout(function () {
-    const shouldPrint = window.confirm('Consultation and prescription saved successfully. Would you like to print the latest prescription now?');
+    const shouldPrint = window.confirm('Consultation completed successfully. Would you like to print the latest prescription now?');
+    const printUrl = '/prescriptions/' + encodeURIComponent(prescriptionId) + '/print';
     if (shouldPrint) {
-      const printUrl = '/prescriptions/' + encodeURIComponent(prescriptionId) + '/print';
       const printWindow = window.open(printUrl, '_blank');
       if (!printWindow) {
         window.location.href = printUrl;
+        return;
       }
     }
+    // Preserve the normal completion flow: unpaid invoices go to billing;
+    // otherwise return to the doctor's queue.
+    window.location.href = afterComplete;
   }, 150);
 })();
 </script>
