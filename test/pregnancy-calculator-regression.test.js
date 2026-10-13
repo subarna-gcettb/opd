@@ -56,7 +56,7 @@ test('OPD booking validates the correct form, uses appointment date for dating, 
   assert.match(source, /pregnancyReferenceHidden\.value = ''/);
 });
 
-test('server persistence stores a scan date only for USG gestational-age mode', () => {
+test('all clinical calculator paths use stored dating mode and appointment date', () => {
   const consultation = read('services/consultationService.js');
   const opdController = read('controllers/opdController.js');
   const opdService = read('services/opdService.js');
@@ -66,4 +66,18 @@ test('server persistence stores a scan date only for USG gestational-age mode', 
   assert.doesNotMatch(consultation, /datingMethod\.startsWith\('USG'\)/);
   assert.doesNotMatch(opdController, /datingMethod\.startsWith\('USG'\)/);
   assert.doesNotMatch(opdService, /datingMethod\.startsWith\('USG'\)/);
+  assert.match(opdController, /pregnancy\.usg_gestational_age_weeks[\s\S]*visit\.appointment_date/);
+  assert.match(opdController, /calculatePregnancy\(req\.body\.lmpDate, visit\.appointment_date\)/);
+  assert.match(consultation, /calculatePregnancyFromUltrasoundEdd\(visit\.usg_edd, visit\.appointment_date\)/);
+  assert.match(consultation, /calculatePregnancy\(payload\.lmpDate, visit\.appointment_date\)/);
+});
+
+test('shared pregnancy widget recalculates when appointment date changes and supports historical as-of dates', () => {
+  const source = read('views/partials/pregnancy-assessment.ejs');
+  assert.match(source, /data-as-of-date=/);
+  assert.match(source, /parseDate\(appointmentDateInput && appointmentDateInput\.value\)/);
+  assert.match(source, /appointmentDateInput\.addEventListener\('change', calculate\)/);
+  assert.match(source, /appointmentDateInput\.addEventListener\('input', calculate\)/);
+  assert.match(read('views/doctors/consultation.ejs'), /asOfDate: visit\.appointment_date/);
+  assert.match(read('views/opd/vitals.ejs'), /asOfDate: visit\.appointment_date/);
 });
