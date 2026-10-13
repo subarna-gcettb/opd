@@ -112,8 +112,11 @@ async function saveTestParameters(testId,payload,actorUserId) {
       const ageMax=ageMaxs[i]!==undefined&&ageMaxs[i]!==''?Number(ageMaxs[i]):null;
       const rangeLow=rangeLows[i]!==undefined&&rangeLows[i]!==''?Number(rangeLows[i]):null;
       const rangeHigh=rangeHighs[i]!==undefined&&rangeHighs[i]!==''?Number(rangeHighs[i]):null;
+      for(const n of [low,high,ageMin,ageMax,rangeLow,rangeHigh])if(n!==null&&!Number.isFinite(n))throw new AppError('Reference and critical values must be valid numbers.',422);
+      if(ageMin!==null&&ageMin<0||ageMax!==null&&ageMax<0)throw new AppError('Reference ages cannot be negative.',422);
       if(ageMin!==null&&ageMax!==null&&ageMin>ageMax)throw new AppError('Reference age minimum cannot exceed age maximum.',422);
       if(rangeLow!==null&&rangeHigh!==null&&rangeLow>rangeHigh)throw new AppError('Reference low value cannot exceed high value.',422);
+      if(low!==null&&high!==null&&low>high)throw new AppError('Critical low value cannot exceed critical high value.',422);
       if(id){
         await conn.execute('UPDATE lab_test_parameters SET code=:code,name=:name,data_type=:dataType,unit=:unit,reference_range_text=:rangeText,critical_low=:low,critical_high=:high,formula_expression=:formula,is_active=1,sort_order=:sortOrder WHERE id=:id AND test_id=:testId',{id,testId,code,name,dataType,unit,rangeText:range,low,high,formula,sortOrder:i+1});
         kept.push(id);
