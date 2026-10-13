@@ -253,7 +253,9 @@ async function saveSettings(branchId, actorUserId, payload) {
   if(reviewUrl){
     let parsed;
     try{parsed=new URL(reviewUrl);}catch(_){throw new AppError('Enter a valid Google review URL.',422);}
-    if(parsed.protocol!=='https:'||!/(^|\\.)google\\.com$|(^|\\.)g\.page$|(^|\\.)maps\\.app\.goo\.gl$/.test(parsed.hostname))throw new AppError('Use a secure Google review link from Google Maps or Google Business Profile.',422);
+    const host=parsed.hostname.toLowerCase();
+    const allowedHosts=['google.com','g.page','maps.app.goo.gl'];
+    if(parsed.protocol!=='https:'||!allowedHosts.some(domain=>host===domain||host.endsWith('.'+domain)))throw new AppError('Use a secure Google review link from Google Maps or Google Business Profile.',422);
   }
   const font=Number(payload.reportFontSizePt||10),top=Number(payload.reportMarginTopMm||10),bottom=Number(payload.reportMarginBottomMm||10);
   if(!Number.isFinite(font)||font<8||font>16)throw new AppError('Report font size must be between 8 and 16 pt.',422);
