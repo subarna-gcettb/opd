@@ -18,9 +18,10 @@ async function report(req,res,next){
     const data=await labSmartService.getPublicReport(req.params.token,req.params.resultId);
     if(!data)throw new AppError('Released report not found or secure link expired.',404);
     const shareUrl=(req.protocol+'://'+req.get('host')+req.originalUrl);
+    const settings=await labSmartService.getSettingsByLaboratoryId(data.result.laboratory_id);
     const png=await bwipjs.toBuffer({bcid:'qrcode',text:shareUrl,scale:4,padding:1});
     const barcode=await bwipjs.toBuffer({bcid:'code128',text:data.result.order_code,scale:2,height:12,includetext:true});
-    res.render('print/lab-report',{layout:'layouts/blank',title:'Laboratory Report',...data,qrDataUri:'data:image/png;base64,'+png.toString('base64'),barcodeDataUri:'data:image/png;base64,'+barcode.toString('base64'),shareUrl});
+    res.render('print/lab-report',{layout:'layouts/blank',title:'Laboratory Report',...data,settings,qrDataUri:'data:image/png;base64,'+png.toString('base64'),barcodeDataUri:'data:image/png;base64,'+barcode.toString('base64'),shareUrl});
   }catch(err){next(err);}
 }
 
