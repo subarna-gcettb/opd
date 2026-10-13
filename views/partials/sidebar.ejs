@@ -70,6 +70,8 @@
       <% if (can('lab.manage')) { %><li class="nav-item"><a class="nav-link <%= active('/lab/tests') %>" href="/lab/tests"><i class="bi bi-list-check"></i> Test Master</a></li><% } %>
       <% if (can('lab.packages.manage')) { %><li class="nav-item"><a class="nav-link <%= active('/lab/packages') %>" href="/lab/packages"><i class="bi bi-boxes"></i> Test Packages</a></li><% } %>
       <% if (can('lab.accounting.view')) { %><li class="nav-item"><a class="nav-link <%= active('/lab/accounting') %>" href="/lab/accounting"><i class="bi bi-graph-up"></i> Lab Accounting & Analytics</a></li><% } %>
+      <% if (can('lab.manage')) { %><li class="nav-item"><a class="nav-link <%= active('/lab/settings') %>" href="/lab/settings"><i class="bi bi-sliders"></i> Lab Settings</a></li><% } %>
+      <li class="nav-item"><a class="nav-link <%= active('/lab/review-builder') %>" href="/lab/review-builder"><i class="bi bi-star"></i> Google Review Builder</a></li>
     <% } %>
 
     <% if (can('pharmacy.view')) { %>
