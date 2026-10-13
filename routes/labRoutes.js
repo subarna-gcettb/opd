@@ -33,7 +33,7 @@ router.post('/results/:id/file',requirePermission('lab.result.enter'),csrfProtec
 router.get('/results/:id/print',requirePermission('lab.report.view','lab.result.release'),asyncHandler(labController.printReport));
 router.get('/results/:id/file',requirePermission('lab.report.view','lab.result.release'),asyncHandler(labController.downloadReportFile));
 
-router.get('/packages',requirePermission('lab.manage'),asyncHandler(labController.packages));
+router.get('/packages',requirePermission('lab.packages.manage'),asyncHandler(labController.packages));
 router.get('/packages/new',requirePermission('lab.packages.manage'),asyncHandler(labController.packageForm));
 router.get('/packages/:id/edit',requirePermission('lab.packages.manage'),asyncHandler(labController.packageForm));
 router.post('/packages',requirePermission('lab.packages.manage'),csrfProtection,asyncHandler(labController.savePackage));
