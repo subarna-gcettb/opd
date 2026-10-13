@@ -23,7 +23,7 @@
 <div class="mb-3">
   <%- include('../partials/pregnancy-assessment', { pregnancy: patient, pregnancyCalculation: null, canEdit: true }) %>
 </div>
-<% } %><div class="text-end"><button class="btn btn-primary btn-lg">Book OPD Appointment</button></div></form>
+<% } %><div class="text-end"><button type="submit" class="btn btn-primary btn-lg">Book OPD Appointment</button></div></form>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
@@ -90,7 +90,7 @@
   let picker=null,availableDates=new Set(),requestId=0;
   function initPicker(){
     if(picker || !window.flatpickr) return;
-    picker=flatpickr(dateInput,{dateFormat:'Y-m-d',minDate:'<%= today %>',disable:[d=>!availableDates.has(picker.formatDate(d,'Y-m-d'))],onChange:(_,value)=>loadSlots(value)});
+    picker=flatpickr(dateInput,{dateFormat:'Y-m-d',minDate:'<%= today %>',disable:[d=>!availableDates.has(picker ? picker.formatDate(d,'Y-m-d') : '')],onChange:(_,value)=>loadSlots(value)});
   }
   function resetSlots(message){availableDates=new Set();slotTime.value='';slotContainer.innerHTML='<span class="text-muted small">'+message+'</span>';slotStatus.textContent='';if(picker){picker.clear();picker.set('enable',[]);}else dateInput.value='';}
   async function loadDoctors(){
