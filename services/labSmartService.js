@@ -224,6 +224,30 @@ function csvCell(value) {
 }
 
 
+
+async function listPhlebotomists(branchId) {
+  const [rows]=await pool.execute('SELECT u.id,u.name,u.mobile,w.professional_registration_no FROM lab_workers w JOIN laboratories l ON l.id=w.laboratory_id JOIN users u ON u.id=w.user_id WHERE l.branch_id=:branchId AND l.is_active=1 AND w.worker_type=\'PHLEBOTOMIST\' AND w.is_active=1 AND w.deleted_at IS NULL AND u.is_active=1 ORDER BY u.name',{branchId});
+  return rows;
+}
+
+async function assignHomeCollection(branchId, actorUserId, orderId, assigneeId) {
+  return withTransaction(async conn=>{
+    const [[order]]=await conn.execute('SELECT o.id,o.collection_type FROM lab_orders o JOIN laboratories l ON l.id=o.laboratory_id WHERE o.id=:orderId AND l.branch_id=:branchId FOR UPDATE',{orderId,branchId});
+    if(!order)throw new AppError('Laboratory order not found in this branch.',404);
+    if(order.collection_type!=='HOME')throw new AppError('This order is not scheduled for home collection.',409);
+    const assignedTo=String(assigneeId||'').trim()?Number(assigneeId):null;
+    if(assignedTo!==null){
+      if(!Number.isInteger(assignedTo)||assignedTo<=0)throw new AppError('Select a valid phlebotomist.',422);
+      const [[worker]]=await conn.execute('SELECT w.id FROM lab_workers w JOIN laboratories l ON l.id=w.laboratory_id JOIN users u ON u.id=w.user_id WHERE l.branch_id=:branchId AND u.id=:userId AND w.worker_type=\'PHLEBOTOMIST\' AND w.is_active=1 AND w.deleted_at IS NULL AND u.is_active=1 LIMIT 1',{branchId,userId:assignedTo});
+      if(!worker)throw new AppError('The selected user is not an active phlebotomist for this branch.',422);
+    }
+    const status=assignedTo===null?'REQUESTED':'ASSIGNED';
+    await conn.execute('UPDATE lab_orders SET home_collection_assigned_to=:assignedTo,home_collection_status=:status WHERE id=:orderId',{assignedTo,status,orderId});
+    await auditService.log({userId:actorUserId,action:'LAB_HOME_COLLECTION_ASSIGNMENT_UPDATED',entity:'lab_order',entityId:orderId,newValue:{assignedTo,status}},conn);
+    return {assignedTo,status};
+  });
+}
+
 const DEFAULT_SETTINGS = {
   google_review_url: '',
   review_message: 'Thank you for choosing Chhayabithi Hospital. If you are satisfied with our service, please share your feedback.',
@@ -327,5 +351,5 @@ async function exportRows(branchId, fromDate, toDate) {
 module.exports = {
   listPackages, getPackage, savePackage, recordPayment, getOrderPayments, getAccounting,
   createExpense, createShareToken, getPublicOrder, getPublicReport, logNotification, csvCell, exportRows,
-  getSettings, getSettingsByLaboratoryId, saveSettings, getTpaClaim, saveTpaClaim
+  getSettings, getSettingsByLaboratoryId, saveSettings, getTpaClaim, saveTpaClaim, listPhlebotomists, assignHomeCollection
 };
