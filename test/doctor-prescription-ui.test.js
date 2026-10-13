@@ -280,3 +280,14 @@ test('prescription save auto-registers medicine name and composition in medicine
   assert.match(service, /mrp, purchase_rate, sale_rate, reorder_level, prescription_required, created_by\)\s*\)\s*VALUES[\s\S]*?0, 0, 0, 0, 1/);
   assert.match(service, /medicineId,\s*name,\s*composition,\s*medicineForm: form/);
 });
+
+
+test('saving a doctor consultation prompts to print the newly saved latest prescription', () => {
+  const controller = fs.readFileSync(path.join(__dirname, '..', 'controllers', 'doctorPortalController.js'), 'utf8');
+  const view = fs.readFileSync(path.join(__dirname, '..', 'views', 'doctors', 'consultation.ejs'), 'utf8');
+  assert.match(controller, /printPrescriptionId=\$\{encodeURIComponent\(result\.prescription\.id\)\}/);
+  assert.match(view, /params\.get\('printPrescriptionId'\)/);
+  assert.match(view, /Would you like to print the latest prescription now\?/);
+  assert.match(view, /'\/prescriptions\/' \+ encodeURIComponent\(prescriptionId\) \+ '\/print'/);
+  assert.match(view, /params\.delete\('printPrescriptionId'\)/);
+});
