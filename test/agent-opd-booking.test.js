@@ -57,3 +57,13 @@ test('doctor lookup APIs use role fallback and retain branch isolation', () => {
   assert.match(controller, /async function assertAgentDoctorBranch/);
   assert.match(controller, /await assertAgentDoctorBranch\(req\)/);
 });
+
+test('agent booking only offers No referral to patients without registered referral attribution', () => {
+  const view = read('views/agent/opd-book.ejs');
+  const controller = read('controllers/agentController.js');
+  assert.match(view, /if \(patient && !patient\.referral_code\) \{ %><option value="NO_REFERRAL"/);
+  assert.match(view, /Existing patient referral attribution is kept unchanged/);
+  assert.match(controller, /if \(patient\.referral_code\) \{/);
+  assert.match(controller, /req\.body\.referralCode !== 'NO_REFERRAL'/);
+  assert.match(controller, /referralCode: resolvedReferralCode/);
+});
