@@ -29,6 +29,8 @@ test('LabSmart-inspired LIS features are connected to migrations, routes and ser
   assert.match(migration, /CREATE TABLE IF NOT EXISTS lab_order_payments/);
   assert.match(migration, /CREATE TABLE IF NOT EXISTS lab_expenses/);
   assert.match(migration, /CREATE TABLE IF NOT EXISTS lab_share_tokens/);
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS lab_settings/);
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS lab_tpa_claims/);
   assert.match(routes, /\/packages/);
   assert.match(routes, /\/accounting/);
   assert.match(routes, /\/export\.csv/);
@@ -46,6 +48,8 @@ test('all changed LIS EJS views compile successfully', () => {
     'views/lab/packages.ejs',
     'views/lab/package-form.ejs',
     'views/lab/accounting.ejs',
+    'views/lab/settings.ejs',
+    'views/lab/review-builder.ejs',
     'views/lab/share.ejs',
     'views/lab/public-order.ejs',
     'views/lab/new-order.ejs',
