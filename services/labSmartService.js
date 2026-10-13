@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const { pool, withTransaction } = require('../config/database');
 const labService = require('./labService');
+const auditService = require('./auditService');
 const AppError = require('../utils/AppError');
 
 async function getLaboratory(branchId, conn = pool) {
@@ -75,6 +76,7 @@ async function savePackage(branchId, actorUserId, payload, id = null) {
       packageId = r.insertId;
     }
     for (const testId of ids) await conn.execute('INSERT INTO lab_test_package_items (package_id,test_id) VALUES (:packageId,:testId)', { packageId, testId });
+    await auditService.log({userId:actorUserId,action:id?'LAB_PACKAGE_UPDATED':'LAB_PACKAGE_CREATED',entity:'lab_test_package',entityId:packageId,newValue:{code,name,price,testIds:ids}},conn);
     return packageId;
   });
 }
@@ -102,6 +104,7 @@ async function recordPayment(branchId, actorUserId, orderId, payload) {
     const newPaid = paid + amount;
     const status = newPaid + 0.005 >= Number(order.net_amount || 0) ? 'PAID' : 'PARTIAL';
     await conn.execute('UPDATE lab_orders SET payment_status=:status WHERE id=:id', { status, id: orderId });
+    await auditService.log({userId:actorUserId,action:'LAB_PAYMENT_RECORDED',entity:'lab_order',entityId:orderId,newValue:{amount,method,referenceNo:payload.referenceNo||null,paid:newPaid,due:Math.max(0,Number(order.net_amount||0)-newPaid)}},conn);
     return { paid: newPaid, due: Math.max(0, Number(order.net_amount || 0) - newPaid), status };
   });
 }
@@ -153,6 +156,7 @@ async function createExpense(branchId, actorUserId, payload) {
     'INSERT INTO lab_expenses (branch_id,laboratory_id,category,description,amount,expense_date,payment_method,reference_no,created_by) VALUES (:branchId,:labId,:category,:description,:amount,:date,:method,:reference,:userId)',
     { branchId, labId: lab.id, category, description, amount, date, method, reference: String(payload.referenceNo || '').trim() || null, userId: actorUserId }
   );
+  await auditService.log({userId:actorUserId,action:'LAB_EXPENSE_RECORDED',entity:'lab_expense',entityId:r.insertId,newValue:{category,amount,date,paymentMethod:method}});
   return r.insertId;
 }
 
@@ -175,6 +179,7 @@ async function createShareToken(branchId, actorUserId, orderId, resultId = null)
     'INSERT INTO lab_share_tokens (token_hash,lab_order_id,lab_result_id,expires_at,created_by) VALUES (:hash,:orderId,:resultId,DATE_ADD(NOW(),INTERVAL 7 DAY),:userId)',
     { hash: tokenHash, orderId, resultId, userId: actorUserId }
   );
+  await auditService.log({userId:actorUserId,action:'LAB_SHARE_TOKEN_CREATED',entity:resultId?'lab_result':'lab_order',entityId:resultId||orderId,newValue:{expiresInDays:7}});
   return token;
 }
 
