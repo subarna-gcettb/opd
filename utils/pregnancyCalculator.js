@@ -119,6 +119,10 @@ function calculatePregnancyFromReference(referenceValue, mode = 'LMP', asOf = ne
  */
 function calculatePregnancyFromUltrasound(scanDateValue, gaWeeksValue, gaDaysValue = 0, asOf = new Date()) {
   const scanDate = parseDateOnly(scanDateValue);
+  // Number('') is 0 in JavaScript, so explicitly reject a missing GA-weeks
+  // value rather than silently treating an incomplete USG report as 0 weeks.
+  if (gaWeeksValue === '' || gaWeeksValue === null || gaWeeksValue === undefined ||
+      String(gaWeeksValue).trim() === '') return null;
   const weeks = Number(gaWeeksValue);
   const days = Number(gaDaysValue || 0);
   if (!scanDate || !Number.isInteger(weeks) || !Number.isInteger(days) ||
