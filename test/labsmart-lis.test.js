@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { evaluateFormula } = require('../utils/labFormula');
+const ejs = require('ejs');
 
 test('lab formulas support safe arithmetic and parameter-code references', () => {
   assert.equal(evaluateFormula('LDL + HDL + VLDL', { LDL: 100, HDL: 40, VLDL: 20 }), 160);
@@ -37,4 +38,27 @@ test('LabSmart-inspired LIS features are connected to migrations, routes and ser
   assert.match(labService, /evaluateFormula\(p\.formula_expression,byCode\)/);
   assert.match(labService, /lab_reference_ranges WHERE parameter_id/);
   assert.match(app, /routes\/labPublicRoutes/);
+});
+
+test('all changed LIS EJS views compile successfully', () => {
+  const root = path.join(__dirname, '..');
+  const views = [
+    'views/lab/packages.ejs',
+    'views/lab/package-form.ejs',
+    'views/lab/accounting.ejs',
+    'views/lab/share.ejs',
+    'views/lab/public-order.ejs',
+    'views/lab/new-order.ejs',
+    'views/lab/order-detail.ejs',
+    'views/lab/result.ejs',
+    'views/lab/test-form.ejs',
+    'views/patient-portal/lab.ejs',
+    'views/print/lab-report.ejs',
+    'views/print/lab-bill.ejs',
+    'views/print/lab-sample-label.ejs'
+  ];
+  for (const relative of views) {
+    const filename = path.join(root, relative);
+    assert.doesNotThrow(() => ejs.compile(fs.readFileSync(filename, 'utf8'), { filename }), relative);
+  }
 });
