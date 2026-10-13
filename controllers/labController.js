@@ -100,7 +100,14 @@ async function attachFile(req,res,next){try{
 async function printReport(req,res,next){try{
   const data=await labService.getResult(req.params.id);if(!data)throw new AppError('Report not found',404);if(!req.user.roles.includes('SUPER_ADMIN')&&Number(data.result.branch_id)!==Number(req.user.branch_id))throw new AppError('You do not have access to this laboratory branch',403);
   if(data.result.status!=='RELEASED'&&!req.user.permissions.includes('lab.result.release'))throw new AppError('Report has not been released',403);
-  res.render('print/lab-report',{layout:'layouts/blank',title:'Laboratory Report',...data});
+  let qrDataUri=null,shareUrl=null;
+  if(data.result.status==='RELEASED'){
+    const token=await labSmartService.createShareToken(branchId(req),req.user.id,data.result.lab_order_id,data.result.id);
+    shareUrl=(process.env.PUBLIC_BASE_URL||req.protocol+'://'+req.get('host')).replace(/\/$/,'')+'/lab/share/'+token;
+    const png=await bwipjs.toBuffer({bcid:'qrcode',text:shareUrl,scale:4,padding:1});
+    qrDataUri='data:image/png;base64,'+png.toString('base64');
+  }
+  res.render('print/lab-report',{layout:'layouts/blank',title:'Laboratory Report',...data,qrDataUri,shareUrl});
 }catch(err){next(err);}}
 
 async function downloadReportFile(req,res,next){try{
@@ -188,6 +195,17 @@ async function exportCsv(req,res,next){try{
   res.send('\uFEFF'+csv);
 }catch(err){next(err);}}
 
+async function printBill(req,res,next){try{
+  const data=await labService.getOrder(req.params.id);if(!data)throw new AppError('Laboratory order not found',404);
+  if(!req.user.roles.includes('SUPER_ADMIN')&&Number(data.order.branch_id)!==Number(branchId(req)))throw new AppError('You do not have access to this laboratory branch',403);
+  const token=await labSmartService.createShareToken(branchId(req),req.user.id,data.order.id);
+  const shareUrl=(process.env.PUBLIC_BASE_URL||req.protocol+'://'+req.get('host')).replace(/\/$/,'')+'/lab/share/'+token;
+  const png=await bwipjs.toBuffer({bcid:'qrcode',text:shareUrl,scale:4,padding:1});
+  const payments=await labSmartService.getOrderPayments(branchId(req),data.order.id);
+  const paid=payments.reduce((sum,p)=>sum+Number(p.amount||0),0);
+  res.render('print/lab-bill',{layout:'layouts/blank',title:'Laboratory Bill',...data,paid,due:Math.max(0,Number(data.order.net_amount||0)-paid),qrDataUri:'data:image/png;base64,'+png.toString('base64'),shareUrl});
+}catch(err){next(err);}}
+
 async function shareOrder(req,res,next){try{
   const data=await labService.getOrder(req.params.id);if(!data)throw new AppError('Laboratory order not found',404);
   if(!req.user.roles.includes('SUPER_ADMIN')&&Number(data.order.branch_id)!==Number(branchId(req)))throw new AppError('You do not have access to this laboratory branch',403);
@@ -224,4 +242,4 @@ async function emailReport(req,res,next){try{
   res.redirect('/lab/results/'+req.params.id+'/share');
 }catch(err){if(err instanceof AppError){req.flash('errors',[{message:err.message}]);return res.redirect('/lab/results/'+req.params.id+'/share');}next(err);}}
 
-module.exports={dashboard,orders,showNewOrder,createOrder,orderDetail,collectSample,receiveSample,rejectSample,resultForm,saveResult,viewResult,verifyResult,releaseResult,attachFile,printReport,downloadReportFile,tests,showTestForm,saveTest,cancelOrder,packages,packageForm,savePackage,accounting,createExpense,recordPayment,exportCsv,shareOrder,shareResult,emailReport};
+module.exports={dashboard,orders,showNewOrder,createOrder,orderDetail,printBill,collectSample,receiveSample,rejectSample,resultForm,saveResult,viewResult,verifyResult,releaseResult,attachFile,printReport,downloadReportFile,tests,showTestForm,saveTest,cancelOrder,packages,packageForm,savePackage,accounting,createExpense,recordPayment,exportCsv,shareOrder,shareResult,emailReport};
