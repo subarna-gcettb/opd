@@ -13,6 +13,7 @@ router.get('/',requirePermission('lab.view'),asyncHandler(labController.dashboar
 router.get('/orders',requirePermission('lab.view'),asyncHandler(labController.orders));
 router.get('/orders/new',requirePermission('lab.order.create'),asyncHandler(labController.showNewOrder));
 router.post('/orders',requirePermission('lab.order.create'),csrfProtection,asyncHandler(labController.createOrder));
+router.get('/orders/:id/print',requirePermission('lab.view'),asyncHandler(labController.printBill));
 router.get('/orders/:id/share',requirePermission('lab.report.share'),asyncHandler(labController.shareOrder));
 router.get('/orders/:id',requirePermission('lab.view'),asyncHandler(labController.orderDetail));
 router.post('/orders/:id/payment',requirePermission('lab.accounting.manage'),csrfProtection,asyncHandler(labController.recordPayment));
