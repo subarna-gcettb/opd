@@ -352,22 +352,34 @@
   }
   function bookingAddDays(date, days) { const d = new Date(date.getFullYear(), date.getMonth(), date.getDate()); d.setDate(d.getDate() + days); return d; }
   function bookingFmt(date) { return date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0'); }
-  function bookingDisplay(date) { return date ? date.toLocaleDateString('en-IN') : '—'; }
+  function bookingDisplay(date) {
+    return date ? String(date.getDate()).padStart(2, '0') + '-' +
+      String(date.getMonth() + 1).padStart(2, '0') + '-' + date.getFullYear() : '—';
+  }
   function bookingCalculate() {
     const mode = pregnancyMethod.value || 'LMP';
     pregnancyDatingMethod.value = mode;
     pregnancyUsgFields.style.display = mode === 'USG' ? '' : 'none';
+    // Do not submit stale values from a previously selected dating method.
+    pregnancyConceptionDate.value = '';
+    pregnancyReferenceHidden.value = '';
+    pregnancyUsgDate.value = '';
+    pregnancyUsgEdd.value = '';
     const labels = {LMP:'1st day of LMP',CONCEPTION:'Conception date',EDD:'Estimated due date',USG:'USG / Ultrasound scan date',USG_EDD:'USG / Ultrasound EDD'};
     pregnancyReferenceLabel.textContent = labels[mode] || 'Date';
     if (pregnancyStatus.value !== 'PREGNANT') {
       pregnancyResult.style.display='none'; pregnancyError.style.display='none'; pregnancyLmp.value='';
+      pregnancyConceptionDate.value = '';
+      pregnancyReferenceHidden.value = '';
+      pregnancyUsgDate.value = '';
+      pregnancyUsgEdd.value = '';
       return true;
     }
     const ref = bookingParseDate(pregnancyReferenceDate.value);
     let calculatedLmp = null;
     if (mode === 'USG') {
       const weeks = Number(pregnancyUsgWeeks.value), days = Number(pregnancyUsgDays.value || 0);
-      if (!ref || !Number.isInteger(weeks) || !Number.isInteger(days) || weeks < 0 || weeks > 45 || days < 0 || days > 6) {
+      if (!ref || pregnancyUsgWeeks.value.trim() === '' || !Number.isInteger(weeks) || !Number.isInteger(days) || weeks < 0 || weeks > 45 || days < 0 || days > 6) {
         pregnancyError.textContent='Enter the USG/ultrasound scan date and valid gestational age (weeks 0–45, days 0–6).'; pregnancyError.style.display=''; pregnancyResult.style.display='none'; return false;
       }
       calculatedLmp = bookingAddDays(ref, -(weeks*7+days)); pregnancyUsgDate.value=bookingFmt(ref); pregnancyUsgEdd.value='';
@@ -381,7 +393,11 @@
       pregnancyReferenceHidden.value = mode==='EDD' ? bookingFmt(ref) : '';
       pregnancyUsgDate.value=''; pregnancyUsgEdd.value='';
     }
-    const today = new Date(); const asOf = new Date(today.getFullYear(),today.getMonth(),today.getDate());
+    // Match the server calculation: when booking for a future OPD date,
+    // calculate gestational age as of that appointment date.
+    const selectedAppointmentDate = bookingParseDate(dateInput.value);
+    const today = new Date();
+    const asOf = selectedAppointmentDate || new Date(today.getFullYear(),today.getMonth(),today.getDate());
     if (calculatedLmp > asOf) { pregnancyError.textContent='The calculated LMP cannot be in the future.'; pregnancyError.style.display=''; pregnancyResult.style.display='none'; return false; }
     const elapsed=Math.floor((asOf-calculatedLmp)/86400000), weeks=Math.floor(elapsed/7), days=elapsed%7, due=bookingAddDays(calculatedLmp,280), remaining=Math.max(0,280-elapsed);
     pregnancyLmp.value=bookingFmt(calculatedLmp);
