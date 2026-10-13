@@ -413,7 +413,12 @@
   pregnancyMethod && pregnancyMethod.addEventListener('change', bookingCalculate);
   pregnancyReferenceDate && pregnancyReferenceDate.addEventListener('change', bookingCalculate);
   [pregnancyUsgWeeks,pregnancyUsgDays].forEach(function(el){ el && el.addEventListener('input',bookingCalculate); });
-  document.querySelector('form')?.addEventListener('submit',function(e){ if(pregnancyStatus && pregnancyStatus.value==='PREGNANT' && !bookingCalculate()){e.preventDefault(); pregnancyError.scrollIntoView({behavior:'smooth',block:'center'});} });
+  pregnancyStatus?.closest('form')?.addEventListener('submit', function(e) {
+    if (pregnancyStatus.value === 'PREGNANT' && !bookingCalculate()) {
+      e.preventDefault();
+      pregnancyError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
   bookingCalculate();
 })();
 </script>
