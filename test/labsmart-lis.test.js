@@ -39,6 +39,9 @@ test('LabSmart-inspired LIS features are connected to migrations, routes and ser
   assert.match(service, /function csvCell/);
   assert.match(labService, /evaluateFormula\(p\.formula_expression,byCode\)/);
   assert.match(labService, /lab_reference_ranges WHERE parameter_id/);
+  assert.match(labService, /home_collection_status=\\'COLLECTED\\'/);
+  assert.match(service, /LAB_TPA_CLAIM_CREATED/);
+  assert.match(service, /LAB_HOME_COLLECTION_ASSIGNMENT_UPDATED/);
   assert.match(app, /routes\/labPublicRoutes/);
 });
 
