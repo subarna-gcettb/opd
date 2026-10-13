@@ -30,7 +30,7 @@
   </div>
 
   <% if (String(visit.gender || '').toLowerCase() === 'female') { %>
-  <%- include('../partials/pregnancy-assessment', { pregnancy, pregnancyCalculation, canEdit: true }) %>
+  <%- include('../partials/pregnancy-assessment', { pregnancy, pregnancyCalculation, canEdit: true, asOfDate: visit.appointment_date }) %>
   <% } %>
 
   <div class="card">
