@@ -75,7 +75,23 @@ async function viewResult(req,res,next){try{
 }catch(err){next(err);}}
 
 async function verifyResult(req,res,next){try{await labService.verifyResult(req.params.id,req.user.id);req.flash('success','Result verified.');res.redirect('/lab/results/'+req.params.id);}catch(err){if(err instanceof AppError){req.flash('errors',[{message:err.message}]);return res.redirect('/lab/results/'+req.params.id);}next(err);}}
-async function releaseResult(req,res,next){try{await labService.releaseResult(req.params.id,req.user.id);req.flash('success','Report released to the patient portal.');res.redirect('/lab/results/'+req.params.id);}catch(err){if(err instanceof AppError){req.flash('errors',[{message:err.message}]);return res.redirect('/lab/results/'+req.params.id);}next(err);}}
+async function releaseResult(req,res,next){try{
+  await labService.releaseResult(req.params.id,req.user.id);
+  let notice='Report released to the patient portal.';
+  try{
+    const data=await labService.getResult(req.params.id);
+    if(data&&data.result.email){
+      const token=await labSmartService.createShareToken(branchId(req),req.user.id,data.result.lab_order_id,data.result.id);
+      const url=(process.env.PUBLIC_BASE_URL||req.protocol+'://'+req.get('host')).replace(/\/$/,'')+'/lab/share/'+token;
+      const safe=value=>String(value||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+      const sent=await emailService.sendMail({to:data.result.email,subject:'Chhayabithi Laboratory Report — '+data.result.order_code,html:'<p>Dear '+safe(data.result.patient_name)+',</p><p>Your laboratory report for <strong>'+safe(data.result.test_name_snapshot)+'</strong> is ready.</p><p><a href="'+safe(url)+'">View secure report</a></p><p>This link expires in 7 days.</p>',text:'Your Chhayabithi laboratory report is ready. View securely: '+url+' (link expires in 7 days).'});
+      await labSmartService.logNotification({orderId:data.result.lab_order_id,resultId:data.result.id,channel:'EMAIL',recipient:data.result.email,status:sent.sent?'SENT':'FAILED',message:'Automatic report-ready email',errorMessage:sent.sent?null:sent.reason,userId:req.user.id});
+      if(sent.sent)notice+=' A secure report link was emailed to the patient.';
+    }
+  }catch(notificationError){console.warn('[lab] Report released, but automatic notification failed:',notificationError.message);}
+  req.flash('success',notice);
+  res.redirect('/lab/results/'+req.params.id);
+}catch(err){if(err instanceof AppError){req.flash('errors',[{message:err.message}]);return res.redirect('/lab/results/'+req.params.id);}next(err);}}
 
 async function attachFile(req,res,next){try{
   await labService.attachReportFile(req.params.id,req.user.id,req.file);req.flash('success','Digital report file attached.');res.redirect('/lab/results/'+req.params.id);
