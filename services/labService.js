@@ -166,17 +166,33 @@ async function createOrder(patientId,branchId,actorUserId,payload={}) {
     const directIds=[...new Set((payload.testIds||[]).map(Number).filter(Number.isInteger))];
     const packageIds=[...new Set((Array.isArray(payload.packageIds)?payload.packageIds:payload.packageIds?[payload.packageIds]:[]).map(Number).filter(Number.isInteger))];
     let packageTotal=0;
+    let selectedPackages=[];
+    let packageItems=[];
     const packageTestIds=new Set();
+    const packagePriceByTestId=new Map();
     if(packageIds.length){
       const packagePlaceholders=packageIds.map((_,i)=>':p'+i).join(',');
       const pp={labId:lab.id};packageIds.forEach((id,i)=>pp['p'+i]=id);
-      const [selectedPackages]=await conn.execute('SELECT id,price,name FROM lab_test_packages WHERE laboratory_id=:labId AND is_active=1 AND deleted_at IS NULL AND id IN ('+packagePlaceholders+')',pp);
-      if(selectedPackages.length!==packageIds.length)throw new AppError('One or more selected test packages are unavailable',422);
+      const [selectedRows]=await conn.execute('SELECT id,price,name FROM lab_test_packages WHERE laboratory_id=:labId AND is_active=1 AND deleted_at IS NULL AND id IN ('+packagePlaceholders+')',pp);
+      if(selectedRows.length!==packageIds.length)throw new AppError('One or more selected test packages are unavailable',422);
+      selectedPackages=selectedRows;
       packageTotal=selectedPackages.reduce((sum,p)=>sum+Number(p.price||0),0);
-      const [packageItems]=await conn.execute('SELECT pi.package_id,pi.test_id FROM lab_test_package_items pi WHERE pi.package_id IN ('+packagePlaceholders+')',pp);
+      const [packageItemRows]=await conn.execute('SELECT pi.package_id,pi.test_id,t.price base_price FROM lab_test_package_items pi JOIN lab_tests t ON t.id=pi.test_id WHERE pi.package_id IN ('+packagePlaceholders+')',pp);
+      packageItems=packageItemRows;
       for(const item of packageItems){
         if(packageTestIds.has(Number(item.test_id)))throw new AppError('Selected packages overlap. Choose one package or remove duplicate tests.',422);
         packageTestIds.add(Number(item.test_id));
+      }
+      for(const selectedPackage of selectedPackages){
+        const bundle=packageItems.filter(item=>Number(item.package_id)===Number(selectedPackage.id));
+        if(!bundle.length)throw new AppError('Every package must contain at least one test.',422);
+        const baseTotal=bundle.reduce((sum,item)=>sum+Number(item.base_price||0),0);
+        let remaining=Math.round(Number(selectedPackage.price||0)*100)/100;
+        bundle.forEach((item,index)=>{
+          const allocation=index===bundle.length-1?remaining:Math.round((baseTotal>0?Number(selectedPackage.price||0)*Number(item.base_price||0)/baseTotal:Number(selectedPackage.price||0)/bundle.length)*100)/100;
+          packagePriceByTestId.set(Number(item.test_id),allocation);
+          remaining=Math.round((remaining-allocation)*100)/100;
+        });
       }
     }
     const ids=[...new Set([...directIds,...packageTestIds])];
@@ -198,7 +214,7 @@ async function createOrder(patientId,branchId,actorUserId,payload={}) {
     if(collectionType==='HOME'&&!homeAddress)throw new AppError('Home collection address is required.',422);
     const homeSchedule=collectionType==='HOME'&&payload.homeCollectionScheduledAt?String(payload.homeCollectionScheduledAt).trim().replace('T',' '):null;
     const [r]=await conn.execute('INSERT INTO lab_orders (order_code,patient_id,visit_id,laboratory_id,source,ordered_by,referral_code,referral_provider_id,booking_date,priority,status,clinical_notes,total_amount,discount_amount,discount_reason,net_amount,payment_status,collection_type,home_collection_address,home_collection_scheduled_at) VALUES (:code,:patientId,:visitId,:labId,:source,:userId,:referralCode,:referralProviderId,:date,:priority,:status,:notes,:total,:discount,:discountReason,:net,"UNBILLED",:collectionType,:homeAddress,:homeSchedule)',{code:orderCode,patientId,visitId:payload.visitId||null,labId:lab.id,source,userId:actorUserId,date:payload.bookingDate||new Date().toISOString().slice(0,10),priority:payload.priority||'ROUTINE',status,notes:payload.clinicalNotes||null,total,discount,discountReason:String(payload.discountReason||'').trim()||null,net,referralCode,referralProviderId,collectionType,homeAddress,homeSchedule});
-    for(const t of tests) await conn.execute('INSERT INTO lab_order_items (lab_order_id,test_id,test_code_snapshot,test_name_snapshot,test_type_snapshot,specimen_type_snapshot,price_snapshot,status,scheduled_date) VALUES (:orderId,:testId,:code,:name,:type,:specimen,:price,:status,:date)',{orderId:r.insertId,testId:t.id,code:t.code,name:t.name,type:t.test_type,specimen:t.specimen_type,price:t.price,status:source==='DOCTOR'?'ORDERED':'BOOKED',date:payload.bookingDate||new Date().toISOString().slice(0,10)});
+    for(const t of tests) await conn.execute('INSERT INTO lab_order_items (lab_order_id,test_id,test_code_snapshot,test_name_snapshot,test_type_snapshot,specimen_type_snapshot,price_snapshot,status,scheduled_date) VALUES (:orderId,:testId,:code,:name,:type,:specimen,:price,:status,:date)',{orderId:r.insertId,testId:t.id,code:t.code,name:t.name,type:t.test_type,specimen:t.specimen_type,price:packagePriceByTestId.has(Number(t.id))?packagePriceByTestId.get(Number(t.id)):t.price,status:source==='DOCTOR'?'ORDERED':'BOOKED',date:payload.bookingDate||new Date().toISOString().slice(0,10)});
     await conn.execute('INSERT INTO lab_order_status_history (lab_order_id,old_status,new_status,changed_by,note) VALUES (:orderId,NULL,:status,:userId,:note)',{orderId:r.insertId,status,userId:actorUserId,note:'Created from '+source.toLowerCase()+' workflow'});
     await auditService.log({userId:actorUserId,action:'LAB_ORDER_CREATED',entity:'lab_order',entityId:r.insertId,newValue:{orderCode,patientId,source,testIds:ids,packageIds,collectionType,total,discount,net,discountReason:String(payload.discountReason||'').trim()||null}},conn);
     return {id:r.insertId,orderCode,patient,lab,tests};
