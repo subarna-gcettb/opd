@@ -59,8 +59,11 @@ test('OPD booking validates the correct form, uses appointment date for dating, 
 test('server persistence stores a scan date only for USG gestational-age mode', () => {
   const consultation = read('services/consultationService.js');
   const opdController = read('controllers/opdController.js');
+  const opdService = read('services/opdService.js');
   assert.match(consultation, /usgDate: pregnancyStatus === 'PREGNANT' && datingMethod === 'USG'/);
   assert.match(opdController, /usgDate: status === 'PREGNANT' && datingMethod === 'USG'/);
+  assert.match(opdService, /usgDate: isFemale && obstetricStatus === 'PREGNANT' && datingMethod === 'USG'/);
   assert.doesNotMatch(consultation, /datingMethod\.startsWith\('USG'\)/);
   assert.doesNotMatch(opdController, /datingMethod\.startsWith\('USG'\)/);
+  assert.doesNotMatch(opdService, /datingMethod\.startsWith\('USG'\)/);
 });
