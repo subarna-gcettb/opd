@@ -195,7 +195,7 @@ async function getPublicOrder(token) {
     { id: order.id }
   );
   if (order.token_result_id) {
-    for (const item of items) if (Number(item.result_id) !== Number(order.token_result_id)) { item.result_id = null; item.result_status = null; item.result_version = null; }
+    for (const item of items) if (Number(item.result_id) !== Number(order.token_result_id)) { item.result_id = null; item.result_status = null; item.result_version = null; item.report_file_name = null; }
   }
   return { order, items };
 }
@@ -225,7 +225,7 @@ function csvCell(value) {
 
 async function exportRows(branchId, fromDate, toDate) {
   const [rows] = await pool.execute(
-    'SELECT o.order_code,o.booking_date,p.health_id,p.name patient_name,p.gender,p.age_years,o.source,o.priority,o.status,oi.test_code_snapshot,oi.test_name_snapshot,oi.status test_status,oi.price_snapshot,o.net_amount,o.payment_status,COALESCE(pay.paid,0) paid_amount,(o.net_amount-COALESCE(pay.paid,0)) due_amount,o.created_at,oi.completed_at FROM lab_orders o JOIN laboratories l ON l.id=o.laboratory_id JOIN patients p ON p.id=o.patient_id JOIN lab_order_items oi ON oi.lab_order_id=o.id LEFT JOIN (SELECT lab_order_id,SUM(amount) paid FROM lab_order_payments GROUP BY lab_order_id) pay ON pay.lab_order_id=o.id WHERE l.branch_id=:branchId AND o.booking_date BETWEEN :fromDate AND :toDate ORDER BY o.booking_date DESC,o.id DESC,oi.id',
+    'SELECT o.order_code,o.booking_date,p.health_id,p.name patient_name,p.gender,p.age_years,o.source,o.priority,o.status,oi.test_code_snapshot,oi.test_name_snapshot,oi.status test_status,oi.price_snapshot,CASE WHEN oi.id=(SELECT MIN(oi2.id) FROM lab_order_items oi2 WHERE oi2.lab_order_id=o.id) THEN o.net_amount ELSE 0 END net_amount,o.payment_status,CASE WHEN oi.id=(SELECT MIN(oi2.id) FROM lab_order_items oi2 WHERE oi2.lab_order_id=o.id) THEN COALESCE(pay.paid,0) ELSE 0 END paid_amount,CASE WHEN oi.id=(SELECT MIN(oi2.id) FROM lab_order_items oi2 WHERE oi2.lab_order_id=o.id) THEN (o.net_amount-COALESCE(pay.paid,0)) ELSE 0 END due_amount,o.created_at,oi.completed_at FROM lab_orders o JOIN laboratories l ON l.id=o.laboratory_id JOIN patients p ON p.id=o.patient_id JOIN lab_order_items oi ON oi.lab_order_id=o.id LEFT JOIN (SELECT lab_order_id,SUM(amount) paid FROM lab_order_payments GROUP BY lab_order_id) pay ON pay.lab_order_id=o.id WHERE l.branch_id=:branchId AND o.booking_date BETWEEN :fromDate AND :toDate ORDER BY o.booking_date DESC,o.id DESC,oi.id',
     { branchId, fromDate, toDate }
   );
   return rows;
