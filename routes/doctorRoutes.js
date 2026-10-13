@@ -12,9 +12,9 @@ router.use(requireAuth);
 
 // JSON helpers used by the OPD booking screen — available to anyone who
 // can book an appointment, not just doctor administrators.
-router.get('/api/list', requirePermission('appointment.create', 'doctor.manage'), asyncHandler(doctorController.doctorsByFilter));
-router.get('/:id/available-dates', requirePermission('appointment.create', 'doctor.manage'), asyncHandler(doctorController.availableDates));
-router.get('/:id/slots', requirePermission('appointment.create', 'doctor.manage'), asyncHandler(doctorController.availableSlots));
+router.get('/api/list', requirePermission('appointment.create', 'doctor.manage', 'agent.appointment.create'), asyncHandler(doctorController.doctorsByFilter));
+router.get('/:id/available-dates', requirePermission('appointment.create', 'doctor.manage', 'agent.appointment.create'), asyncHandler(doctorController.availableDates));
+router.get('/:id/slots', requirePermission('appointment.create', 'doctor.manage', 'agent.appointment.create'), asyncHandler(doctorController.availableSlots));
 
 router.get('/', requirePermission('doctor.manage'), asyncHandler(doctorController.list));
 router.get('/new', requirePermission('doctor.manage'), asyncHandler(doctorController.showNewForm));
