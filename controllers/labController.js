@@ -34,7 +34,7 @@ async function showNewOrder(req,res,next){try{
 
 async function createOrder(req,res,next){try{
   const testIds=Array.isArray(req.body.testIds)?req.body.testIds:(req.body.testIds?[req.body.testIds]:[]);
-  const result=await labService.createOrder(Number(req.body.patientId),branchId(req),req.user.id,{testIds,packageIds:req.body.packageIds,source:req.body.source||'RECEPTION',bookingDate:req.body.bookingDate,priority:req.body.priority,clinicalNotes:req.body.clinicalNotes,collectionType:req.body.collectionType,homeCollectionAddress:req.body.homeCollectionAddress,homeCollectionScheduledAt:req.body.homeCollectionScheduledAt});
+  const result=await labService.createOrder(Number(req.body.patientId),branchId(req),req.user.id,{testIds,packageIds:req.body.packageIds,source:req.body.source||'RECEPTION',bookingDate:req.body.bookingDate,priority:req.body.priority,clinicalNotes:req.body.clinicalNotes,collectionType:req.body.collectionType,homeCollectionAddress:req.body.homeCollectionAddress,homeCollectionScheduledAt:req.body.homeCollectionScheduledAt,discountAmount:req.user.permissions.includes('lab.accounting.manage')?req.body.discountAmount:0,discountReason:req.user.permissions.includes('lab.accounting.manage')?req.body.discountReason:''});
   req.flash('success','Laboratory order '+result.orderCode+' created.');
   res.redirect('/lab/orders/'+result.id);
 }catch(err){if(err instanceof AppError){req.flash('errors',[{message:err.message}]);return res.redirect('/lab/orders/new');}next(err);}}
