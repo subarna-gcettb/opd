@@ -1,0 +1,12 @@
+<div class="d-flex justify-content-between align-items-center mb-3"><div><h4><%= item?'Edit Test Package':'New Test Package' %></h4><div class="small text-muted">Package prices replace individual test prices for included tests.</div></div><a href="/lab/packages" class="btn btn-outline-secondary btn-sm">Back</a></div>
+<form method="POST" action="<%= item?'/lab/packages/'+item.id:'/lab/packages' %>">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
+<div class="row g-3"><div class="col-lg-4"><div class="card"><div class="card-body">
+<label class="form-label">Package code</label><input class="form-control mb-2" name="code" required maxlength="50" value="<%= item?.code||'' %>">
+<label class="form-label">Package name</label><input class="form-control mb-2" name="name" required maxlength="180" value="<%= item?.name||'' %>">
+<label class="form-label">Package price (₹)</label><input class="form-control mb-2" type="number" min="0" step="0.01" name="price" required value="<%= item?.price??0 %>">
+<label class="form-label">Description</label><textarea class="form-control mb-2" name="description" rows="3"><%= item?.description||'' %></textarea>
+<% if(item){ %><label class="form-label">Status</label><select class="form-select" name="isActive"><option value="1" <%= item.is_active?'selected':'' %>>Active</option><option value="0" <%= !item.is_active?'selected':'' %>>Inactive</option></select><% } %>
+</div></div></div><div class="col-lg-8"><div class="card"><div class="card-header d-flex justify-content-between"><strong>Included tests</strong><span class="small text-muted">Select one or more</span></div><div class="card-body"><div class="row g-2">
+<% tests.forEach(function(t){ const selected=(item?.tests||[]).some(x=>Number(x.id)===Number(t.id)); %><div class="col-md-6"><label class="border rounded p-2 d-flex gap-2 h-100"><input class="form-check-input mt-1" type="checkbox" name="testIds" value="<%= t.id %>" <%= selected?'checked':'' %>><span><strong><%= t.name %></strong><small class="d-block text-muted"><%= t.code %> · ₹<%= Number(t.price).toFixed(2) %></small></span></label></div><% }) %>
+</div></div><div class="card-footer text-end"><button class="btn btn-primary">Save package</button></div></div></div></div></form>
