@@ -187,13 +187,13 @@ async function getConsultationContext(visitId) {
         pregnancyCalculation.referenceDate = conceptionDate.toISOString().slice(0, 10);
       }
     } else if (pregnancyMethod === 'EDD') {
-      pregnancyCalculation = calculatePregnancy(visit.lmp_date);
+      pregnancyCalculation = calculatePregnancy(visit.lmp_date, visit.appointment_date);
       if (pregnancyCalculation) {
         pregnancyCalculation.referenceMode = 'EDD';
         pregnancyCalculation.referenceDate = pregnancyCalculation.estimatedDueDate;
       }
     } else {
-      pregnancyCalculation = calculatePregnancy(visit.lmp_date);
+      pregnancyCalculation = calculatePregnancy(visit.lmp_date, visit.appointment_date);
     }
   }
 
