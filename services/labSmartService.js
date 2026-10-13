@@ -225,6 +225,29 @@ function csvCell(value) {
 
 
 
+
+async function listLabStaff(branchId) {
+  const lab=await getLaboratory(branchId);
+  const [users]=await pool.execute('SELECT id,name,email,mobile FROM users WHERE branch_id=:branchId AND is_active=1 ORDER BY name',{branchId});
+  const [workers]=await pool.execute('SELECT w.*,u.name,u.email,u.mobile FROM lab_workers w JOIN users u ON u.id=w.user_id WHERE w.laboratory_id=:labId AND w.deleted_at IS NULL ORDER BY u.name',{labId:lab.id});
+  return {lab,users,workers};
+}
+
+async function saveLabWorker(branchId, actorUserId, payload) {
+  const lab=await getLaboratory(branchId);
+  const userId=Number(payload.userId);
+  const types=['RECEPTION','TECHNICIAN','PATHOLOGIST','RADIOLOGIST','CARDIOLOGY','ADMIN','QUALITY','PHLEBOTOMIST'];
+  const workerType=types.includes(payload.workerType)?payload.workerType:'TECHNICIAN';
+  if(!Number.isInteger(userId)||userId<=0)throw new AppError('Select a valid staff user.',422);
+  const [[user]]=await pool.execute('SELECT id FROM users WHERE id=:userId AND branch_id=:branchId AND is_active=1 LIMIT 1',{userId,branchId});
+  if(!user)throw new AppError('Select an active user assigned to this branch.',422);
+  const registration=String(payload.registrationNo||'').trim()||null;
+  const active=payload.isActive==='0'?0:1;
+  await pool.execute('INSERT INTO lab_workers (user_id,laboratory_id,worker_type,professional_registration_no,is_active,deleted_at) VALUES (:userId,:labId,:workerType,:registration,:active,NULL) ON DUPLICATE KEY UPDATE worker_type=VALUES(worker_type),professional_registration_no=VALUES(professional_registration_no),is_active=VALUES(is_active),deleted_at=NULL',
+    {userId,labId:lab.id,workerType,registration,active});
+  await auditService.log({userId:actorUserId,action:'LAB_WORKER_CONFIGURED',entity:'lab_worker',entityId:userId,newValue:{workerType,active,registration}});
+}
+
 async function listPhlebotomists(branchId) {
   const [rows]=await pool.execute('SELECT u.id,u.name,u.mobile,w.professional_registration_no FROM lab_workers w JOIN laboratories l ON l.id=w.laboratory_id JOIN users u ON u.id=w.user_id WHERE l.branch_id=:branchId AND l.is_active=1 AND w.worker_type=\'PHLEBOTOMIST\' AND w.is_active=1 AND w.deleted_at IS NULL AND u.is_active=1 ORDER BY u.name',{branchId});
   return rows;
@@ -351,5 +374,5 @@ async function exportRows(branchId, fromDate, toDate) {
 module.exports = {
   listPackages, getPackage, savePackage, recordPayment, getOrderPayments, getAccounting,
   createExpense, createShareToken, getPublicOrder, getPublicReport, logNotification, csvCell, exportRows,
-  getSettings, getSettingsByLaboratoryId, saveSettings, getTpaClaim, saveTpaClaim, listPhlebotomists, assignHomeCollection
+  getSettings, getSettingsByLaboratoryId, saveSettings, getTpaClaim, saveTpaClaim, listPhlebotomists, assignHomeCollection, listLabStaff, saveLabWorker
 };
