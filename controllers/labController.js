@@ -42,9 +42,10 @@ async function createOrder(req,res,next){try{
 async function orderDetail(req,res,next){try{
   const data=await labService.getOrder(req.params.id); if(!data)throw new AppError('Laboratory order not found',404); if(!req.user.roles.includes('SUPER_ADMIN')&&Number(data.order.branch_id)!==Number(req.user.branch_id))throw new AppError('You do not have access to this laboratory branch',403);
   const payments=await labSmartService.getOrderPayments(branchId(req),data.order.id);
+  const tpaClaim=await labSmartService.getTpaClaim(branchId(req),data.order.id);
   const paid=payments.reduce((sum,p)=>sum+Number(p.amount||0),0);
   const shareUrl=req.protocol+'://'+req.get('host')+'/lab/orders/'+data.order.id+'/share';
-  res.render('lab/order-detail',{title:data.order.order_code+' · Laboratory Order',...data,payments,paid,due:Math.max(0,Number(data.order.net_amount||0)-paid),shareUrl});
+  res.render('lab/order-detail',{title:data.order.order_code+' · Laboratory Order',...data,payments,tpaClaim,paid,due:Math.max(0,Number(data.order.net_amount||0)-paid),shareUrl});
 }catch(err){next(err);}}
 
 async function collectSample(req,res,next){try{
@@ -101,6 +102,7 @@ async function attachFile(req,res,next){try{
 async function printReport(req,res,next){try{
   const data=await labService.getResult(req.params.id);if(!data)throw new AppError('Report not found',404);if(!req.user.roles.includes('SUPER_ADMIN')&&Number(data.result.branch_id)!==Number(req.user.branch_id))throw new AppError('You do not have access to this laboratory branch',403);
   if(data.result.status!=='RELEASED'&&!req.user.permissions.includes('lab.result.release'))throw new AppError('Report has not been released',403);
+  const settings=await labSmartService.getSettings(branchId(req));
   let qrDataUri=null,barcodeDataUri=null,shareUrl=null;
   const barcode=await bwipjs.toBuffer({bcid:'code128',text:data.result.order_code,scale:2,height:12,includetext:true});
   barcodeDataUri='data:image/png;base64,'+barcode.toString('base64');
@@ -110,7 +112,7 @@ async function printReport(req,res,next){try{
     const png=await bwipjs.toBuffer({bcid:'qrcode',text:shareUrl,scale:4,padding:1});
     qrDataUri='data:image/png;base64,'+png.toString('base64');
   }
-  res.render('print/lab-report',{layout:'layouts/blank',title:'Laboratory Report',...data,qrDataUri,barcodeDataUri,shareUrl});
+  res.render('print/lab-report',{layout:'layouts/blank',title:'Laboratory Report',...data,settings,qrDataUri,barcodeDataUri,shareUrl});
 }catch(err){next(err);}}
 
 async function downloadReportFile(req,res,next){try{
@@ -214,7 +216,8 @@ async function printBill(req,res,next){try{
   const barcode=await bwipjs.toBuffer({bcid:'code128',text:data.order.order_code,scale:2,height:12,includetext:true});
   const payments=await labSmartService.getOrderPayments(branchId(req),data.order.id);
   const paid=payments.reduce((sum,p)=>sum+Number(p.amount||0),0);
-  res.render('print/lab-bill',{layout:'layouts/blank',title:'Laboratory Bill',...data,paid,due:Math.max(0,Number(data.order.net_amount||0)-paid),qrDataUri:'data:image/png;base64,'+png.toString('base64'),barcodeDataUri:'data:image/png;base64,'+barcode.toString('base64'),shareUrl});
+  const settings=await labSmartService.getSettings(branchId(req));
+  res.render('print/lab-bill',{layout:'layouts/blank',title:'Laboratory Bill',...data,settings,paid,due:Math.max(0,Number(data.order.net_amount||0)-paid),qrDataUri:'data:image/png;base64,'+png.toString('base64'),barcodeDataUri:'data:image/png;base64,'+barcode.toString('base64'),shareUrl});
 }catch(err){next(err);}}
 
 async function shareOrder(req,res,next){try{
@@ -253,4 +256,37 @@ async function emailReport(req,res,next){try{
   res.redirect('/lab/results/'+req.params.id+'/share');
 }catch(err){if(err instanceof AppError){req.flash('errors',[{message:err.message}]);return res.redirect('/lab/results/'+req.params.id+'/share');}next(err);}}
 
-module.exports={dashboard,orders,showNewOrder,createOrder,orderDetail,printBill,printSampleLabel,collectSample,receiveSample,rejectSample,resultForm,saveResult,viewResult,verifyResult,releaseResult,attachFile,printReport,downloadReportFile,tests,showTestForm,saveTest,cancelOrder,packages,packageForm,savePackage,accounting,createExpense,recordPayment,exportCsv,shareOrder,shareResult,emailReport};
+
+async function settings(req,res,next){try{
+  const data=await labSmartService.getSettings(branchId(req));
+  res.render('lab/settings',{title:'Laboratory Settings & Review Builder',settings:data});
+}catch(err){next(err);}}
+
+async function saveSettings(req,res,next){try{
+  await labSmartService.saveSettings(branchId(req),req.user.id,req.body);
+  req.flash('success','Laboratory settings saved.');
+  res.redirect('/lab/settings');
+}catch(err){if(err instanceof AppError){req.flash('errors',[{message:err.message}]);return res.redirect('/lab/settings');}next(err);}}
+
+async function reviewBuilder(req,res,next){try{
+  const settings=await labSmartService.getSettings(branchId(req));
+  let order=null;
+  if(req.query.orderId){
+    const data=await labService.getOrder(req.query.orderId);
+    if(!data)throw new AppError('Laboratory order not found',404);
+    if(!req.user.roles.includes('SUPER_ADMIN')&&Number(data.order.branch_id)!==Number(branchId(req)))throw new AppError('You do not have access to this laboratory branch',403);
+    order=data.order;
+  }
+  const message=String(settings.review_message||'Thank you for choosing Chhayabithi Hospital. If you are satisfied with our service, please share your feedback.')
+    .replace(/\{patient\}/gi,order?.patient_name||'')
+    .replace(/\{order\}/gi,order?.order_code||'');
+  res.render('lab/review-builder',{title:'Google Review Builder',settings,order,message,reviewUrl:settings.google_review_url||''});
+}catch(err){next(err);}}
+
+async function saveTpaClaim(req,res,next){try{
+  await labSmartService.saveTpaClaim(branchId(req),req.user.id,Number(req.params.id),req.body);
+  req.flash('success','Insurance / TPA claim saved.');
+  res.redirect('/lab/orders/'+req.params.id);
+}catch(err){if(err instanceof AppError){req.flash('errors',[{message:err.message}]);return res.redirect('/lab/orders/'+req.params.id);}next(err);}}
+
+module.exports={dashboard,orders,showNewOrder,createOrder,orderDetail,printBill,printSampleLabel,collectSample,receiveSample,rejectSample,resultForm,saveResult,viewResult,verifyResult,releaseResult,attachFile,printReport,downloadReportFile,tests,showTestForm,saveTest,cancelOrder,packages,packageForm,savePackage,accounting,createExpense,recordPayment,exportCsv,shareOrder,shareResult,emailReport,settings,saveSettings,reviewBuilder,saveTpaClaim};
