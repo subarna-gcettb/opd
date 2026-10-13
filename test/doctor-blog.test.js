@@ -68,3 +68,11 @@ test('YouTube link parser accepts common YouTube formats and rejects unrelated h
   assert.equal(youtubeVideoId('javascript:alert(1)'), null);
   assert.equal(youtubeVideoId('https://youtube.com/watch?v=short'), null);
 });
+
+test('doctor dashboard displays a prominent blog-writing panel with direct links', () => {
+  const dashboard = read('views/doctors/portal-dashboard.ejs');
+  assert.match(dashboard, /Health Blog Publishing/);
+  assert.match(dashboard, /href="\/doctor\/blogs"/);
+  assert.match(dashboard, /href="\/doctor\/blogs\/new"/);
+  assert.match(dashboard, /Write a Blog/);
+});
