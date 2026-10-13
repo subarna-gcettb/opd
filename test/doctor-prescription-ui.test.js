@@ -225,6 +225,16 @@ test('receptionist patient registration offers active referral providers with bo
   assert.match(view, /<%= r\.provider_name %> — <%= r\.referral_code %>/);
 });
 
+
+test('Agent OPD booking marks full slots red and prevents selecting them', () => {
+  const view = fs.readFileSync(path.join(__dirname, '..', 'views', 'agent', 'opd-book.ejs'), 'utf8');
+  assert.match(view, /s\.available!=null\?s\.available:\(Number\(s\.capacity\|\|1\)-Number\(s\.booked\|\|0\)\)/);
+  assert.match(view, /full\?'btn-danger':'btn-outline-primary'/);
+  assert.match(view, /full\?' disabled aria-disabled="true" title="Already booked"':''/);
+  assert.match(view, /full\?' · Booked':''/);
+  assert.match(view, /if\(btn\.disabled\)return/);
+});
+
 test('OPD booking marks full slots red and prevents selecting them', () => {
   const view = fs.readFileSync(path.join(__dirname, '..', 'views', 'opd', 'book.ejs'), 'utf8');
   assert.match(view, /slot\.available != null/);
