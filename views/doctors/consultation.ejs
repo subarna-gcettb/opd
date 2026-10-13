@@ -425,7 +425,7 @@
     const shouldPrint = window.confirm('Consultation and prescription saved successfully. Would you like to print the latest prescription now?');
     if (shouldPrint) {
       const printUrl = '/prescriptions/' + encodeURIComponent(prescriptionId) + '/print';
-      const printWindow = window.open(printUrl, '_blank', 'noopener');
+      const printWindow = window.open(printUrl, '_blank');
       if (!printWindow) {
         window.location.href = printUrl;
       }
