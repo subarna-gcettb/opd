@@ -1,6 +1,7 @@
 const { pool } = require('../config/database');
 const labSmartService = require('../services/labSmartService');
 const AppError = require('../utils/AppError');
+const bwipjs = require('bwip-js');
 
 async function order(req,res,next){
   try{
@@ -14,7 +15,9 @@ async function report(req,res,next){
   try{
     const data=await labSmartService.getPublicReport(req.params.token,req.params.resultId);
     if(!data)throw new AppError('Released report not found or secure link expired.',404);
-    res.render('print/lab-report',{layout:'layouts/blank',title:'Laboratory Report',...data});
+    const shareUrl=(req.protocol+'://'+req.get('host')+req.originalUrl);
+    const png=await bwipjs.toBuffer({bcid:'qrcode',text:shareUrl,scale:4,padding:1});
+    res.render('print/lab-report',{layout:'layouts/blank',title:'Laboratory Report',...data,qrDataUri:'data:image/png;base64,'+png.toString('base64'),shareUrl});
   }catch(err){next(err);}
 }
 
