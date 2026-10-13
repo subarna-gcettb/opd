@@ -132,7 +132,7 @@ async function saveConsultation(req, res, next) {
     if (!items.length) throw new AppError('Add at least one medicine to save the consultation and prescription.', 422);
     const result = await consultationService.saveConsultation(req.params.visitId, { ...req.body, allowFinalizedEdit: req.body._editMode === '1' }, req.user.id, items);
     req.flash('success', `Consultation and prescription ${result.prescription.code} (v${result.prescription.version}) saved together.`);
-    res.redirect(`/doctor/consultation/${req.params.visitId}`);
+    res.redirect(`/doctor/consultation/${req.params.visitId}?printPrescriptionId=${encodeURIComponent(result.prescription.id)}`);
   } catch (err) {
     if (err instanceof AppError) {
       req.flash('errors', [{ message: err.message }]);
