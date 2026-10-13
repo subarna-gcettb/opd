@@ -258,6 +258,18 @@ async function emailReport(req,res,next){try{
 }catch(err){if(err instanceof AppError){req.flash('errors',[{message:err.message}]);return res.redirect('/lab/results/'+req.params.id+'/share');}next(err);}}
 
 
+
+async function staff(req,res,next){try{
+  const data=await labSmartService.listLabStaff(branchId(req));
+  res.render('lab/staff',{title:'Laboratory Staff & Permissions',...data});
+}catch(err){next(err);}}
+
+async function saveStaff(req,res,next){try{
+  await labSmartService.saveLabWorker(branchId(req),req.user.id,req.body);
+  req.flash('success','Laboratory staff assignment saved.');
+  res.redirect('/lab/workers');
+}catch(err){if(err instanceof AppError){req.flash('errors',[{message:err.message}]);return res.redirect('/lab/workers');}next(err);}}
+
 async function settings(req,res,next){try{
   const data=await labSmartService.getSettings(branchId(req));
   res.render('lab/settings',{title:'Laboratory Settings & Review Builder',settings:data});
@@ -296,4 +308,4 @@ async function saveTpaClaim(req,res,next){try{
   res.redirect('/lab/orders/'+req.params.id);
 }catch(err){if(err instanceof AppError){req.flash('errors',[{message:err.message}]);return res.redirect('/lab/orders/'+req.params.id);}next(err);}}
 
-module.exports={dashboard,orders,showNewOrder,createOrder,orderDetail,printBill,printSampleLabel,collectSample,receiveSample,rejectSample,resultForm,saveResult,viewResult,verifyResult,releaseResult,attachFile,printReport,downloadReportFile,tests,showTestForm,saveTest,cancelOrder,packages,packageForm,savePackage,accounting,createExpense,recordPayment,exportCsv,shareOrder,shareResult,emailReport,settings,saveSettings,reviewBuilder,saveTpaClaim,assignHomeCollection};
+module.exports={dashboard,orders,showNewOrder,createOrder,orderDetail,printBill,printSampleLabel,collectSample,receiveSample,rejectSample,resultForm,saveResult,viewResult,verifyResult,releaseResult,attachFile,printReport,downloadReportFile,tests,showTestForm,saveTest,cancelOrder,packages,packageForm,savePackage,accounting,createExpense,recordPayment,exportCsv,shareOrder,shareResult,emailReport,settings,saveSettings,reviewBuilder,saveTpaClaim,assignHomeCollection,staff,saveStaff};
