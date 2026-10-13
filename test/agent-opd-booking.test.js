@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const ejs = require('ejs');
+const { requirePermissionOrRole } = require('../middleware/roles');
 
 const read = (relative) => fs.readFileSync(path.join(__dirname, '..', relative), 'utf8');
 
@@ -32,10 +33,26 @@ test('agent patient search is branch-scoped and supports receptionist identifier
   assert.match(routes, /router\.get\('\/api\/patients',requireAgent,asyncHandler\(controller\.searchPatients\)\)/);
 });
 
-test('agent appointment API can load doctors and dates but cannot inspect another branch', () => {
+test('agent role can access read-only doctor lookups when permission rows are stale', async () => {
+  const middleware = requirePermissionOrRole(
+    ['appointment.create', 'doctor.manage', 'agent.appointment.create'],
+    ['AGENT']
+  );
+  let nextError;
+  let nextCalled = false;
+  middleware({ user: { roles: ['AGENT'], permissions: [] } }, {}, (error) => {
+    nextCalled = true;
+    nextError = error;
+  });
+  assert.equal(nextCalled, true);
+  assert.equal(nextError, undefined);
+});
+
+test('doctor lookup APIs use role fallback and retain branch isolation', () => {
   const routes = read('routes/doctorRoutes.js');
   const controller = read('controllers/doctorController.js');
-  assert.equal((routes.match(/agent\.appointment\.create/g) || []).length, 3);
+  assert.match(routes, /requirePermissionOrRole/);
+  assert.equal((routes.match(/requireBookingLookup/g) || []).length, 4);
   assert.match(controller, /const branchId = isAgent \? req\.user\.branch_id/);
   assert.match(controller, /async function assertAgentDoctorBranch/);
   assert.match(controller, /await assertAgentDoctorBranch\(req\)/);
