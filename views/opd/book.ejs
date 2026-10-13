@@ -409,6 +409,7 @@
     document.getElementById('bookingConception').textContent=bookingDisplay(bookingAddDays(calculatedLmp,14));
     pregnancyError.style.display='none'; pregnancyResult.style.display=''; return true;
   }
+  dateInput && dateInput.addEventListener('change', bookingCalculate);
   pregnancyStatus && pregnancyStatus.addEventListener('change', bookingCalculate);
   pregnancyMethod && pregnancyMethod.addEventListener('change', bookingCalculate);
   pregnancyReferenceDate && pregnancyReferenceDate.addEventListener('change', bookingCalculate);
