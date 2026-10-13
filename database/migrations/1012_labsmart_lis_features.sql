@@ -80,6 +80,51 @@ CREATE TABLE IF NOT EXISTS lab_share_tokens (
   INDEX idx_lab_share_result (lab_result_id, expires_at)
 ) ENGINE=InnoDB;
 
+
+CREATE TABLE IF NOT EXISTS lab_settings (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  laboratory_id INT UNSIGNED NOT NULL,
+  google_review_url VARCHAR(1000) NULL,
+  review_message VARCHAR(1000) NULL,
+  report_font_size_pt DECIMAL(4,1) NOT NULL DEFAULT 10,
+  report_margin_top_mm DECIMAL(5,1) NOT NULL DEFAULT 10,
+  report_margin_bottom_mm DECIMAL(5,1) NOT NULL DEFAULT 10,
+  report_show_interpretation TINYINT(1) NOT NULL DEFAULT 1,
+  report_show_comments TINYINT(1) NOT NULL DEFAULT 1,
+  report_show_method TINYINT(1) NOT NULL DEFAULT 1,
+  report_show_instrument TINYINT(1) NOT NULL DEFAULT 1,
+  updated_by INT UNSIGNED NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_lab_settings_lab FOREIGN KEY (laboratory_id) REFERENCES laboratories(id),
+  CONSTRAINT fk_lab_settings_user FOREIGN KEY (updated_by) REFERENCES users(id),
+  UNIQUE KEY uk_lab_settings_laboratory (laboratory_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS lab_tpa_claims (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  lab_order_id INT UNSIGNED NOT NULL,
+  insurer_name VARCHAR(180) NOT NULL,
+  policy_number VARCHAR(120) NULL,
+  claim_number VARCHAR(120) NULL,
+  claim_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+  approved_amount DECIMAL(10,2) NULL,
+  paid_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+  status ENUM('DRAFT','SUBMITTED','QUERY','APPROVED','REJECTED','SETTLED') NOT NULL DEFAULT 'DRAFT',
+  submitted_at DATETIME NULL,
+  settled_at DATETIME NULL,
+  notes VARCHAR(1000) NULL,
+  created_by INT UNSIGNED NOT NULL,
+  updated_by INT UNSIGNED NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_lab_tpa_order FOREIGN KEY (lab_order_id) REFERENCES lab_orders(id),
+  CONSTRAINT fk_lab_tpa_creator FOREIGN KEY (created_by) REFERENCES users(id),
+  CONSTRAINT fk_lab_tpa_updater FOREIGN KEY (updated_by) REFERENCES users(id),
+  UNIQUE KEY uk_lab_tpa_order (lab_order_id),
+  INDEX idx_lab_tpa_status (status, updated_at)
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS lab_notification_logs (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   lab_order_id INT UNSIGNED NOT NULL,
@@ -115,7 +160,8 @@ INSERT INTO permissions (code, description) VALUES
   ('lab.accounting.view', 'View laboratory collections, expenses and business analytics'),
   ('lab.accounting.manage', 'Record laboratory payments and expenses'),
   ('lab.data.export', 'Export laboratory operations data'),
-  ('lab.report.share', 'Create secure report sharing links')
+  ('lab.report.share', 'Create secure report sharing links'),
+  ('lab.tpa.manage', 'Manage laboratory insurance and TPA claims')
 ON DUPLICATE KEY UPDATE description=VALUES(description);
 
 INSERT INTO role_permissions (role_id, permission_id)
@@ -125,7 +171,7 @@ ON DUPLICATE KEY UPDATE role_id=role_id;
 
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.id,p.id FROM roles r JOIN permissions p
-  ON p.code IN ('lab.packages.manage','lab.accounting.view','lab.accounting.manage','lab.data.export','lab.report.share')
+  ON p.code IN ('lab.packages.manage','lab.accounting.view','lab.accounting.manage','lab.data.export','lab.report.share','lab.tpa.manage')
 WHERE r.code IN ('ADMIN','LAB_ADMIN')
 ON DUPLICATE KEY UPDATE role_id=role_id;
 
