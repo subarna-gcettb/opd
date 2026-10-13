@@ -132,7 +132,7 @@ async function saveConsultation(req, res, next) {
     if (!items.length) throw new AppError('Add at least one medicine to save the consultation and prescription.', 422);
     const result = await consultationService.saveConsultation(req.params.visitId, { ...req.body, allowFinalizedEdit: req.body._editMode === '1' }, req.user.id, items);
     req.flash('success', `Consultation and prescription ${result.prescription.code} (v${result.prescription.version}) saved together.`);
-    res.redirect(`/doctor/consultation/${req.params.visitId}?printPrescriptionId=${encodeURIComponent(result.prescription.id)}`);
+    res.redirect(`/doctor/consultation/${req.params.visitId}`);
   } catch (err) {
     if (err instanceof AppError) {
       req.flash('errors', [{ message: err.message }]);
@@ -149,7 +149,19 @@ async function completeVisit(req, res, next) {
     await opdService.updateVisitStatus(req.params.visitId, 'COMPLETED', req.user.id);
     req.flash('success', 'Consultation completed. The clinical record is now finalized.');
     const [[invoice]] = await pool.execute('SELECT id, status FROM invoices WHERE visit_id = :visitId ORDER BY created_at DESC LIMIT 1', { visitId: req.params.visitId });
-    res.redirect(invoice && invoice.status !== 'PAID' ? '/billing/invoices/' + invoice.id : '/doctor/queue');
+    const [[latestPrescription]] = await pool.execute(
+      'SELECT id FROM prescriptions WHERE visit_id = :visitId AND is_current = 1 ORDER BY created_at DESC LIMIT 1',
+      { visitId: req.params.visitId }
+    );
+    const destination = invoice && invoice.status !== 'PAID'
+      ? '/billing/invoices/' + invoice.id
+      : '/doctor/queue';
+    if (latestPrescription) {
+      return res.redirect(
+        `/doctor/consultation/${req.params.visitId}?printPrescriptionId=${encodeURIComponent(latestPrescription.id)}&afterComplete=${encodeURIComponent(destination)}`
+      );
+    }
+    res.redirect(destination);
   } catch (err) {
     if (err instanceof AppError) {
       req.flash('errors', [{ message: err.message }]);
