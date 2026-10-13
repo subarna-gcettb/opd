@@ -87,6 +87,12 @@ async function saveTestParameters(testId,payload,actorUserId) {
     const refs = Array.isArray(payload.referenceRange) ? payload.referenceRange : (payload.referenceRange ? [payload.referenceRange] : []);
     const lows = Array.isArray(payload.criticalLow) ? payload.criticalLow : (payload.criticalLow ? [payload.criticalLow] : []);
     const highs = Array.isArray(payload.criticalHigh) ? payload.criticalHigh : (payload.criticalHigh ? [payload.criticalHigh] : []);
+    const formulas = Array.isArray(payload.formulaExpression) ? payload.formulaExpression : (payload.formulaExpression ? [payload.formulaExpression] : []);
+    const rangeSexes = Array.isArray(payload.rangeSex) ? payload.rangeSex : (payload.rangeSex ? [payload.rangeSex] : []);
+    const ageMins = Array.isArray(payload.ageMinYears) ? payload.ageMinYears : (payload.ageMinYears ? [payload.ageMinYears] : []);
+    const ageMaxs = Array.isArray(payload.ageMaxYears) ? payload.ageMaxYears : (payload.ageMaxYears ? [payload.ageMaxYears] : []);
+    const rangeLows = Array.isArray(payload.rangeLow) ? payload.rangeLow : (payload.rangeLow ? [payload.rangeLow] : []);
+    const rangeHighs = Array.isArray(payload.rangeHigh) ? payload.rangeHigh : (payload.rangeHigh ? [payload.rangeHigh] : []);
     const kept=[];
     for(let i=0;i<names.length;i++){
       const name=String(names[i]||'').trim(); if(!name) continue;
@@ -96,12 +102,25 @@ async function saveTestParameters(testId,payload,actorUserId) {
       const range=String(refs[i]||'').trim()||null;
       const low=lows[i]!==undefined&&lows[i]!==''?Number(lows[i]):null;
       const high=highs[i]!==undefined&&highs[i]!==''?Number(highs[i]):null;
+      const formula=String(formulas[i]||'').trim()||null;
+      const rangeSex=['ALL','MALE','FEMALE'].includes(rangeSexes[i])?rangeSexes[i]:'ALL';
+      const ageMin=ageMins[i]!==undefined&&ageMins[i]!==''?Number(ageMins[i]):null;
+      const ageMax=ageMaxs[i]!==undefined&&ageMaxs[i]!==''?Number(ageMaxs[i]):null;
+      const rangeLow=rangeLows[i]!==undefined&&rangeLows[i]!==''?Number(rangeLows[i]):null;
+      const rangeHigh=rangeHighs[i]!==undefined&&rangeHighs[i]!==''?Number(rangeHighs[i]):null;
+      if(ageMin!==null&&ageMax!==null&&ageMin>ageMax)throw new AppError('Reference age minimum cannot exceed age maximum.',422);
+      if(rangeLow!==null&&rangeHigh!==null&&rangeLow>rangeHigh)throw new AppError('Reference low value cannot exceed high value.',422);
       if(id){
-        await conn.execute('UPDATE lab_test_parameters SET code=:code,name=:name,data_type=:dataType,unit=:unit,reference_range_text=:rangeText,critical_low=:low,critical_high=:high,is_active=1,sort_order=:sortOrder WHERE id=:id AND test_id=:testId',{id,testId,code,name,dataType,unit,rangeText:range,low,high,sortOrder:i+1});
+        await conn.execute('UPDATE lab_test_parameters SET code=:code,name=:name,data_type=:dataType,unit=:unit,reference_range_text=:rangeText,critical_low=:low,critical_high=:high,formula_expression=:formula,is_active=1,sort_order=:sortOrder WHERE id=:id AND test_id=:testId',{id,testId,code,name,dataType,unit,rangeText:range,low,high,formula,sortOrder:i+1});
         kept.push(id);
       }else{
-        const [r]=await conn.execute('INSERT INTO lab_test_parameters (test_id,code,name,data_type,unit,reference_range_text,critical_low,critical_high,sort_order,is_active) VALUES (:testId,:code,:name,:dataType,:unit,:rangeText,:low,:high,:sortOrder,1)',{testId,code,name,dataType,unit,rangeText:range,low,high,sortOrder:i+1});
+        const [r]=await conn.execute('INSERT INTO lab_test_parameters (test_id,code,name,data_type,unit,reference_range_text,critical_low,critical_high,formula_expression,sort_order,is_active) VALUES (:testId,:code,:name,:dataType,:unit,:rangeText,:low,:high,:formula,:sortOrder,1)',{testId,code,name,dataType,unit,rangeText:range,low,high,formula,sortOrder:i+1});
         kept.push(r.insertId);
+      }
+      const parameterId=id||kept[kept.length-1];
+      await conn.execute('DELETE FROM lab_reference_ranges WHERE parameter_id=:parameterId',{parameterId});
+      if(range!==null||ageMin!==null||ageMax!==null||rangeLow!==null||rangeHigh!==null||rangeSex!=='ALL'){
+        await conn.execute('INSERT INTO lab_reference_ranges (parameter_id,sex,age_min_years,age_max_years,low_value,high_value,range_text,is_active) VALUES (:parameterId,:sex,:ageMin,:ageMax,:low,:high,:rangeText,1)',{parameterId,sex:rangeSex,ageMin,ageMax,low:rangeLow,high:rangeHigh,rangeText:range});
       }
     }
     if(kept.length){
