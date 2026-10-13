@@ -306,16 +306,47 @@ async function showVitals(req, res, next) {
       { id: req.params.visitId }
     );
     const [[pregnancy]] = await pool.execute(
-      `SELECT lmp_date, gravida, para, abortions, pregnancy_status,
+      `SELECT lmp_date, gravida, para, abortions, pregnancy_status, pregnancy_dating_method,
+              usg_date, usg_gestational_age_weeks, usg_gestational_age_days, usg_edd,
               gestational_age_weeks, gestational_age_days, estimated_due_date, obstetric_notes
        FROM appointments WHERE id = :appointmentId`,
       { appointmentId: visit.appointment_id }
     );
 
-    const { calculatePregnancy } = require('../utils/pregnancyCalculator');
-    const pregnancyCalculation = pregnancy && pregnancy.pregnancy_status === 'PREGNANT'
-      ? calculatePregnancy(pregnancy.lmp_date)
-      : null;
+    const {
+      calculatePregnancy,
+      calculatePregnancyFromReference,
+      calculatePregnancyFromUltrasound,
+      calculatePregnancyFromUltrasoundEdd
+    } = require('../utils/pregnancyCalculator');
+    const pregnancyMethod = String(pregnancy && pregnancy.pregnancy_dating_method || 'LMP').toUpperCase();
+    let pregnancyCalculation = null;
+    if (pregnancy && pregnancy.pregnancy_status === 'PREGNANT') {
+      if (pregnancyMethod === 'USG') {
+        pregnancyCalculation = calculatePregnancyFromUltrasound(
+          pregnancy.usg_date,
+          pregnancy.usg_gestational_age_weeks,
+          pregnancy.usg_gestational_age_days,
+          visit.appointment_date
+        );
+      } else if (pregnancyMethod === 'USG_EDD') {
+        pregnancyCalculation = calculatePregnancyFromUltrasoundEdd(pregnancy.usg_edd, visit.appointment_date);
+      } else if (pregnancyMethod === 'CONCEPTION') {
+        pregnancyCalculation = calculatePregnancy(pregnancy.lmp_date, visit.appointment_date);
+        if (pregnancyCalculation) {
+          pregnancyCalculation.referenceMode = 'CONCEPTION';
+          pregnancyCalculation.referenceDate = pregnancyCalculation.conceptionDate;
+        }
+      } else if (pregnancyMethod === 'EDD') {
+        pregnancyCalculation = calculatePregnancy(pregnancy.lmp_date, visit.appointment_date);
+        if (pregnancyCalculation) {
+          pregnancyCalculation.referenceMode = 'EDD';
+          pregnancyCalculation.referenceDate = pregnancyCalculation.estimatedDueDate;
+        }
+      } else {
+        pregnancyCalculation = calculatePregnancy(pregnancy.lmp_date, visit.appointment_date);
+      }
+    }
 
     res.render('opd/vitals', {
       title: `Vitals — ${visit.patient_name}`,
@@ -343,7 +374,7 @@ async function saveVitals(req, res, next) {
   };
   try {
     const [[visit]] = await pool.execute(
-      `SELECT v.id, v.appointment_id, p.gender
+      `SELECT v.id, v.appointment_id, p.gender, a.appointment_date
        FROM opd_visits v JOIN appointments a ON a.id = v.appointment_id
        JOIN patients p ON p.id = v.patient_id
        WHERE v.id = :id`,
@@ -389,11 +420,11 @@ async function saveVitals(req, res, next) {
       const datingMethod = String(req.body.pregnancyDatingMethod || 'LMP').toUpperCase();
       let calculation = null;
       if (status === 'PREGNANT') {
-        if (datingMethod === 'USG') calculation = calculatePregnancyFromUltrasound(req.body.usgDate, req.body.usgGestationalAgeWeeks, req.body.usgGestationalAgeDays);
-        else if (datingMethod === 'USG_EDD') calculation = calculatePregnancyFromUltrasoundEdd(req.body.usgEdd);
-        else if (datingMethod === 'CONCEPTION') calculation = calculatePregnancyFromReference(req.body.conceptionDate, 'CONCEPTION');
-        else if (datingMethod === 'EDD') calculation = calculatePregnancyFromReference(req.body.referenceDate, 'EDD');
-        else calculation = calculatePregnancy(req.body.lmpDate);
+        if (datingMethod === 'USG') calculation = calculatePregnancyFromUltrasound(req.body.usgDate, req.body.usgGestationalAgeWeeks, req.body.usgGestationalAgeDays, visit.appointment_date);
+        else if (datingMethod === 'USG_EDD') calculation = calculatePregnancyFromUltrasoundEdd(req.body.usgEdd, visit.appointment_date);
+        else if (datingMethod === 'CONCEPTION') calculation = calculatePregnancyFromReference(req.body.conceptionDate, 'CONCEPTION', visit.appointment_date);
+        else if (datingMethod === 'EDD') calculation = calculatePregnancyFromReference(req.body.referenceDate, 'EDD', visit.appointment_date);
+        else calculation = calculatePregnancy(req.body.lmpDate, visit.appointment_date);
       }
       if (status === 'PREGNANT' && !calculation) {
         throw new AppError('Invalid pregnancy dating input. Check the LMP/conception/EDD or USG/ultrasound report values.', 400);
