@@ -119,9 +119,21 @@ async function addException(req, res, next) {
   }
 }
 
+async function assertAgentDoctorBranch(req) {
+  if (!req.user || !Array.isArray(req.user.roles) || !req.user.roles.includes('AGENT')) return;
+  const branchId = req.user.branch_id;
+  if (!branchId) throw new AppError('Agent account has no branch assigned', 403);
+  const [[doctor]] = await pool.execute(
+    'SELECT id FROM doctors WHERE id=:doctorId AND branch_id=:branchId AND is_active=1 AND deleted_at IS NULL LIMIT 1',
+    { doctorId: req.params.id, branchId }
+  );
+  if (!doctor) throw new AppError('Doctor not found for your branch', 404);
+}
+
 /** JSON endpoint used by the booking screen to fetch live slot availability. */
 async function availableSlots(req, res, next) {
   try {
+    await assertAgentDoctorBranch(req);
     const slots = await scheduleService.getAvailableSlots(req.params.id, req.query.date);
     res.json({ slots });
   } catch (err) {
@@ -131,6 +143,7 @@ async function availableSlots(req, res, next) {
 
 async function availableDates(req, res, next) {
   try {
+    await assertAgentDoctorBranch(req);
     const from = req.query.from || new Date().toISOString().slice(0, 10);
     const dates = await scheduleService.getAvailableDates(req.params.id, from, req.query.days || 90);
     res.json({ dates });
@@ -142,8 +155,11 @@ async function availableDates(req, res, next) {
 /** JSON endpoint: doctors filtered by department/branch, for booking form cascade. */
 async function doctorsByFilter(req, res, next) {
   try {
+    const isAgent = Array.isArray(req.user.roles) && req.user.roles.includes('AGENT');
+    const branchId = isAgent ? req.user.branch_id : (req.query.branchId || null);
+    if (isAgent && !branchId) throw new AppError('Agent account has no branch assigned', 403);
     const doctors = await doctorService.listDoctors({
-      branchId: req.query.branchId || null,
+      branchId,
       departmentId: req.query.departmentId || null
     });
     res.json({ doctors });
