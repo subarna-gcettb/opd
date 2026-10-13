@@ -135,7 +135,7 @@ async function getAccounting(branchId, fromDate, toDate) {
     { branchId, fromDate, toDate }
   );
   const [tat] = await pool.execute(
-    'SELECT oi.test_name_snapshot name,AVG(TIMESTAMPDIFF(MINUTE,s.collected_at,oi.completed_at)) avg_minutes,COUNT(*) count FROM lab_order_items oi JOIN lab_orders o ON o.id=oi.lab_order_id JOIN laboratories l ON l.id=o.laboratory_id JOIN lab_samples s ON s.lab_order_item_id=oi.id WHERE l.branch_id=:branchId AND oi.completed_at IS NOT NULL AND s.collected_at IS NOT NULL AND DATE(oi.completed_at) BETWEEN :fromDate AND :toDate GROUP BY oi.test_name_snapshot ORDER BY avg_minutes DESC LIMIT 10',
+    'SELECT oi.test_name_snapshot name,AVG(TIMESTAMPDIFF(MINUTE,s.collected_at,oi.completed_at)) avg_minutes,COUNT(*) count FROM lab_order_items oi JOIN lab_orders o ON o.id=oi.lab_order_id JOIN laboratories l ON l.id=o.laboratory_id JOIN (SELECT lab_order_item_id,MAX(collected_at) collected_at FROM lab_samples GROUP BY lab_order_item_id) s ON s.lab_order_item_id=oi.id WHERE l.branch_id=:branchId AND oi.completed_at IS NOT NULL AND s.collected_at IS NOT NULL AND DATE(oi.completed_at) BETWEEN :fromDate AND :toDate GROUP BY oi.test_name_snapshot ORDER BY avg_minutes DESC LIMIT 10',
     { branchId, fromDate, toDate }
   );
   return { collections, expenses, summary: { collected: Number(summary.collected || 0), expenses: Number(summary.expenses || 0), orders: Number(summary.orders_count || 0), reports: Number(summary.reports_count || 0) }, topTests, tat };
