@@ -357,7 +357,8 @@ async function saveResult(itemId,actorUserId,payload,mode='enter') {
 
 async function verifyResult(resultId,actorUserId) {
   return withTransaction(async conn=>{
-    const [[r]]=await conn.execute('SELECT r.*,oi.lab_order_id FROM lab_results r JOIN lab_order_items oi ON oi.id=r.lab_order_item_id WHERE r.id=:id AND r.is_current=1 FOR UPDATE',{id:resultId});
+    const branchId=await actorBranch(conn,actorUserId);
+    const [[r]]=await conn.execute('SELECT r.*,oi.lab_order_id FROM lab_results r JOIN lab_order_items oi ON oi.id=r.lab_order_item_id JOIN lab_orders o ON o.id=oi.lab_order_id JOIN laboratories l ON l.id=o.laboratory_id WHERE r.id=:id AND r.is_current=1 AND l.branch_id=:branchId FOR UPDATE',{id:resultId,branchId});
     if(!r)throw new AppError('Current result not found',404);if(r.status!=='RESULT_ENTERED')throw new AppError('Only entered results can be verified',409);
     await conn.execute('UPDATE lab_results SET status="VERIFIED",reviewed_by=:userId,reviewed_at=NOW() WHERE id=:id',{id:resultId,userId:actorUserId});await conn.execute('UPDATE lab_order_items SET status="VERIFIED" WHERE id=:id',{id:r.lab_order_item_id});await recalcOrder(conn,r.lab_order_id);
     await auditService.log({userId:actorUserId,action:'LAB_RESULT_VERIFIED',entity:'lab_result',entityId:resultId},conn);
@@ -366,7 +367,8 @@ async function verifyResult(resultId,actorUserId) {
 
 async function releaseResult(resultId,actorUserId) {
   return withTransaction(async conn=>{
-    const [[r]]=await conn.execute('SELECT r.*,oi.lab_order_id FROM lab_results r JOIN lab_order_items oi ON oi.id=r.lab_order_item_id WHERE r.id=:id AND r.is_current=1 FOR UPDATE',{id:resultId});
+    const branchId=await actorBranch(conn,actorUserId);
+    const [[r]]=await conn.execute('SELECT r.*,oi.lab_order_id FROM lab_results r JOIN lab_order_items oi ON oi.id=r.lab_order_item_id JOIN lab_orders o ON o.id=oi.lab_order_id JOIN laboratories l ON l.id=o.laboratory_id WHERE r.id=:id AND r.is_current=1 AND l.branch_id=:branchId FOR UPDATE',{id:resultId,branchId});
     if(!r)throw new AppError('Current result not found',404);if(r.status!=='VERIFIED')throw new AppError('Result must be verified before release',409);
     await conn.execute('UPDATE lab_results SET status="RELEASED",released_by=:userId,released_at=NOW() WHERE id=:id',{id:resultId,userId:actorUserId});await conn.execute('UPDATE lab_order_items SET status="REPORTED",completed_at=NOW() WHERE id=:id',{id:r.lab_order_item_id});await recalcOrder(conn,r.lab_order_id);
     await auditService.log({userId:actorUserId,action:'LAB_RESULT_RELEASED',entity:'lab_result',entityId:resultId},conn);
