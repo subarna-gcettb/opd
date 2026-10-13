@@ -72,11 +72,21 @@ async function searchPatients(req,res,next){
 async function bookOpd(req,res,next){
   try {
     if (!req.body.healthId || !req.body.doctorId || !req.body.departmentId || !req.body.appointmentDate || !req.body.slotTime || !req.body.referralCode) {
-      throw new AppError('Health ID, referral number, department, doctor, date and slot time are required.',422);
+      throw new AppError('Health ID, referral selection, department, doctor, date and slot time are required.',422);
     }
     const bid=branchId(req);
     const patient=await agentService.getPatient(req.body.healthId,bid);
     if(!patient) throw new AppError('Patient not found in this branch. Search by Health ID and select a valid patient.',404);
+
+    // Existing patient attribution is immutable. Only patients without a
+    // registered referral code can choose No referral or a new active code.
+    let resolvedReferralCode = null;
+    if (patient.referral_code) {
+      resolvedReferralCode = (await agentService.resolveReferralForPatient(patient, patient.referral_code)).referral_code;
+    } else if (req.body.referralCode !== 'NO_REFERRAL') {
+      resolvedReferralCode = (await agentService.resolveReferralForPatient(patient, req.body.referralCode)).referral_code;
+    }
+
     const result=await opdService.bookAppointment({
       patientId:patient.id,
       doctorId:req.body.doctorId,
@@ -98,7 +108,7 @@ async function bookOpd(req,res,next){
         usgGestationalAgeDays: req.body.usgGestationalAgeDays,
         usgEdd: req.body.usgEdd,
         obstetricNotes: req.body.obstetricNotes,
-      referralCode:(await agentService.resolveReferralForPatient(patient,req.body.referralCode)).referral_code
+      referralCode: resolvedReferralCode
     },req.user.id);
     req.flash('success',`OPD booked for ${patient.name}. Token ${String(result.token).padStart(3,'0')} — ${result.appointmentCode}`);
     res.redirect('/agent/patients');
