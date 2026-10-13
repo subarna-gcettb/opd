@@ -44,6 +44,10 @@ async function getTest(testId) {
   );
   if (!test) return null;
   const [parameters] = await pool.execute('SELECT p.* FROM lab_test_parameters p WHERE p.test_id=:testId AND p.is_active=1 ORDER BY p.sort_order,p.name',{testId});
+  for(const parameter of parameters){
+    const [[range]]=await pool.execute("SELECT sex,age_min_years,age_max_years,low_value,high_value,range_text FROM lab_reference_ranges WHERE parameter_id=:id AND is_active=1 ORDER BY (sex<>'ALL') DESC,(age_min_years IS NOT NULL) DESC LIMIT 1",{id:parameter.id});
+    if(range)Object.assign(parameter,{range_sex:range.sex,age_min_years:range.age_min_years,age_max_years:range.age_max_years,range_low_value:range.low_value,range_high_value:range.high_value});
+  }
   return {test,parameters};
 }
 
