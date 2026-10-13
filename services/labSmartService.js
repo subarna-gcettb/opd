@@ -223,6 +223,85 @@ function csvCell(value) {
   return '"' + text.replace(/"/g, '""') + '"';
 }
 
+
+const DEFAULT_SETTINGS = {
+  google_review_url: '',
+  review_message: 'Thank you for choosing Chhayabithi Hospital. If you are satisfied with our service, please share your feedback.',
+  report_font_size_pt: 10,
+  report_margin_top_mm: 10,
+  report_margin_bottom_mm: 10,
+  report_show_interpretation: 1,
+  report_show_comments: 1,
+  report_show_method: 1,
+  report_show_instrument: 1
+};
+
+async function getSettings(branchId) {
+  const lab=await getLaboratory(branchId);
+  const [[settings]]=await pool.execute('SELECT * FROM lab_settings WHERE laboratory_id=:labId LIMIT 1',{labId:lab.id});
+  return { ...DEFAULT_SETTINGS, ...(settings||{}), laboratory_id:lab.id, laboratory_name:lab.name };
+}
+
+async function getSettingsByLaboratoryId(laboratoryId) {
+  const [[settings]]=await pool.execute('SELECT * FROM lab_settings WHERE laboratory_id=:labId LIMIT 1',{labId:laboratoryId});
+  return { ...DEFAULT_SETTINGS, ...(settings||{}) };
+}
+
+async function saveSettings(branchId, actorUserId, payload) {
+  const lab=await getLaboratory(branchId);
+  const reviewUrl=String(payload.googleReviewUrl||'').trim();
+  if(reviewUrl){
+    let parsed;
+    try{parsed=new URL(reviewUrl);}catch(_){throw new AppError('Enter a valid Google review URL.',422);}
+    if(parsed.protocol!=='https:'||!/(^|\\.)google\\.com$|(^|\\.)g\.page$|(^|\\.)maps\\.app\.goo\.gl$/.test(parsed.hostname))throw new AppError('Use a secure Google review link from Google Maps or Google Business Profile.',422);
+  }
+  const font=Number(payload.reportFontSizePt||10),top=Number(payload.reportMarginTopMm||10),bottom=Number(payload.reportMarginBottomMm||10);
+  if(!Number.isFinite(font)||font<8||font>16)throw new AppError('Report font size must be between 8 and 16 pt.',422);
+  if(!Number.isFinite(top)||top<0||top>40||!Number.isFinite(bottom)||bottom<0||bottom>40)throw new AppError('Report margins must be between 0 and 40 mm.',422);
+  const values={
+    labId:lab.id,reviewUrl:reviewUrl||null,reviewMessage:String(payload.reviewMessage||'').trim().slice(0,1000)||DEFAULT_SETTINGS.review_message,
+    font,top,bottom,showInterpretation:payload.reportShowInterpretation==='1'?1:0,
+    showComments:payload.reportShowComments==='1'?1:0,showMethod:payload.reportShowMethod==='1'?1:0,
+    showInstrument:payload.reportShowInstrument==='1'?1:0,userId:actorUserId
+  };
+  await pool.execute(
+    'INSERT INTO lab_settings (laboratory_id,google_review_url,review_message,report_font_size_pt,report_margin_top_mm,report_margin_bottom_mm,report_show_interpretation,report_show_comments,report_show_method,report_show_instrument,updated_by) VALUES (:labId,:reviewUrl,:reviewMessage,:font,:top,:bottom,:showInterpretation,:showComments,:showMethod,:showInstrument,:userId) ON DUPLICATE KEY UPDATE google_review_url=VALUES(google_review_url),review_message=VALUES(review_message),report_font_size_pt=VALUES(report_font_size_pt),report_margin_top_mm=VALUES(report_margin_top_mm),report_margin_bottom_mm=VALUES(report_margin_bottom_mm),report_show_interpretation=VALUES(report_show_interpretation),report_show_comments=VALUES(report_show_comments),report_show_method=VALUES(report_show_method),report_show_instrument=VALUES(report_show_instrument),updated_by=VALUES(updated_by)',
+    values
+  );
+  await auditService.log({userId:actorUserId,action:'LAB_SETTINGS_UPDATED',entity:'laboratory',entityId:lab.id,newValue:{googleReviewConfigured:Boolean(reviewUrl),fontSize:font,marginTop:top,marginBottom:bottom}});
+}
+
+async function getTpaClaim(branchId, orderId) {
+  const [[claim]]=await pool.execute('SELECT c.* FROM lab_tpa_claims c JOIN lab_orders o ON o.id=c.lab_order_id JOIN laboratories l ON l.id=o.laboratory_id WHERE c.lab_order_id=:orderId AND l.branch_id=:branchId LIMIT 1',{orderId,branchId});
+  return claim||null;
+}
+
+async function saveTpaClaim(branchId, actorUserId, orderId, payload) {
+  const insurer=String(payload.insurerName||'').trim();
+  const statusOptions=['DRAFT','SUBMITTED','QUERY','APPROVED','REJECTED','SETTLED'];
+  const status=statusOptions.includes(payload.status)?payload.status:'DRAFT';
+  const claimAmount=Number(payload.claimAmount||0);
+  const approvedAmount=String(payload.approvedAmount??'').trim()===''?null:Number(payload.approvedAmount);
+  const paidAmount=Number(payload.paidAmount||0);
+  if(!insurer)throw new AppError('Insurance company / TPA name is required.',422);
+  if(!Number.isFinite(claimAmount)||claimAmount<0||!Number.isFinite(paidAmount)||paidAmount<0||(approvedAmount!==null&&(!Number.isFinite(approvedAmount)||approvedAmount<0)))throw new AppError('Claim, approved and paid amounts must be valid non-negative amounts.',422);
+  if(paidAmount>(approvedAmount===null?claimAmount:approvedAmount))throw new AppError('Paid amount cannot exceed the approved claim amount.',422);
+  return withTransaction(async conn=>{
+    const [[order]]=await conn.execute('SELECT o.id,o.net_amount FROM lab_orders o JOIN laboratories l ON l.id=o.laboratory_id WHERE o.id=:id AND l.branch_id=:branchId FOR UPDATE',{id:orderId,branchId});
+    if(!order)throw new AppError('Laboratory order not found in this branch.',404);
+    const [existingRows]=await conn.execute('SELECT id,created_by FROM lab_tpa_claims WHERE lab_order_id=:id FOR UPDATE',{id:orderId});
+    const existing=existingRows[0];
+    const [result]=await conn.execute(
+      'INSERT INTO lab_tpa_claims (lab_order_id,insurer_name,policy_number,claim_number,claim_amount,approved_amount,paid_amount,status,submitted_at,settled_at,notes,created_by,updated_by) VALUES (:orderId,:insurer,:policy,:claimNumber,:claimAmount,:approvedAmount,:paidAmount,:status,IF(:status=\'SUBMITTED\',NOW(),NULL),IF(:status=\'SETTLED\',NOW(),NULL),:notes,:createdBy,:userId) ON DUPLICATE KEY UPDATE insurer_name=VALUES(insurer_name),policy_number=VALUES(policy_number),claim_number=VALUES(claim_number),claim_amount=VALUES(claim_amount),approved_amount=VALUES(approved_amount),paid_amount=VALUES(paid_amount),status=VALUES(status),submitted_at=IF(VALUES(status)=\'SUBMITTED\',COALESCE(submitted_at,NOW()),submitted_at),settled_at=IF(VALUES(status)=\'SETTLED\',COALESCE(settled_at,NOW()),settled_at),notes=VALUES(notes),updated_by=VALUES(updated_by)',
+      {orderId,insurer,policy:String(payload.policyNumber||'').trim()||null,claimNumber:String(payload.claimNumber||'').trim()||null,claimAmount,approvedAmount,paidAmount,status,notes:String(payload.notes||'').trim()||null,createdBy:existing?existing.created_by:actorUserId,userId:actorUserId}
+    );
+    const claimId=existing?existing.id:result.insertId;
+    await auditService.log({userId:actorUserId,action:existing?'LAB_TPA_CLAIM_UPDATED':'LAB_TPA_CLAIM_CREATED',entity:'lab_tpa_claim',entityId:claimId,newValue:{orderId,insurer,claimAmount,approvedAmount,paidAmount,status}},conn);
+    return claimId;
+  });
+}
+
+
 async function exportRows(branchId, fromDate, toDate) {
   const [rows] = await pool.execute(
     'SELECT o.order_code,o.booking_date,p.health_id,p.name patient_name,p.gender,p.age_years,o.source,o.priority,o.status,oi.test_code_snapshot,oi.test_name_snapshot,oi.status test_status,oi.price_snapshot,CASE WHEN oi.id=(SELECT MIN(oi2.id) FROM lab_order_items oi2 WHERE oi2.lab_order_id=o.id) THEN o.net_amount ELSE 0 END net_amount,o.payment_status,CASE WHEN oi.id=(SELECT MIN(oi2.id) FROM lab_order_items oi2 WHERE oi2.lab_order_id=o.id) THEN COALESCE(pay.paid,0) ELSE 0 END paid_amount,CASE WHEN oi.id=(SELECT MIN(oi2.id) FROM lab_order_items oi2 WHERE oi2.lab_order_id=o.id) THEN (o.net_amount-COALESCE(pay.paid,0)) ELSE 0 END due_amount,o.created_at,oi.completed_at FROM lab_orders o JOIN laboratories l ON l.id=o.laboratory_id JOIN patients p ON p.id=o.patient_id JOIN lab_order_items oi ON oi.lab_order_id=o.id LEFT JOIN (SELECT lab_order_id,SUM(amount) paid FROM lab_order_payments GROUP BY lab_order_id) pay ON pay.lab_order_id=o.id WHERE l.branch_id=:branchId AND o.booking_date BETWEEN :fromDate AND :toDate ORDER BY o.booking_date DESC,o.id DESC,oi.id',
@@ -233,5 +312,6 @@ async function exportRows(branchId, fromDate, toDate) {
 
 module.exports = {
   listPackages, getPackage, savePackage, recordPayment, getOrderPayments, getAccounting,
-  createExpense, createShareToken, getPublicOrder, getPublicReport, logNotification, csvCell, exportRows
+  createExpense, createShareToken, getPublicOrder, getPublicReport, logNotification, csvCell, exportRows,
+  getSettings, getSettingsByLaboratoryId, saveSettings, getTpaClaim, saveTpaClaim
 };
