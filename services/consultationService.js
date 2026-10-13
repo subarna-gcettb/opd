@@ -402,7 +402,7 @@ async function saveConsultation(visitId, payload, actorUserId, prescriptionItems
           abortions: isFemale && payload.abortions !== '' && payload.abortions != null ? Math.max(0, Number(payload.abortions)) : null,
           pregnancyStatus,
           datingMethod: pregnancyStatus === 'PREGNANT' ? datingMethod : null,
-          usgDate: pregnancyStatus === 'PREGNANT' && datingMethod.startsWith('USG') ? (payload.usgDate || null) : null,
+          usgDate: pregnancyStatus === 'PREGNANT' && datingMethod === 'USG' ? (payload.usgDate || null) : null,
           usgWeeks: pregnancyStatus === 'PREGNANT' && datingMethod === 'USG' ? Number(payload.usgGestationalAgeWeeks) : null,
           usgDays: pregnancyStatus === 'PREGNANT' && datingMethod === 'USG' ? Number(payload.usgGestationalAgeDays || 0) : null,
           usgEdd: pregnancyStatus === 'PREGNANT' && datingMethod === 'USG_EDD' ? (payload.usgEdd || null) : null,
