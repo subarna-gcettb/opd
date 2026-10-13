@@ -2,6 +2,8 @@ const { pool } = require('../config/database');
 const labSmartService = require('../services/labSmartService');
 const AppError = require('../utils/AppError');
 const bwipjs = require('bwip-js');
+const path = require('path');
+const { uploadDir } = require('../utils/labReportUpload');
 
 async function order(req,res,next){
   try{
@@ -22,4 +24,17 @@ async function report(req,res,next){
   }catch(err){next(err);}
 }
 
-module.exports={order,report};
+
+async function reportFile(req,res,next){
+  try{
+    const data=await labSmartService.getPublicReport(req.params.token,req.params.resultId);
+    if(!data)throw new AppError('Released report not found or secure link expired.',404);
+    if(!data.result.report_storage_path)throw new AppError('No attached imaging report is available.',404);
+    const absolute=path.resolve(data.result.report_storage_path),root=path.resolve(uploadDir);
+    if(!absolute.startsWith(root+path.sep))throw new AppError('Invalid report file path.',403);
+    const filename=String(data.result.report_file_name||'lab-report').replace(/["\\\\]/g,'');
+    res.sendFile(absolute,{headers:{'Content-Disposition':'inline; filename="'+filename+'"'}});
+  }catch(err){next(err);}
+}
+
+module.exports={order,report,reportFile};
