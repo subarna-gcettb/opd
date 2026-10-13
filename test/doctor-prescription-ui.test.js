@@ -153,6 +153,9 @@ test('Agent OPD booking uses dynamic department, doctor, date and slot cascade',
   assert.match(source, /available-dates/);
   assert.match(source, /\/doctors\/.*\/slots/);
   assert.match(source, /agentSlotTime/);
+  // flatpickr may call disable before picker is assigned; this must not abort startup.
+  assert.ok(source.includes("disable:[d=>!availableDates.has(picker ? picker.formatDate(d,'Y-m-d') : '')]"));
+  assert.ok(source.includes('<button type="submit" class="btn btn-primary btn-lg">Book OPD Appointment</button>'));
 });
 
 
