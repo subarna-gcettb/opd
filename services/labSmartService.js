@@ -333,7 +333,7 @@ async function saveTpaClaim(branchId, actorUserId, orderId, payload) {
     const [[paidRow]]=await conn.execute('SELECT COALESCE(SUM(amount),0) paid FROM lab_order_payments WHERE lab_order_id=:orderId',{orderId});
     const totalPaid=Number(paidRow.paid||0);
     const paymentStatus=totalPaid+0.005>=Number(order.net_amount||0)?'PAID':(totalPaid>0?'PARTIAL':'UNPAID');
-    await conn.execute('UPDATE lab_orders SET payment_status=:status WHERE id=:orderId',{status:paymentStatus,orderId});
+    if(order.payment_status!=='WAIVED')await conn.execute('UPDATE lab_orders SET payment_status=:status WHERE id=:orderId',{status:paymentStatus,orderId});
     await auditService.log({userId:actorUserId,action:existing?'LAB_TPA_CLAIM_UPDATED':'LAB_TPA_CLAIM_CREATED',entity:'lab_tpa_claim',entityId:claimId,newValue:{orderId,insurer,claimAmount,approvedAmount,paidAmount,additionalTpaPayment,status}},conn);
     return claimId;
   });
