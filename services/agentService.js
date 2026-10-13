@@ -116,7 +116,7 @@ async function searchPatientsForAgent(q, branchId, limit = 10) {
   if (term.length < 2) return [];
   const safeLimit = Math.min(20, Math.max(1, Number.parseInt(limit, 10) || 10));
   const like = '%' + term + '%';
-  const isAadhaarLast4 = /^\\d{4}$/.test(term);
+  const isAadhaarLast4 = /^\d{4}$/.test(term);
   const sql = 'SELECT p.id, p.health_id, p.registration_number, p.name, p.gender, p.age_years, p.mobile, p.aadhaar_last4, p.referral_code, p.referral_provider_id, rp.provider_name AS referral_provider_name ' +
     'FROM patients p LEFT JOIN referral_providers rp ON rp.id = p.referral_provider_id ' +
     'WHERE p.branch_id = :branchId AND p.deleted_at IS NULL ' +
