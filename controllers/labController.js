@@ -43,9 +43,10 @@ async function orderDetail(req,res,next){try{
   const data=await labService.getOrder(req.params.id); if(!data)throw new AppError('Laboratory order not found',404); if(!req.user.roles.includes('SUPER_ADMIN')&&Number(data.order.branch_id)!==Number(req.user.branch_id))throw new AppError('You do not have access to this laboratory branch',403);
   const payments=await labSmartService.getOrderPayments(branchId(req),data.order.id);
   const tpaClaim=await labSmartService.getTpaClaim(branchId(req),data.order.id);
+  const phlebotomists=data.order.collection_type==='HOME'?await labSmartService.listPhlebotomists(branchId(req)):[];
   const paid=payments.reduce((sum,p)=>sum+Number(p.amount||0),0);
   const shareUrl=req.protocol+'://'+req.get('host')+'/lab/orders/'+data.order.id+'/share';
-  res.render('lab/order-detail',{title:data.order.order_code+' · Laboratory Order',...data,payments,tpaClaim,paid,due:Math.max(0,Number(data.order.net_amount||0)-paid),shareUrl});
+  res.render('lab/order-detail',{title:data.order.order_code+' · Laboratory Order',...data,payments,tpaClaim,phlebotomists,paid,due:Math.max(0,Number(data.order.net_amount||0)-paid),shareUrl});
 }catch(err){next(err);}}
 
 async function collectSample(req,res,next){try{
@@ -283,10 +284,16 @@ async function reviewBuilder(req,res,next){try{
   res.render('lab/review-builder',{title:'Google Review Builder',settings,order,message,reviewUrl:settings.google_review_url||''});
 }catch(err){next(err);}}
 
+async function assignHomeCollection(req,res,next){try{
+  const result=await labSmartService.assignHomeCollection(branchId(req),req.user.id,Number(req.params.id),req.body.assignedTo);
+  req.flash('success',result.status==='ASSIGNED'?'Home collection assigned to phlebotomist.':'Home collection assignment cleared.');
+  res.redirect('/lab/orders/'+req.params.id);
+}catch(err){if(err instanceof AppError){req.flash('errors',[{message:err.message}]);return res.redirect('/lab/orders/'+req.params.id);}next(err);}}
+
 async function saveTpaClaim(req,res,next){try{
   await labSmartService.saveTpaClaim(branchId(req),req.user.id,Number(req.params.id),req.body);
   req.flash('success','Insurance / TPA claim saved.');
   res.redirect('/lab/orders/'+req.params.id);
 }catch(err){if(err instanceof AppError){req.flash('errors',[{message:err.message}]);return res.redirect('/lab/orders/'+req.params.id);}next(err);}}
 
-module.exports={dashboard,orders,showNewOrder,createOrder,orderDetail,printBill,printSampleLabel,collectSample,receiveSample,rejectSample,resultForm,saveResult,viewResult,verifyResult,releaseResult,attachFile,printReport,downloadReportFile,tests,showTestForm,saveTest,cancelOrder,packages,packageForm,savePackage,accounting,createExpense,recordPayment,exportCsv,shareOrder,shareResult,emailReport,settings,saveSettings,reviewBuilder,saveTpaClaim};
+module.exports={dashboard,orders,showNewOrder,createOrder,orderDetail,printBill,printSampleLabel,collectSample,receiveSample,rejectSample,resultForm,saveResult,viewResult,verifyResult,releaseResult,attachFile,printReport,downloadReportFile,tests,showTestForm,saveTest,cancelOrder,packages,packageForm,savePackage,accounting,createExpense,recordPayment,exportCsv,shareOrder,shareResult,emailReport,settings,saveSettings,reviewBuilder,saveTpaClaim,assignHomeCollection};
