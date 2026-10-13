@@ -191,7 +191,7 @@ async function getPublicOrder(token) {
   );
   if (!order) return null;
   const [items] = await pool.execute(
-    'SELECT oi.id,oi.test_name_snapshot,oi.test_code_snapshot,oi.status,oi.completed_at,r.id result_id,r.status result_status,r.version result_version FROM lab_order_items oi LEFT JOIN lab_results r ON r.lab_order_item_id=oi.id AND r.is_current=1 WHERE oi.lab_order_id=:id ORDER BY oi.id',
+    'SELECT oi.id,oi.test_name_snapshot,oi.test_code_snapshot,oi.status,oi.completed_at,r.id result_id,r.status result_status,r.version result_version,r.report_file_name FROM lab_order_items oi LEFT JOIN lab_results r ON r.lab_order_item_id=oi.id AND r.is_current=1 WHERE oi.lab_order_id=:id ORDER BY oi.id',
     { id: order.id }
   );
   if (order.token_result_id) {
