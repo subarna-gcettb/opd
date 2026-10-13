@@ -91,7 +91,7 @@
       <input type="hidden" name="_editMode" value="<%= editMode ? '1' : '0' %>">
 
       <% if (String(visit.gender || '').toLowerCase() === 'female') { %>
-      <%- include('../partials/pregnancy-assessment', { pregnancy: visit, pregnancyCalculation, canEdit }) %>
+      <%- include('../partials/pregnancy-assessment', { pregnancy: visit, pregnancyCalculation, canEdit, asOfDate: visit.appointment_date }) %>
       <% } %>
 
       <div class="card-header">Clinical Consultation</div>
