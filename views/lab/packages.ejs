@@ -1,0 +1,9 @@
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <div><h4 class="mb-0">Test Panels & Packages</h4><div class="small text-muted">Create checkup bundles with package pricing.</div></div>
+  <div class="d-flex gap-2"><a class="btn btn-outline-secondary btn-sm" href="/lab/tests">Test master</a><a class="btn btn-primary btn-sm" href="/lab/packages/new">New package</a></div>
+</div>
+<div class="card"><div class="table-responsive"><table class="table align-middle mb-0">
+<thead><tr><th>Code</th><th>Package</th><th>Included tests</th><th>Package price</th><th>Status</th><th></th></tr></thead><tbody>
+<% packages.forEach(function(p){ %><tr><td><code><%= p.code %></code></td><td><strong><%= p.name %></strong><div class="small text-muted"><%= p.description||'' %></div></td><td><%= p.tests.map(t=>t.name).join(', ') %><div class="small text-muted"><%= p.test_count %> tests</div></td><td>₹<%= Number(p.price).toFixed(2) %></td><td><span class="badge text-bg-<%= p.is_active?'success':'secondary' %>"><%= p.is_active?'Active':'Inactive' %></span></td><td><a class="btn btn-sm btn-outline-primary" href="/lab/packages/<%= p.id %>/edit">Edit</a></td></tr><% }) %>
+<% if(!packages.length){ %><tr><td colspan="6" class="text-center text-muted py-4">No packages configured yet.</td></tr><% } %>
+</tbody></table></div></div>
