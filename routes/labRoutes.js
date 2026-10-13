@@ -44,6 +44,7 @@ router.get('/settings',requirePermission('lab.manage'),asyncHandler(labControlle
 router.post('/settings',requirePermission('lab.manage'),csrfProtection,asyncHandler(labController.saveSettings));
 router.get('/review-builder',requirePermission('lab.view'),asyncHandler(labController.reviewBuilder));
 router.post('/orders/:id/tpa-claim',requirePermission('lab.tpa.manage'),csrfProtection,asyncHandler(labController.saveTpaClaim));
+router.post('/orders/:id/home-collection/assign',requirePermission('lab.sample.collect'),csrfProtection,asyncHandler(labController.assignHomeCollection));
 router.get('/accounting',requirePermission('lab.accounting.view'),asyncHandler(labController.accounting));
 router.post('/expenses',requirePermission('lab.accounting.manage'),csrfProtection,asyncHandler(labController.createExpense));
 router.get('/export.csv',requirePermission('lab.data.export'),asyncHandler(labController.exportCsv));
