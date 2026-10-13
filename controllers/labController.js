@@ -58,6 +58,7 @@ async function rejectSample(req,res,next){try{await labService.rejectSample(req.
 
 async function resultForm(req,res,next){try{
   const data=await labService.getOrder(req.params.orderId); if(!data)throw new AppError('Laboratory order not found',404);
+  if(!req.user.roles.includes('SUPER_ADMIN')&&Number(data.order.branch_id)!==Number(branchId(req)))throw new AppError('You do not have access to this laboratory branch',403);
   const item=data.items.find(x=>Number(x.id)===Number(req.params.itemId)); if(!item)throw new AppError('Laboratory test not found in this order',404);
   const result=item.result_id?await labService.getResult(item.result_id):null;
   const test=await labService.getTest(item.test_id);
