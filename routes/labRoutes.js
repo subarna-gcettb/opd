@@ -19,6 +19,7 @@ router.get('/orders/:id',requirePermission('lab.view'),asyncHandler(labControlle
 router.post('/orders/:id/payment',requirePermission('lab.accounting.manage'),csrfProtection,asyncHandler(labController.recordPayment));
 router.post('/orders/:id/cancel',requirePermission('lab.order.cancel'),csrfProtection,asyncHandler(labController.cancelOrder));
 
+router.get('/items/:itemId/sample/label',requirePermission('lab.sample.collect'),asyncHandler(labController.printSampleLabel));
 router.post('/items/:itemId/sample/collect',requirePermission('lab.sample.collect'),csrfProtection,asyncHandler(labController.collectSample));
 router.post('/items/:itemId/sample/receive',requirePermission('lab.sample.collect'),csrfProtection,asyncHandler(labController.receiveSample));
 router.post('/items/:itemId/sample/reject',requirePermission('lab.sample.collect'),csrfProtection,asyncHandler(labController.rejectSample));
