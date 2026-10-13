@@ -150,7 +150,13 @@ ALTER TABLE lab_orders
   ADD COLUMN discount_reason VARCHAR(500) NULL,
   ADD COLUMN collection_type ENUM('IN_LAB','HOME') NOT NULL DEFAULT 'IN_LAB',
   ADD COLUMN home_collection_address VARCHAR(700) NULL,
-  ADD COLUMN home_collection_scheduled_at DATETIME NULL;
+  ADD COLUMN home_collection_scheduled_at DATETIME NULL,
+  ADD COLUMN home_collection_assigned_to INT UNSIGNED NULL,
+  ADD COLUMN home_collection_status ENUM('NOT_REQUIRED','REQUESTED','ASSIGNED','COLLECTED','CANCELLED') NOT NULL DEFAULT 'NOT_REQUIRED',
+  ADD CONSTRAINT fk_lab_order_phlebotomist FOREIGN KEY (home_collection_assigned_to) REFERENCES users(id);
+
+ALTER TABLE lab_workers
+  MODIFY COLUMN worker_type ENUM('RECEPTION','TECHNICIAN','PATHOLOGIST','RADIOLOGIST','CARDIOLOGY','ADMIN','QUALITY','PHLEBOTOMIST') NOT NULL;
 
 ALTER TABLE lab_test_parameters
   ADD COLUMN formula_expression VARCHAR(1000) NULL;
