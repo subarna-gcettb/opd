@@ -410,7 +410,7 @@ async function saveVitals(req, res, next) {
         {
           lmpDate: calculation ? calculation.lmpDate : null,
           datingMethod: status === 'PREGNANT' ? datingMethod : null,
-          usgDate: status === 'PREGNANT' && datingMethod.startsWith('USG') ? (req.body.usgDate || null) : null,
+          usgDate: status === 'PREGNANT' && datingMethod === 'USG' ? (req.body.usgDate || null) : null,
           usgWeeks: status === 'PREGNANT' && datingMethod === 'USG' ? Number(req.body.usgGestationalAgeWeeks) : null,
           usgDays: status === 'PREGNANT' && datingMethod === 'USG' ? Number(req.body.usgGestationalAgeDays || 0) : null,
           usgEdd: status === 'PREGNANT' && datingMethod === 'USG_EDD' ? (req.body.usgEdd || null) : null,
