@@ -4,7 +4,10 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
   <h4 class="mb-0">My Patients Today</h4>
-  <div class="d-flex gap-2">
+  <div class="d-flex flex-wrap gap-2">
+    <a href="/doctor/blogs" class="btn btn-success btn-sm"><i class="bi bi-journal-richtext me-1" aria-hidden="true"></i> My Blog</a>
+    <a href="/doctor/blogs/new" class="btn btn-outline-success btn-sm"><i class="bi bi-pencil-square me-1" aria-hidden="true"></i> Write a Blog</a>
+    <div class="d-flex gap-2">
     <form method="GET" class="d-flex gap-2">
       <input type="date" name="date" class="form-control form-control-sm" value="<%= date %>">
       <button class="btn btn-sm btn-outline-secondary">Go</button>
@@ -13,6 +16,7 @@
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <button class="btn btn-sm btn-warning"><i class="bi bi-megaphone"></i> Call Next Patient</button>
     </form>
+    </div>
   </div>
 </div>
 
