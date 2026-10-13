@@ -158,7 +158,7 @@ async function createExpense(branchId, actorUserId, payload) {
 
 async function createShareToken(branchId, actorUserId, orderId, resultId = null) {
   const [[order]] = await pool.execute(
-    'SELECT o.id,o.branch_id FROM lab_orders o JOIN laboratories l ON l.id=o.laboratory_id WHERE o.id=:id AND l.branch_id=:branchId',
+    'SELECT o.id,l.branch_id FROM lab_orders o JOIN laboratories l ON l.id=o.laboratory_id WHERE o.id=:id AND l.branch_id=:branchId',
     { id: orderId, branchId }
   );
   if (!order) throw new AppError('Laboratory order not found in this branch.', 404);
@@ -181,7 +181,7 @@ async function createShareToken(branchId, actorUserId, orderId, resultId = null)
 async function getPublicOrder(token) {
   const hash = crypto.createHash('sha256').update(String(token || '')).digest('hex');
   const [[order]] = await pool.execute(
-    'SELECT o.id,o.order_code,o.booking_date,o.status,o.total_amount,o.discount_amount,o.net_amount,o.payment_status,o.created_at,p.name patient_name,p.health_id,l.name laboratory_name,l.phone laboratory_phone,st.expires_at FROM lab_share_tokens st JOIN lab_orders o ON o.id=st.lab_order_id JOIN patients p ON p.id=o.patient_id JOIN laboratories l ON l.id=o.laboratory_id WHERE st.token_hash=:hash AND st.revoked_at IS NULL AND st.expires_at>NOW() LIMIT 1',
+    'SELECT o.id,o.order_code,o.booking_date,o.status,o.total_amount,o.discount_amount,o.net_amount,o.payment_status,o.created_at,p.name patient_name,p.health_id,l.name laboratory_name,l.phone laboratory_phone,st.expires_at,st.lab_result_id token_result_id FROM lab_share_tokens st JOIN lab_orders o ON o.id=st.lab_order_id JOIN patients p ON p.id=o.patient_id JOIN laboratories l ON l.id=o.laboratory_id WHERE st.token_hash=:hash AND st.revoked_at IS NULL AND st.expires_at>NOW() LIMIT 1',
     { hash }
   );
   if (!order) return null;
@@ -189,12 +189,16 @@ async function getPublicOrder(token) {
     'SELECT oi.id,oi.test_name_snapshot,oi.test_code_snapshot,oi.status,oi.completed_at,r.id result_id,r.status result_status,r.version result_version FROM lab_order_items oi LEFT JOIN lab_results r ON r.lab_order_item_id=oi.id AND r.is_current=1 WHERE oi.lab_order_id=:id ORDER BY oi.id',
     { id: order.id }
   );
+  if (order.token_result_id) {
+    for (const item of items) if (Number(item.result_id) !== Number(order.token_result_id)) { item.result_id = null; item.result_status = null; item.result_version = null; }
+  }
   return { order, items };
 }
 
 async function getPublicReport(token, resultId) {
   const publicOrder = await getPublicOrder(token);
   if (!publicOrder) return null;
+  if (publicOrder.order.token_result_id && Number(publicOrder.order.token_result_id) !== Number(resultId)) return null;
   const item = publicOrder.items.find(row => Number(row.result_id) === Number(resultId) && row.result_status === 'RELEASED');
   if (!item) return null;
   return labService.getResult(resultId);
