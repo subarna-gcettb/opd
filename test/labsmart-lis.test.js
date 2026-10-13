@@ -35,6 +35,10 @@ test('LabSmart-inspired LIS features are connected to migrations, routes and ser
   assert.match(routes, /\/accounting/);
   assert.match(routes, /\/export\.csv/);
   assert.match(routes, /\/share\/email/);
+  assert.match(routes, /\/review-builder/);
+  assert.match(routes, /\/tpa-claim/);
+  assert.match(routes, /\/home-collection\/assign/);
+  assert.match(routes, /\/workers/);
   assert.match(service, /crypto\.createHash\('sha256'\)/);
   assert.match(service, /function csvCell/);
   assert.match(labService, /evaluateFormula\(p\.formula_expression,byCode\)/);
@@ -53,6 +57,7 @@ test('all changed LIS EJS views compile successfully', () => {
     'views/lab/accounting.ejs',
     'views/lab/settings.ejs',
     'views/lab/review-builder.ejs',
+    'views/lab/staff.ejs',
     'views/lab/share.ejs',
     'views/lab/public-order.ejs',
     'views/lab/new-order.ejs',
