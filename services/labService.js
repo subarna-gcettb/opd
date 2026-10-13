@@ -280,7 +280,7 @@ async function getOrder(orderId) {
 async function collectSample(itemId,actorUserId,payload={}) {
   return withTransaction(async conn=>{
     const branchId = await actorBranch(conn, actorUserId);
-    const [[item]]=await conn.execute('SELECT oi.*,o.order_code,o.patient_id,l.branch_id FROM lab_order_items oi JOIN lab_orders o ON o.id=oi.lab_order_id JOIN laboratories l ON l.id=o.laboratory_id WHERE oi.id=:id AND l.branch_id=:branchId FOR UPDATE',{id:itemId,branchId});
+    const [[item]]=await conn.execute('SELECT oi.*,o.order_code,o.patient_id,o.collection_type,l.branch_id FROM lab_order_items oi JOIN lab_orders o ON o.id=oi.lab_order_id JOIN laboratories l ON l.id=o.laboratory_id WHERE oi.id=:id AND l.branch_id=:branchId FOR UPDATE',{id:itemId,branchId});
     if(!item)throw new AppError('Laboratory order item not found',404);
     if(['CANCELLED','REJECTED','REPORTED'].includes(item.status))throw new AppError('This test cannot accept a sample now',409);
     const [[existing]]=await conn.execute('SELECT id,sample_code,barcode_value FROM lab_samples WHERE lab_order_item_id=:id AND status NOT IN ("REJECTED","DISPOSED") ORDER BY id DESC LIMIT 1 FOR UPDATE',{id:itemId});
@@ -288,6 +288,10 @@ async function collectSample(itemId,actorUserId,payload={}) {
     if(existing){sampleCode=existing.sample_code;barcode=existing.barcode_value;await conn.execute('UPDATE lab_samples SET status="COLLECTED",collected_at=NOW(),collected_by=:userId,specimen_type=:specimen,container_type=:container,volume=:volume WHERE id=:id',{id:existing.id,userId:actorUserId,specimen:payload.specimenType||item.specimen_type_snapshot||'Sample',container:payload.containerType||null,volume:payload.volume||null});}
     else{const seq=await sequenceService.nextValue(conn,'lab-sample:'+new Date().getFullYear()+':'+item.lab_order_id);sampleCode='SMP'+new Date().getFullYear()+sequenceService.pad(seq,6);barcode='CHB'+new Date().getFullYear()+sequenceService.pad(seq,8);await conn.execute('INSERT INTO lab_samples (sample_code,barcode_value,lab_order_item_id,specimen_type,container_type,volume,collected_at,collected_by,status) VALUES (:sampleCode,:barcode,:itemId,:specimen,:container,:volume,NOW(),:userId,"COLLECTED")',{sampleCode,barcode,itemId,specimen:payload.specimenType||item.specimen_type_snapshot||'Sample',container:payload.containerType||null,volume:payload.volume||null,userId:actorUserId});}
     await conn.execute('UPDATE lab_order_items SET status="COLLECTED" WHERE id=:id',{id:itemId});
+    if(item.collection_type==='HOME'){
+      const [[remaining]]=await conn.execute('SELECT COUNT(*) pending FROM lab_order_items oi WHERE oi.lab_order_id=:orderId AND oi.status NOT IN (\'CANCELLED\',\'REJECTED\') AND NOT EXISTS (SELECT 1 FROM lab_samples s WHERE s.lab_order_item_id=oi.id AND s.status NOT IN (\'REJECTED\',\'DISPOSED\'))',{orderId:item.lab_order_id});
+      if(Number(remaining.pending)===0)await conn.execute('UPDATE lab_orders SET home_collection_status=\'COLLECTED\' WHERE id=:orderId',{orderId:item.lab_order_id});
+    }
     await recalcOrder(conn,item.lab_order_id,actorUserId);
     await auditService.log({userId:actorUserId,action:'LAB_SAMPLE_COLLECTED',entity:'lab_order_item',entityId:itemId,newValue:{sampleCode,barcode}},conn);
     return {sampleCode,barcode};
