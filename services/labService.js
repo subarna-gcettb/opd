@@ -286,7 +286,7 @@ async function rejectSample(itemId,actorUserId,reason) {
   return withTransaction(async conn=>{
     if(!String(reason||'').trim())throw new AppError('Sample rejection reason is required',422);
     const branchId = await actorBranch(conn, actorUserId);
-    const [[s]]=await conn.execute('SELECT s.*,oi.lab_order_id FROM lab_samples s JOIN lab_order_items oi ON oi.id=s.lab_order_item_id JOIN lab_orders o ON o.id=oi.lab_order_id WHERE oi.id=:itemId AND o.branch_id=:branchId ORDER BY s.id DESC LIMIT 1 FOR UPDATE',{itemId,branchId});
+    const [[s]]=await conn.execute('SELECT s.*,oi.lab_order_id FROM lab_samples s JOIN lab_order_items oi ON oi.id=s.lab_order_item_id JOIN lab_orders o ON o.id=oi.lab_order_id JOIN laboratories l ON l.id=o.laboratory_id WHERE oi.id=:itemId AND l.branch_id=:branchId ORDER BY s.id DESC LIMIT 1 FOR UPDATE',{itemId,branchId});
     if(!s)throw new AppError('No sample found',404);
     await conn.execute('UPDATE lab_samples SET status="REJECTED",rejection_reason=:reason WHERE id=:id',{id:s.id,reason:String(reason).trim()});
     await conn.execute('UPDATE lab_order_items SET status="REJECTED",rejected_reason=:reason WHERE id=:itemId',{itemId,reason:String(reason).trim()});
