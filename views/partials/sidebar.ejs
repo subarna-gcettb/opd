@@ -25,7 +25,10 @@
     <li class="nav-item"><a class="nav-link <%= active('/dashboard') %>" href="/dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
 
     <% if (isDoctor) { %>
-      <li class="nav-item"><a class="nav-link <%= active('/doctor') %>" href="/doctor/queue"><i class="bi bi-person-badge"></i> Doctor Portal</a></li>
+      <li class="nav-section">Doctor Workspace</li>
+      <li class="nav-item"><a class="nav-link <%= active('/doctor') && !currentPath.startsWith('/doctor/blogs') ? 'active' : '' %>" href="/doctor/"><i class="bi bi-person-badge"></i> Doctor Dashboard</a></li>
+      <li class="nav-item"><a class="nav-link <%= active('/doctor/blogs') %>" href="/doctor/blogs"><i class="bi bi-journal-richtext"></i> My Blog</a></li>
+      <li class="nav-item"><a class="nav-link <%= active('/doctor/blogs/new') %>" href="/doctor/blogs/new"><i class="bi bi-pencil-square"></i> Write a Blog</a></li>
     <% } %>
 
     <% if (can('agent.portal')) { %>
