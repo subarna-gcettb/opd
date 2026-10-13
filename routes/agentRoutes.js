@@ -18,6 +18,7 @@ router.get('/patients',requireAgent,asyncHandler(controller.patients));
 router.get('/patients/new',requireAgent,asyncHandler(controller.newPatient));
 router.post('/patients',requireAgent,csrfProtection,asyncHandler(controller.createPatient));
 router.get('/opd/new',requireAgent,asyncHandler(controller.opdForm));
+router.get('/api/patients',requireAgent,asyncHandler(controller.searchPatients));
 router.post('/opd',requireAgent,csrfProtection,asyncHandler(controller.bookOpd));
 router.get('/tests/new',requireAgent,asyncHandler(controller.testForm));
 router.post('/tests',requireAgent,csrfProtection,asyncHandler(controller.bookTest));
