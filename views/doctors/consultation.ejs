@@ -413,7 +413,7 @@
 (function () {
   const params = new URLSearchParams(window.location.search);
   const prescriptionId = params.get('printPrescriptionId');
-  if (!prescriptionId || !/^\\d+$/.test(prescriptionId)) return;
+  if (!prescriptionId || !/^\d+$/.test(prescriptionId)) return;
 
   // Consume the one-time prompt parameter so refreshing the consultation page
   // does not repeatedly ask the doctor to print the same prescription.
