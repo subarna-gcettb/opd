@@ -287,16 +287,28 @@ async function saveTpaClaim(branchId, actorUserId, orderId, payload) {
   if(!Number.isFinite(claimAmount)||claimAmount<0||!Number.isFinite(paidAmount)||paidAmount<0||(approvedAmount!==null&&(!Number.isFinite(approvedAmount)||approvedAmount<0)))throw new AppError('Claim, approved and paid amounts must be valid non-negative amounts.',422);
   if(paidAmount>(approvedAmount===null?claimAmount:approvedAmount))throw new AppError('Paid amount cannot exceed the approved claim amount.',422);
   return withTransaction(async conn=>{
-    const [[order]]=await conn.execute('SELECT o.id,o.net_amount FROM lab_orders o JOIN laboratories l ON l.id=o.laboratory_id WHERE o.id=:id AND l.branch_id=:branchId FOR UPDATE',{id:orderId,branchId});
+    const [[order]]=await conn.execute('SELECT o.id,o.net_amount,o.payment_status FROM lab_orders o JOIN laboratories l ON l.id=o.laboratory_id WHERE o.id=:id AND l.branch_id=:branchId FOR UPDATE',{id:orderId,branchId});
     if(!order)throw new AppError('Laboratory order not found in this branch.',404);
-    const [existingRows]=await conn.execute('SELECT id,created_by FROM lab_tpa_claims WHERE lab_order_id=:id FOR UPDATE',{id:orderId});
+    if(order.payment_status==='WAIVED'&&paidAmount>0)throw new AppError('A waived order cannot record a TPA payment.',409);
+    if(claimAmount>Number(order.net_amount||0)+0.005)throw new AppError('Claim amount cannot exceed the laboratory order net amount.',422);
+    const [existingRows]=await conn.execute('SELECT id,created_by,paid_amount FROM lab_tpa_claims WHERE lab_order_id=:id FOR UPDATE',{id:orderId});
     const existing=existingRows[0];
+    const previousTpaPaid=Number(existing?.paid_amount||0);
+    if(paidAmount<previousTpaPaid)throw new AppError('TPA paid amount cannot be reduced below previously recorded payments.',422);
+    const additionalTpaPayment=Math.round((paidAmount-previousTpaPaid)*100)/100;
     const [result]=await conn.execute(
       'INSERT INTO lab_tpa_claims (lab_order_id,insurer_name,policy_number,claim_number,claim_amount,approved_amount,paid_amount,status,submitted_at,settled_at,notes,created_by,updated_by) VALUES (:orderId,:insurer,:policy,:claimNumber,:claimAmount,:approvedAmount,:paidAmount,:status,IF(:status=\'SUBMITTED\',NOW(),NULL),IF(:status=\'SETTLED\',NOW(),NULL),:notes,:createdBy,:userId) ON DUPLICATE KEY UPDATE insurer_name=VALUES(insurer_name),policy_number=VALUES(policy_number),claim_number=VALUES(claim_number),claim_amount=VALUES(claim_amount),approved_amount=VALUES(approved_amount),paid_amount=VALUES(paid_amount),status=VALUES(status),submitted_at=IF(VALUES(status)=\'SUBMITTED\',COALESCE(submitted_at,NOW()),submitted_at),settled_at=IF(VALUES(status)=\'SETTLED\',COALESCE(settled_at,NOW()),settled_at),notes=VALUES(notes),updated_by=VALUES(updated_by)',
       {orderId,insurer,policy:String(payload.policyNumber||'').trim()||null,claimNumber:String(payload.claimNumber||'').trim()||null,claimAmount,approvedAmount,paidAmount,status,notes:String(payload.notes||'').trim()||null,createdBy:existing?existing.created_by:actorUserId,userId:actorUserId}
     );
     const claimId=existing?existing.id:result.insertId;
-    await auditService.log({userId:actorUserId,action:existing?'LAB_TPA_CLAIM_UPDATED':'LAB_TPA_CLAIM_CREATED',entity:'lab_tpa_claim',entityId:claimId,newValue:{orderId,insurer,claimAmount,approvedAmount,paidAmount,status}},conn);
+    if(additionalTpaPayment>0){
+      await conn.execute('INSERT INTO lab_order_payments (lab_order_id,amount,payment_method,reference_no,notes,received_by) VALUES (:orderId,:amount,\'BANK_TRANSFER\',:reference,:notes,:userId)',{orderId,amount:additionalTpaPayment,reference:String(payload.claimNumber||'').trim()||null,notes:'TPA / insurance settlement '+(insurer||''),userId:actorUserId});
+    }
+    const [[paidRow]]=await conn.execute('SELECT COALESCE(SUM(amount),0) paid FROM lab_order_payments WHERE lab_order_id=:orderId',{orderId});
+    const totalPaid=Number(paidRow.paid||0);
+    const paymentStatus=totalPaid+0.005>=Number(order.net_amount||0)?'PAID':(totalPaid>0?'PARTIAL':'UNPAID');
+    await conn.execute('UPDATE lab_orders SET payment_status=:status WHERE id=:orderId',{status:paymentStatus,orderId});
+    await auditService.log({userId:actorUserId,action:existing?'LAB_TPA_CLAIM_UPDATED':'LAB_TPA_CLAIM_CREATED',entity:'lab_tpa_claim',entityId:claimId,newValue:{orderId,insurer,claimAmount,approvedAmount,paidAmount,additionalTpaPayment,status}},conn);
     return claimId;
   });
 }
