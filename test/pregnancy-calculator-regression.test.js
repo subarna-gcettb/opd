@@ -32,7 +32,7 @@ test('USG EDD and conception-based dating return a consistent EDD', () => {
   const usgEdd = calculator.calculatePregnancyFromUltrasoundEdd('2027-04-19', new Date(2026, 9, 8));
   const conception = calculator.calculatePregnancyFromReference('2026-07-27', 'CONCEPTION', new Date(2026, 9, 8));
   assert.equal(usgEdd.estimatedDueDate, '2027-04-19');
-  assert.equal(conception.estimatedDueDate, '2027-05-04');
+  assert.equal(conception.estimatedDueDate, '2027-04-19');
 });
 
 test('shared pregnancy assessment initializes every widget and formats dates as dd-mm-yyyy', () => {
