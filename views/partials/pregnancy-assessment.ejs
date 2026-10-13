@@ -108,9 +108,9 @@
 
 <script>
 (function () {
-  const root = document.querySelector('[data-pregnancy-widget]');
-  if (!root || window.__pregnancyWidgetInitialized) return;
-  window.__pregnancyWidgetInitialized = true;
+  document.querySelectorAll('[data-pregnancy-widget]').forEach(function (root) {
+    if (root.dataset.pregnancyInitialized === '1') return;
+    root.dataset.pregnancyInitialized = '1';
 
   const status = root.querySelector('[data-pregnancy-status]');
   const method = root.querySelector('[data-pregnancy-method]');
@@ -151,16 +151,26 @@
     return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
   }
   function display(date) {
-    return date ? date.toLocaleDateString('en-IN') : '—';
+    if (!date) return '—';
+    return String(date.getDate()).padStart(2, '0') + '-' +
+      String(date.getMonth() + 1).padStart(2, '0') + '-' + date.getFullYear();
   }
   function calculate() {
-    const mode = method.value || 'LMP';
+    const mode = String(method.value || 'LMP').toUpperCase();
     datingMethod.value = mode;
+    // Clear values from the previously selected dating method before
+    // populating only the fields that belong to the current method.
+    conceptionInput.value = '';
+    referenceInput.value = '';
+    usgDateInput.value = '';
+    usgEddInput.value = '';
 
     if (status.value !== 'PREGNANT') {
       results.style.display = 'none';
       error.style.display = 'none';
       lmp.value = '';
+      conceptionInput.value = '';
+      referenceInput.value = '';
       usgDateInput.value = '';
       usgEddInput.value = '';
       return true;
@@ -178,7 +188,7 @@
       if (mode === 'USG') {
         const weeks = Number(usgWeeks.value);
         const days = Number(usgDays.value || 0);
-        if (!scanDate || !Number.isInteger(weeks) || !Number.isInteger(days) || weeks < 0 || weeks > 45 || days < 0 || days > 6) {
+        if (!scanDate || usgWeeks.value.trim() === '' || !Number.isInteger(weeks) || !Number.isInteger(days) || weeks < 0 || weeks > 45 || days < 0 || days > 6) {
           results.style.display = 'none';
           error.style.display = '';
           error.querySelector('.alert').textContent = 'Enter the USG/ultrasound scan date and valid gestational age (weeks 0–45, days 0–6).';
@@ -261,6 +271,7 @@
       event.preventDefault();
       error.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
+  });
   });
 })();
 </script>
