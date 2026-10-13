@@ -7,6 +7,7 @@ const opdService = require('../services/opdService');
 const doctorService = require('../services/doctorService');
 const scheduleService = require('../services/scheduleService');
 const labService = require('../services/labService');
+const labSmartService = require('../services/labSmartService');
 const { uploadDir } = require('../utils/labReportUpload');
 const path = require('path');
 const { pool } = require('../config/database');
@@ -164,7 +165,8 @@ async function showLab(req,res,next){
     const patientId=requirePatientContext(req);
     const data=await patientPortalService.getOwnDashboard(patientId);
     const tests=await labService.getAvailableTestsForBranch(data.patient.branch_id);
-    res.render('patient-portal/lab',{title:'My Laboratory & Diagnostics',patient:data.patient,orders:data.labOrders,tests});
+    const packages=await labSmartService.listPackages(data.patient.branch_id);
+    res.render('patient-portal/lab',{title:'My Laboratory & Diagnostics',patient:data.patient,orders:data.labOrders,tests,packages});
   }catch(err){next(err);}
 }
 
@@ -174,7 +176,7 @@ async function bookLab(req,res,next){
     const data=await patientPortalService.getOwnDashboard(patientId);
     const testIds=Array.isArray(req.body.testIds)?req.body.testIds:(req.body.testIds?[req.body.testIds]:[]);
     const result=await labService.createOrder(patientId,data.patient.branch_id,req.user.id,{
-      testIds,source:'PATIENT',bookingDate:req.body.bookingDate,priority:req.body.priority,clinicalNotes:req.body.clinicalNotes
+      testIds,packageIds:req.body.packageIds,source:'PATIENT',bookingDate:req.body.bookingDate,priority:req.body.priority,clinicalNotes:req.body.clinicalNotes,collectionType:req.body.collectionType,homeCollectionAddress:req.body.homeCollectionAddress,homeCollectionScheduledAt:req.body.homeCollectionScheduledAt
     });
     req.flash('success','Test booking '+result.orderCode+' has been created. Track it from your laboratory dashboard.');
     res.redirect('/patient-portal/lab/orders/'+result.id);
